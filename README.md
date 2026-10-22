@@ -60,36 +60,18 @@ Package birinchi marta yig'ilgach, GitHub'da uni ochiq qiling: profil → Packag
 
 ## Avtomatik deploy
 
-`main` ga har push qilinganda Actions image'ni yig'adi, keyin serverga SSH orqali kirib `deploy/deploy.sh` ni ishga tushiradi. Bu skript `git pull`, `docker compose pull` va `up -d` ni bajarib, oxirida `/healthz` ni tekshiradi. Deploy kaliti serverda faqat shu skriptni bajara oladi.
+`main` ga push qilinganda GitHub Actions image'ni yig'adi. Server esa har daqiqada GitHub'ni tekshiradi: yangi commit bo'lsa va uning image'i tayyor bo'lsa, `deploy/deploy.sh` ni ishga tushiradi. Skript `git pull` qiladi, yangi image'ni yuklab, konteynerni qayta ishga tushiradi va `/healthz` ni tekshiradi. Server GitHub'ga o'zi murojaat qilgani uchun SSH porti, GitHub secret'lari va kalitlar kerak emas. Push'dan keyin yangilanish taxminan 2–3 daqiqa oladi.
 
-**Bir martalik sozlash (serverda, loyiha egasi bo'lgan foydalanuvchi nomidan):**
+**Bir marta yoqish** (loyiha papkasida, papka egasi bo'lgan foydalanuvchi nomidan):
 
 ```bash
-cd /var/www/zarba-nuqtasi && git pull          # deploy.sh ni olish
-chmod +x deploy/deploy.sh
-groups | grep -q docker || echo "foydalanuvchi docker guruhida emas: sudo usermod -aG docker $USER"
-
-ssh-keygen -t ed25519 -N "" -C github-deploy -f ~/.ssh/zarba_deploy
-echo "command=\"$PWD/deploy/deploy.sh\",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty $(cat ~/.ssh/zarba_deploy.pub)" >> ~/.ssh/authorized_keys
-
-whoami                       # → DEPLOY_USER
-cat ~/.ssh/zarba_deploy      # → DEPLOY_SSH_KEY (butunligicha, BEGIN/END qatorlari bilan)
-ssh-keyscan localhost 2>/dev/null | sed "s/^localhost/game.telegap.uz/"   # → DEPLOY_KNOWN_HOSTS (ixtiyoriy)
+cd /var/www/zarba-nuqtasi && git pull
+chmod +x deploy/*.sh && ./deploy/install-autodeploy.sh
 ```
 
-**GitHub'da:** repo → Settings → Secrets and variables → Actions → New repository secret:
+Holat: `systemctl list-timers zarba-autodeploy.timer`. Jurnal: `journalctl -u zarba-autodeploy -f`. Qo'lda yangilash: `./deploy/deploy.sh`. O'chirish: `sudo systemctl disable --now zarba-autodeploy.timer`.
 
-| Secret | Qiymat |
-|---|---|
-| `DEPLOY_HOST` | `game.telegap.uz` yoki server IP manzili |
-| `DEPLOY_USER` | `whoami` natijasi |
-| `DEPLOY_SSH_KEY` | `~/.ssh/zarba_deploy` fayli matni |
-| `DEPLOY_PORT` | SSH port 22 bo'lmasa (ixtiyoriy) |
-| `DEPLOY_KNOWN_HOSTS` | server kaliti, MITM'dan himoya uchun (ixtiyoriy) |
-
-Secret'lar qo'shilmaguncha deploy bosqichi o'tkazib yuboriladi, build esa odatdagidek ishlaydi. SSH porti faqat ma'lum IP'larga ochiq bo'lsa, GitHub runner'lari ulana olmaydi. Bunday holda portni ochish yoki self-hosted runner ishlatish kerak.
-
-Qo'lda yangilash: `./deploy/deploy.sh`.
+**Muqobil yo'l: Actions'dan SSH orqali.** Server GitHub runner'lari uchun SSH orqali ochiq bo'lsa, Actions'dagi `deploy` bosqichi push'dan so'ng darhol yangilaydi. Buning uchun repo secret'larini qo'shing: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` va ixtiyoriy `DEPLOY_PORT`, `DEPLOY_KNOWN_HOSTS`. Serverdagi `~/.ssh/authorized_keys` ga kalitni `command="…/deploy/deploy.sh",no-pty,no-port-forwarding` cheklovi bilan qo'shing. `DEPLOY_HOST` secret'i bo'lmasa, bu bosqich o'tkazib yuboriladi.
 
 ## Sozlamalar (muhit o'zgaruvchilari)
 

@@ -41,3 +41,36 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+    steps:
+      - name: Serverni yangilash
+        if: env.DEPLOY_HOST != ''
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          PORT="${DEPLOY_PORT:-22}"
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "$PORT" "$DEPLOY_HOST" > ~/.ssh/known_hosts 2>/dev/null
+          fi
+          # serverdagi kalit faqat deploy/deploy.sh ni ishga tushira oladi (authorized_keys: command=...)
+          ssh -i ~/.ssh/deploy -p "$PORT" -o BatchMode=yes -o ConnectTimeout=20 "$DEPLOY_USER@$DEPLOY_HOST" deploy
+
+      - name: Deploy sozlanmagan
+        if: env.DEPLOY_HOST == ''
+        run: echo "::notice::DEPLOY_HOST secret qo'shilmagan, avtomatik deploy o'tkazib yuborildi (README → Avtomatik deploy)"

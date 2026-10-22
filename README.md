@@ -58,6 +58,39 @@ docker compose pull && docker compose up -d
 
 Package birinchi marta yig'ilgach, GitHub'da uni ochiq qiling: profil → Packages → zarba-nuqtasi → Package settings → Change visibility → Public. Yopiq qoldirsangiz, serverda `docker login ghcr.io` qilish kerak bo'ladi.
 
+## Avtomatik deploy
+
+`main` ga har push qilinganda Actions image'ni yig'adi, keyin serverga SSH orqali kirib `deploy/deploy.sh` ni ishga tushiradi. Bu skript `git pull`, `docker compose pull` va `up -d` ni bajarib, oxirida `/healthz` ni tekshiradi. Deploy kaliti serverda faqat shu skriptni bajara oladi.
+
+**Bir martalik sozlash (serverda, loyiha egasi bo'lgan foydalanuvchi nomidan):**
+
+```bash
+cd /var/www/zarba-nuqtasi && git pull          # deploy.sh ni olish
+chmod +x deploy/deploy.sh
+groups | grep -q docker || echo "foydalanuvchi docker guruhida emas: sudo usermod -aG docker $USER"
+
+ssh-keygen -t ed25519 -N "" -C github-deploy -f ~/.ssh/zarba_deploy
+echo "command=\"$PWD/deploy/deploy.sh\",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-pty $(cat ~/.ssh/zarba_deploy.pub)" >> ~/.ssh/authorized_keys
+
+whoami                       # → DEPLOY_USER
+cat ~/.ssh/zarba_deploy      # → DEPLOY_SSH_KEY (butunligicha, BEGIN/END qatorlari bilan)
+ssh-keyscan localhost 2>/dev/null | sed "s/^localhost/game.telegap.uz/"   # → DEPLOY_KNOWN_HOSTS (ixtiyoriy)
+```
+
+**GitHub'da:** repo → Settings → Secrets and variables → Actions → New repository secret:
+
+| Secret | Qiymat |
+|---|---|
+| `DEPLOY_HOST` | `game.telegap.uz` yoki server IP manzili |
+| `DEPLOY_USER` | `whoami` natijasi |
+| `DEPLOY_SSH_KEY` | `~/.ssh/zarba_deploy` fayli matni |
+| `DEPLOY_PORT` | SSH port 22 bo'lmasa (ixtiyoriy) |
+| `DEPLOY_KNOWN_HOSTS` | server kaliti, MITM'dan himoya uchun (ixtiyoriy) |
+
+Secret'lar qo'shilmaguncha deploy bosqichi o'tkazib yuboriladi, build esa odatdagidek ishlaydi. SSH porti faqat ma'lum IP'larga ochiq bo'lsa, GitHub runner'lari ulana olmaydi. Bunday holda portni ochish yoki self-hosted runner ishlatish kerak.
+
+Qo'lda yangilash: `./deploy/deploy.sh`.
+
 ## Sozlamalar (muhit o'zgaruvchilari)
 
 | O'zgaruvchi | Standart | Ma'nosi |

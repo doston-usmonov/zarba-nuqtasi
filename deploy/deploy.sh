@@ -4,7 +4,14 @@
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."
 
-git pull --ff-only --quiet
+# autodeploy bilan bir vaqtda ishlamasin (u qulfni o'zi olib, ZARBA_LOCKED=1 bilan chaqiradi)
+if [ "${ZARBA_LOCKED:-}" != 1 ]; then
+  exec 9>"${TMPDIR:-/tmp}/zarba-autodeploy.lock"
+  flock -w 120 9 || { echo "Boshqa yangilanish ketyapti, keyinroq urinib ko'ring" >&2; exit 1; }
+fi
+
+git fetch --quiet origin main
+git merge --ff-only --quiet origin/main
 docker compose pull --quiet
 docker compose up -d --remove-orphans
 docker image prune -f >/dev/null

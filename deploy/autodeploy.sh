@@ -21,4 +21,4 @@ if ! docker manifest inspect "$IMAGE:$remote_rev" >/dev/null 2>&1; then
 fi
 
 echo "Yangi versiya ${remote_rev:0:7} o'rnatilmoqda"
-exec ./deploy/deploy.sh
+ZARBA_LOCKED=1 exec ./deploy/deploy.sh

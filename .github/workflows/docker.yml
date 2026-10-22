@@ -60,16 +60,27 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
+          fail(){ echo "::error title=Deploy::$1"; exit 1; }
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$DEPLOY_KEY" | tr -d '\r' > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          ssh-keygen -y -f ~/.ssh/deploy >/dev/null 2>&1 || fail "DEPLOY_SSH_KEY yaroqsiz: ~/.ssh/zarba_deploy faylining to'liq matni (BEGIN/END qatorlari bilan) kerak, .pub emas"
+          [ -n "$DEPLOY_USER" ] || fail "DEPLOY_USER secret bo'sh"
           PORT="${DEPLOY_PORT:-22}"
           if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
             printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
           else
-            ssh-keyscan -p "$PORT" "$DEPLOY_HOST" > ~/.ssh/known_hosts 2>/dev/null
+            ssh-keyscan -T 15 -p "$PORT" "$DEPLOY_HOST" > ~/.ssh/known_hosts 2>/dev/null || true
+            [ -s ~/.ssh/known_hosts ] || fail "$DEPLOY_HOST:$PORT ga ulanib bo'lmadi: SSH porti tashqaridan yopiq (firewall) yoki DEPLOY_HOST/DEPLOY_PORT noto'g'ri"
           fi
           # serverdagi kalit faqat deploy/deploy.sh ni ishga tushira oladi (authorized_keys: command=...)
-          ssh -i ~/.ssh/deploy -p "$PORT" -o BatchMode=yes -o ConnectTimeout=20 "$DEPLOY_USER@$DEPLOY_HOST" deploy
+          set +e
+          out=$(ssh -i ~/.ssh/deploy -p "$PORT" -o BatchMode=yes -o ConnectTimeout=20 "$DEPLOY_USER@$DEPLOY_HOST" deploy 2>&1); code=$?
+          set -e
+          echo "$out"
+          if [ $code -ne 0 ]; then
+            why=$(printf '%s\n' "$out" | grep -m1 -E "Permission denied|Connection refused|timed out|Could not resolve|Host key verification|No such file|not found|Permission|docker|healthz|javob" || printf '%s\n' "$out" | tail -n1)
+            fail "ssh chiqish kodi $code: $why"
+          fi
 
       - name: Deploy sozlanmagan
         if: env.DEPLOY_HOST == ''

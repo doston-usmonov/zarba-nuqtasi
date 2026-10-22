@@ -342,11 +342,13 @@ const wrapA = a => { while (a > Math.PI) a -= Math.PI*2; while (a < -Math.PI) a 
 const isTouch = matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').matches;
 const IN_ARTIFACT = !!(window.claude && typeof window.claude.use === 'function');
 let KBLOCK = false;
-// as its own site: go full screen and lock the keyboard so Ctrl (crouch) and Esc stay in the game
+// as its own site: go full screen and lock only the game's keys, so Ctrl+W/T/N can't close the tab while
+// Alt+Tab, the Windows key and Esc still reach the system (Esc leaves full screen at once)
+const LOCK_KEYS = ['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','KeyR','KeyT','KeyN','KeyF','KeyC','KeyB','KeyM','KeyH','KeyP','KeyL','KeyO','KeyU','KeyI','KeyJ','KeyK','Digit1','Digit2','Digit3','Digit4','Digit5','Space','ControlLeft','ControlRight']
 function goFullscreen(){
   if (IN_ARTIFACT || window.top !== window || document.fullscreenElement || !document.documentElement.requestFullscreen) return;
   document.documentElement.requestFullscreen({ navigationUI:'hide' })
-    .then(() => navigator.keyboard && navigator.keyboard.lock ? navigator.keyboard.lock().then(() => { KBLOCK = true; }) : null)
+    .then(() => navigator.keyboard && navigator.keyboard.lock ? navigator.keyboard.lock(LOCK_KEYS).then(() => { KBLOCK = true; }) : null)
     .catch(() => {});
 }
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement){ KBLOCK = false; try { navigator.keyboard && navigator.keyboard.unlock && navigator.keyboard.unlock(); } catch(e){} } });
@@ -1523,7 +1525,7 @@ document.addEventListener('pointerlockerror', lockFailed);
 document.addEventListener('keydown', e => {
   if (!inGame()) return;
   keys[e.code] = true;
-  if (['Space','Tab','ArrowUp','ArrowDown'].includes(e.code) || (KBLOCK && (e.ctrlKey || e.metaKey || e.altKey))) e.preventDefault();
+  if (['Space','Tab','ArrowUp','ArrowDown'].includes(e.code) || (KBLOCK && e.ctrlKey)) e.preventDefault();
   if ((e.code === 'ControlLeft' || e.code === 'ControlRight') && !KBLOCK && !e.repeat && S.time - (S.ctrlHint || -99) > 8){ S.ctrlHint = S.time; hint(IN_ARTIFACT ? "Cho'kkalash — C. Brauzerda Ctrl+W yorliqni yopib qo'yadi" : "Cho'kkalash — C. Ctrl ishlashi uchun to'liq ekranga o'ting (F11 emas, o'yin tugmasi orqali)", 3200); }
   if (e.code === 'Escape' && KBLOCK && document.pointerLockElement){ document.exitPointerLock(); return; }
   if (S.paused) return;

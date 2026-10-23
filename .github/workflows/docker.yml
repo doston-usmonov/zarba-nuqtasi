@@ -12,6 +12,19 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: zarba
+          POSTGRES_PASSWORD: zarba
+          POSTGRES_DB: zarba_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U zarba"
+          --health-interval 2s --health-timeout 5s --health-retries 30
+    env:
+      ZARBA_TEST_DATABASE_URL: postgres://zarba:zarba@localhost:5432/zarba_test?sslmode=disable
     steps:
       - uses: actions/checkout@v4
 

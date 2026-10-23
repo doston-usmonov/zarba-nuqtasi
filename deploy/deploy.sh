@@ -12,6 +12,13 @@ fi
 
 git fetch --quiet origin main
 git merge --ff-only --quiet origin/main
+
+# PostgreSQL paroli: .env bo'lmasa, bir marta tasodifiy parol bilan yaratiladi (git'ga tushmaydi).
+# DIQQAT: .env ni o'chirmang — baza shu parol bilan yaratilgan.
+if ! grep -qs '^ZARBA_DB_PASSWORD=' .env; then
+  ( umask 077; echo "ZARBA_DB_PASSWORD=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')" >> .env )
+  echo ".env yaratildi (PostgreSQL paroli)"
+fi
 docker compose pull --quiet
 docker compose up -d --remove-orphans
 docker image prune -f >/dev/null

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -32,11 +33,13 @@ func (a *api) routes(mux *http.ServeMux) {
 	h := func(f http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Cache-Control", "no-store")
-			if a.st == nil {
-				writeErr(w, http.StatusServiceUnavailable, "Hisoblar vaqtincha ishlamayapti")
+			if !a.st.Ready() {
+				writeErr(w, http.StatusServiceUnavailable, "Hisoblar vaqtincha ishlamayapti, birozdan keyin qayta urinib ko'ring")
 				return
 			}
-			f(w, r)
+			ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+			defer cancel()
+			f(w, r.WithContext(ctx))
 		}
 	}
 	mux.HandleFunc("GET /api/me", h(a.me))
@@ -79,6 +82,11 @@ func writeErr(w http.ResponseWriter, code int, msg string) {
 	writeJSON(w, code, map[string]string{"error": msg})
 }
 
+func serverErr(w http.ResponseWriter, what string, err error) {
+	log.Printf("%s: %v", what, err)
+	writeErr(w, http.StatusInternalServerError, "Server xatosi, keyinroq urinib ko'ring")
+}
+
 // readJSON: faqat o'z saytimizdan kelgan, kichik JSON so'rovlar (CSRF va katta so'rovlarga qarshi).
 func (a *api) readJSON(w http.ResponseWriter, r *http.Request, v any) bool {
 	if !originOK(r, a.allowed) {
@@ -115,10 +123,10 @@ func sessionToken(r *http.Request) string {
 
 // currentUser: cookie bo'yicha foydalanuvchi (yo'q bo'lsa false).
 func (a *api) currentUser(r *http.Request) (User, bool) {
-	if a.st == nil {
+	if !a.st.Ready() {
 		return User{}, false
 	}
-	return a.st.Session(sessionToken(r))
+	return a.st.Session(r.Context(), sessionToken(r))
 }
 
 // ---- endpointlar ----
@@ -134,7 +142,11 @@ func (a *api) me(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusUnauthorized, "Hisobga kirilmagan")
 		return
 	}
-	_, _, pos := a.st.Leaderboard(0, u.ID)
+	pos, err := a.st.position(r.Context(), u.ID)
+	if err != nil {
+		serverErr(w, "o'rin", err)
+		return
+	}
 	out := toOut(u)
 	out.Pos = pos
 	writeJSON(w, http.StatusOK, map[string]any{"user": out})
@@ -149,7 +161,7 @@ func (a *api) register(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusTooManyRequests, "Bu manzildan juda ko'p hisob ochildi. Keyinroq urinib ko'ring")
 		return
 	}
-	u, token, err := a.st.Register(c.Username, c.Password)
+	u, token, err := a.st.Register(r.Context(), c.Username, c.Password)
 	switch {
 	case errors.Is(err, errBadUsername), errors.Is(err, errBadPassword):
 		writeErr(w, http.StatusBadRequest, err.Error())
@@ -177,7 +189,7 @@ func (a *api) doLogin(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusTooManyRequests, "Juda ko'p noto'g'ri urinish. Bir daqiqadan keyin qayta urinib ko'ring")
 		return
 	}
-	u, token, err := a.st.Login(c.Username, c.Password)
+	u, token, err := a.st.Login(r.Context(), c.Username, c.Password)
 	if errors.Is(err, errBadLogin) {
 		a.login.allow(ip) // faqat noto'g'ri urinishlar hisoblanadi
 		writeErr(w, http.StatusUnauthorized, err.Error())
@@ -197,7 +209,9 @@ func (a *api) logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if t := sessionToken(r); t != "" {
-		a.st.Logout(t)
+		if err := a.st.Logout(r.Context(), t); err != nil {
+			log.Printf("chiqishda xato: %v", err)
+		}
 	}
 	setSession(w, r, "", -1)
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
@@ -239,7 +253,11 @@ func (a *api) leaderboard(w http.ResponseWriter, r *http.Request) {
 	if logged {
 		meID = me.ID
 	}
-	top, total, myPos := a.st.Leaderboard(limit, meID)
+	top, total, myPos, err := a.st.Leaderboard(r.Context(), limit, meID)
+	if err != nil {
+		serverErr(w, "reyting jadvali", err)
+		return
+	}
 	rows := make([]lbRow, 0, len(top))
 	for i, u := range top {
 		rows = append(rows, row(i+1, u))
@@ -253,7 +271,11 @@ func (a *api) leaderboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *api) player(w http.ResponseWriter, r *http.Request) {
-	u, pos, hist, ok := a.st.Profile(r.PathValue("name"))
+	u, pos, hist, ok, err := a.st.Profile(r.Context(), r.PathValue("name"))
+	if err != nil {
+		serverErr(w, "profil", err)
+		return
+	}
 	if !ok {
 		writeErr(w, http.StatusNotFound, "Bunday o'yinchi yo'q")
 		return
@@ -273,13 +295,9 @@ func (a *api) player(w http.ResponseWriter, r *http.Request) {
 		After   int    `json:"after"`
 	}
 	ms := []mOut{}
-	for _, m := range hist {
-		for _, p := range m.Players {
-			if p.UserID == u.ID {
-				ms = append(ms, mOut{ID: m.ID, Ended: m.Ended, Room: m.Room, ScoreT: m.ScoreT, ScoreCT: m.ScoreCT, Team: p.Team, Won: p.Won,
-					Kills: p.Kills, Deaths: p.Deaths, HS: p.HS, Before: p.Before, After: p.After})
-			}
-		}
+	for _, h := range hist {
+		ms = append(ms, mOut{ID: h.MatchID, Ended: h.Ended, Room: h.Room, ScoreT: h.ScoreT, ScoreCT: h.ScoreCT, Team: h.Team, Won: h.Won,
+			Kills: h.Kills, Deaths: h.Deaths, HS: h.HS, Before: h.Before, After: h.After})
 	}
 	out := toOut(u)
 	out.Pos = pos

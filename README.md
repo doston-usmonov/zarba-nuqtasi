@@ -1,6 +1,6 @@
 # Zarba Nuqtasi — o'yin serveri
 
-Brauzerdagi taktik otishma va uning onlayn serveri. Bitta Go dasturi o'yin sahifasini tarqatadi va `/ws` orqali o'yinchilarni xonalarga ulaydi. Tashqi Go kutubxonasi yo'q, faqat standart kutubxona ishlatilgan.
+Brauzerdagi taktik otishma va uning onlayn serveri. Bitta Go dasturi o'yin sahifasini tarqatadi, `/ws` orqali o'yinchilarni xonalarga ulaydi, hisoblar va reytingni PostgreSQL'da saqlaydi. Yagona tashqi kutubxona — PostgreSQL drayveri `github.com/lib/pq`, uning o'zi ham boshqa kutubxonalarga bog'liq emas.
 
 ```
 zarba-server/
@@ -8,7 +8,9 @@ zarba-server/
 ├── hub.go             xonalar, o'yinchilar, holatni uzatish (relay)
 ├── match.go           o'yinni server tomonidan kuzatish (hisob, o'ldirishlar, natija)
 ├── rating.go          Elo reyting va darajalar
-├── store.go           hisoblar, sessiyalar, o'yinlar tarixi, kunlik zaxira
+├── store.go           PostgreSQL: hisoblar, sessiyalar, o'yinlar tarixi, migratsiyalar
+├── migrations/        SQL sxema (server ishga tushganda avtomatik qo'llanadi)
+├── legacy.go          oldingi fayl bazasidan bir martalik import
 ├── api.go             /api: ro'yxatdan o'tish, kirish, reyting jadvali, profil
 ├── ws.go              WebSocket (RFC 6455) — serverga kerakli qismi
 ├── server_test.go     testlar (go test ./...)
@@ -23,10 +25,19 @@ zarba-server/
 ## Tez ishga tushirish (lokal)
 
 ```bash
-go run .                     # http://localhost:8080
-# yoki
+# hammasi Docker'da (o'yin + PostgreSQL + zaxira):
+echo "ZARBA_DB_PASSWORD=$(openssl rand -hex 24)" > .env
 docker compose up -d --build
+
+# yoki o'yinni Go bilan, bazani Docker'da:
+docker run -d --name zarba-pg -e POSTGRES_USER=zarba -e POSTGRES_PASSWORD=zarba -e POSTGRES_DB=zarba -p 5432:5432 postgres:17-alpine
+DATABASE_URL="postgres://zarba:zarba@localhost:5432/zarba?sslmode=disable" go run .   # http://localhost:8080
+
+# testlar (alohida test bazasi; har test uni tozalaydi):
+ZARBA_TEST_DATABASE_URL="postgres://zarba:zarba@localhost:5432/zarba_test?sslmode=disable" go test -race ./...
 ```
+
+`DATABASE_URL` berilmasa ham o'yin ishlaydi, faqat hisoblar va reyting o'chiq bo'ladi.
 
 Bir xil Wi-Fi'dagi do'stlar `http://<kompyuteringiz-IP>:8080` orqali kira oladi. Buning uchun compose faylida portni `"8080:8080"` qiling.
 
@@ -36,8 +47,8 @@ Bir xil Wi-Fi'dagi do'stlar `http://<kompyuteringiz-IP>:8080` orqali kira oladi.
 2. Konteynerni ishga tushiring:
    ```bash
    cd ~/zarba-server
-   docker compose up -d --build
-   curl -s localhost:8080/healthz      # {"players":0,"rooms":0}
+   ./deploy/deploy.sh                  # .env (baza paroli) ni yaratadi va hammasini ishga tushiradi
+   curl -s localhost:8080/healthz      # {"db":"ok","players":0,"rooms":0}
    ```
 3. Domenning A yozuvini server IP manziliga yo'naltiring.
 4. Nginx sozlamasini qo'ying va sertifikat oling:
@@ -93,17 +104,21 @@ Natijani server o'zi hisoblaydi:
 
 Zarbaning tekkani hali ham o'yinchi brauzerida hisoblanadi. Uni serverga o'tkazish ROADMAP'dagi keyingi bosqichlardan biri.
 
-**Ma'lumotlar** `zarba-data` volume'ida (`/data`) saqlanadi:
-- `snapshot.json`: hisoblar va sessiyalar, har o'zgarishda atomik qayta yoziladi.
-- `matches.jsonl`: tugagan o'yinlar, faqat oxiriga qo'shiladi.
-- `backups/YYYY-MM-DD/`: kunlik nusxa, oxirgi 7 kun saqlanadi.
+### Ma'lumotlar bazasi (PostgreSQL 17)
 
-Ma'lumotlar papkasini ochib bo'lmasa, server baribir ishga tushadi: o'yin mehmon rejimida ishlaydi, `/api` esa `503` qaytaradi.
+Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanadi), `matches`, `match_players`. Sxema `migrations/NNN_*.sql` fayllarida. Server ishga tushganda yangi migratsiyalar avtomatik qo'llanadi: har biri o'z tranzaksiyasida, `pg_advisory_lock` bilan himoyalangan. O'yin natijasi va barcha o'yinchilarning reytingi bitta tranzaksiyada yoziladi.
 
-Zaxira nusxani serverdan ko'chirib olish:
-```bash
-docker cp zarba-nuqtasi:/data ./zarba-data-$(date +%F)
-```
+- **Baza paroli:** `.env` faylidagi `ZARBA_DB_PASSWORD`. Fayl git'ga tushmaydi. `deploy/deploy.sh` uni birinchi marta o'zi yaratadi. **`.env` ni o'chirmang:** baza shu parol bilan yaratilgan.
+- **Port:** tashqariga ochilmaydi, bazaga faqat compose ichidagi xizmatlar ulanadi.
+- **Zaxira:** `db-backup` xizmati har kuni `pg_dump` oladi va `zarba-backups` volume'ida 7 kunlik nusxani saqlaydi:
+  ```bash
+  docker compose exec db-backup ls -la /backups                                       # ro'yxat
+  docker compose cp db-backup:/backups/zarba-$(date +%F).sql.gz .                      # ko'chirib olish
+  gunzip -c zarba-2026-10-23.sql.gz | docker compose exec -T db psql -U zarba zarba    # tiklash (bo'sh bazaga)
+  ```
+- **Bazaga qo'lda kirish:** `docker compose exec db psql -U zarba zarba`.
+- **Baza ishlamasa:** o'yin baribir ishlaydi (mehmon rejimida), `/api` `503` qaytaradi va server bazaga qayta ulanishga urinib turadi. Holatini `/healthz` dagi `db` maydoni ko'rsatadi.
+- **Oldingi versiyadan ko'chish:** baza bo'sh bo'lsa, server `/data/snapshot.json` va `matches.jsonl` ni (fayl bazasini) avtomatik import qiladi. Hisoblar, parollar, sessiyalar, reyting va tarix saqlanib qoladi, fayllar `*.imported-<sana>` deb qayta nomlanadi.
 
 API: `POST /api/register`, `POST /api/login`, `POST /api/logout`, `GET /api/me`, `GET /api/leaderboard`, `GET /api/players/{login}`.
 
@@ -114,7 +129,8 @@ API: `POST /api/register`, `POST /api/login`, `POST /api/logout`, `GET /api/me`,
 | `ADDR` | `:8080` | Tinglanadigan manzil |
 | `MAX_PLAYERS` | `16` | Bitta xonadagi o'yinchilar chegarasi |
 | `ALLOWED_ORIGINS` | bo'sh | Bo'sh bo'lsa faqat o'z domeni. `*` bo'lsa hammasi. Aks holda vergul bilan ajratilgan hostlar |
-| `DATA_DIR` | `data` (Docker'da `/data`) | Hisoblar, reyting va o'yinlar tarixi papkasi |
+| `DATABASE_URL` | bo'sh | PostgreSQL manzili. Bo'sh bo'lsa hisoblar o'chiq |
+| `DATA_DIR` | bo'sh (Docker'da `/data`) | Oldingi fayl bazasi papkasi (faqat bir martalik import uchun) |
 
 Bitta IP manzildan bir vaqtda ko'pi bilan 8 ta ulanish qabul qilinadi. Bir o'yinchidan soniyasiga 60 tadan ortiq xabar kelsa, ortiqchasi tashlanadi. Bitta xabar 8 KB dan oshmaydi.
 

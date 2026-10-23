@@ -2,3 +2,4 @@ deploy
 *.md
 .git
 data
+.env

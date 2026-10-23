@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -51,7 +52,7 @@ type hub struct {
 	rooms      map[string]*room
 	perIP      map[string]int
 	maxPlayers int
-	store      *Store // nil — hisoblar o'chirilgan
+	store      *Store // nil yoki tayyor emas — hisoblar o'chirilgan
 }
 
 func newHub(maxPlayers int, st *Store) *hub {
@@ -86,8 +87,11 @@ func accPublic(u User) json.RawMessage {
 func (h *hub) serve(ws *wsConn, roomName, ip string, acct *account) {
 	defer ws.close()
 	var accJSON json.RawMessage
-	if acct != nil && h.store != nil {
-		if u, ok := h.store.User(acct.id); ok {
+	if acct != nil && h.store.Ready() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		u, ok := h.store.User(ctx, acct.id)
+		cancel()
+		if ok {
 			accJSON = accPublic(u)
 		}
 	}
@@ -237,7 +241,7 @@ func (h *hub) reader(c *client) {
 		buf.WriteByte('}')
 		r.broadcast(buf.Bytes(), c.id)
 		r.mu.Unlock()
-		if res != nil && h.store != nil {
+		if res != nil && h.store.Ready() {
 			go h.finishMatch(r, res)
 		}
 	}
@@ -245,7 +249,9 @@ func (h *hub) reader(c *client) {
 
 // finishMatch reytinglarni yozadi va o'yinchilarga natijani yuboradi.
 func (h *hub) finishMatch(r *room, res *matchResult) {
-	changes, err := h.store.ApplyMatch(res)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	changes, err := h.store.ApplyMatch(ctx, res)
 	if err != nil {
 		log.Printf("o'yin natijasi saqlanmadi (%s): %v", r.name, err)
 		return
@@ -254,7 +260,13 @@ func (h *hub) finishMatch(r *room, res *matchResult) {
 		return
 	}
 	log.Printf("o'yin tugadi: xona=%s hisob=%d:%d g'olib=%s reytingli o'yinchilar=%d", r.name, res.ScoreT, res.ScoreCT, res.Winner, len(changes))
-	r.mu.Lock()
+	fresh := map[int64]json.RawMessage{}
+	for id := range changes {
+		if u, ok := h.store.User(ctx, id); ok {
+			fresh[id] = accPublic(u)
+		}
+	}
+	r.mu.Lock() // bazaga murojaatlar qulfdan tashqarida
 	defer r.mu.Unlock()
 	for _, c := range r.clients {
 		if c.acct == nil {
@@ -264,8 +276,8 @@ func (h *hub) finishMatch(r *room, res *matchResult) {
 		if !ok {
 			continue
 		}
-		if u, ok := h.store.User(c.acct.id); ok {
-			c.accJSON = accPublic(u)
+		if a := fresh[c.acct.id]; a != nil {
+			c.accJSON = a
 		}
 		msg := jsonMsg(map[string]any{"t": "rt", "before": ch.Before, "after": ch.After, "delta": ch.Delta, "won": ch.Won,
 			"rank": rankOf(ch.After, ch.Matches), "matches": ch.Matches})

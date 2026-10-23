@@ -44,6 +44,6 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - [ ] Qurol ko'rinishlari (skinlar): yutuqlar va daraja orqali ochiladi, tasodifiy sandiq va pullik o'yin elementlari yo'q
 
 ## Texnik
-- [ ] O'yinchilar ko'payganda: PostgreSQL'ga o'tish (`store.go` almashtiriladi)
+- ✅ PostgreSQL: hisoblar, reyting va o'yinlar tarixi, migratsiyalar, kunlik zaxira
 - [ ] O'yin yozuvlari (demo) va qayta ko'rish
 - [ ] Monitoring: o'yinchilar soni, xonalar, xatolar (Prometheus)

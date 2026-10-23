@@ -1,10 +1,54 @@
 services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zarba
+      POSTGRES_USER: zarba
+      # .env faylidan; ./deploy/deploy.sh birinchi ishga tushganda uni tasodifiy parol bilan o'zi yaratadi
+      POSTGRES_PASSWORD: ${ZARBA_DB_PASSWORD:?.env faylida ZARBA_DB_PASSWORD yo'q — ./deploy/deploy.sh ni ishga tushiring}
+    volumes:
+      - zarba-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zarba -d zarba"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+    # port tashqariga ochilmaydi: bazaga faqat shu compose ichidagi xizmatlar ulanadi
+
+  # kunlik zaxira nusxa (pg_dump), oxirgi 7 kun saqlanadi
+  db-backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: zarba
+      PGDATABASE: zarba
+      PGPASSWORD: ${ZARBA_DB_PASSWORD}
+    volumes:
+      - zarba-backups:/backups
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          f=/backups/zarba-$$(date +%F).sql.gz
+          if pg_dump --no-owner | gzip > $$f.tmp; then mv $$f.tmp $$f; echo "zaxira: $$f"; else rm -f $$f.tmp; echo "zaxira olinmadi" >&2; fi
+          find /backups -name 'zarba-*.sql.gz' -mtime +7 -delete
+          sleep 86400
+        done
+
   zarba:
     # GitHub Actions har push'da yig'adigan image; lokal yig'ish uchun: docker compose up -d --build
     image: ghcr.io/doston-usmonov/zarba-nuqtasi:latest
     build: .
     container_name: zarba-nuqtasi
     restart: unless-stopped
+    depends_on:
+      - db   # baza tayyor bo'lmasa ham o'yin ishga tushadi va bazani o'zi kutadi
     # Faqat lokal portga ochiladi: tashqariga Nginx orqali chiqariladi.
     # Nginx'siz sinab ko'rish uchun "127.0.0.1:8080:8080" o'rniga "8080:8080" yozing.
     ports:
@@ -12,8 +56,12 @@ services:
     environment:
       MAX_PLAYERS: "16"      # bitta xonadagi o'yinchilar chegarasi
       ALLOWED_ORIGINS: ""    # bo'sh — faqat o'z domeningiz; "*" — hamma joydan
+      DATABASE_URL: postgres://zarba:${ZARBA_DB_PASSWORD}@db:5432/zarba?sslmode=disable
+      DATA_DIR: /data        # oldingi versiyaning fayl bazasi: birinchi ishga tushishda Postgres'ga import qilinadi
     volumes:
-      - zarba-data:/data     # hisoblar, reyting, o'yinlar tarixi va kunlik zaxira nusxalar
+      - zarba-data:/data
 
 volumes:
+  zarba-pg:
+  zarba-backups:
   zarba-data:

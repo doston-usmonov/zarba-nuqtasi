@@ -33,14 +33,14 @@ func main() {
 	}
 	allowed := parseOrigins(env("ALLOWED_ORIGINS", ""))
 
-	// Hisoblar va reyting. Ma'lumotlar papkasi ochilmasa ham o'yin ishlayveradi — faqat mehmon sifatida.
-	dataDir := env("DATA_DIR", "data")
-	st, err := openStore(dataDir)
-	if err != nil {
-		log.Printf("DIQQAT: hisoblar o'chirildi, %s ochilmadi: %v", dataDir, err)
-		st = nil
+	// Hisoblar va reyting — PostgreSQL. Baza bo'lmasa yoki hali tayyor bo'lmasa ham o'yin ishlayveradi (mehmon rejimida).
+	var st *Store
+	if dsn := os.Getenv("DATABASE_URL"); dsn == "" {
+		log.Printf("DIQQAT: DATABASE_URL berilmagan — hisoblar va reyting o'chirilgan")
+	} else if s, err := openStore(dsn, os.Getenv("DATA_DIR")); err != nil {
+		log.Printf("DIQQAT: DATABASE_URL noto'g'ri: %v", err)
 	} else {
-		log.Printf("hisoblar: %s", dataDir)
+		st = s
 	}
 	a := newAPI(st, allowed)
 	h := newHub(maxPlayers, st)
@@ -76,7 +76,14 @@ func main() {
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		rooms, players := h.stats()
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]int{"rooms": rooms, "players": players})
+		db := "off"
+		if st != nil {
+			db = "starting"
+			if st.Ready() {
+				db = "ok"
+			}
+		}
+		json.NewEncoder(w).Encode(map[string]any{"rooms": rooms, "players": players, "db": db})
 	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" || r.URL.Path == "/index.html" {

@@ -3,9 +3,12 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net"
@@ -13,6 +16,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -39,57 +43,133 @@ func TestEloDelta(t *testing.T) {
 	}
 }
 
-func TestStorePersistence(t *testing.T) {
-	dir := t.TempDir()
-	s, err := openStore(dir)
+// ---- PostgreSQL bilan testlar: ZARBA_TEST_DATABASE_URL berilmasa o'tkazib yuboriladi ----
+
+// testStore toza sxema bilan yangi Store ochadi (har test uchun baza tozalanadi).
+func testStore(t *testing.T, legacyDir string) *Store {
+	t.Helper()
+	dsn := os.Getenv("ZARBA_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("ZARBA_TEST_DATABASE_URL berilmagan — PostgreSQL testlari o'tkazib yuborildi")
+	}
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := s.Register("ab", "secret1"); err != errBadUsername {
+	if _, err := db.Exec(`DROP SCHEMA public CASCADE; CREATE SCHEMA public`); err != nil {
+		t.Fatalf("test bazasi tozalanmadi: %v", err)
+	}
+	db.Close()
+	st, err := openStore(dsn, legacyDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; !st.Ready(); i++ {
+		if i > 200 {
+			t.Fatal("baza 20 soniyada tayyor bo'lmadi")
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	t.Cleanup(func() { st.db.Close() })
+	return st
+}
+
+func TestStore(t *testing.T) {
+	s, ctx := testStore(t, ""), context.Background()
+	if _, _, err := s.Register(ctx, "ab", "secret1"); err != errBadUsername {
 		t.Fatalf("qisqa login qabul qilinmasligi kerak: %v", err)
 	}
-	if _, _, err := s.Register("Ali", "123"); err != errBadPassword {
+	if _, _, err := s.Register(ctx, "Ali", "123"); err != errBadPassword {
 		t.Fatalf("qisqa parol qabul qilinmasligi kerak: %v", err)
 	}
-	u, tok, err := s.Register("Ali_01", "secret1")
+	u, tok, err := s.Register(ctx, "Ali_01", "secret1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := s.Register("ali_01", "boshqa1"); err != errTaken {
+	if _, _, err := s.Register(ctx, "ali_01", "boshqa1"); err != errTaken {
 		t.Fatalf("katta-kichik harf farqi bilan ham band: %v", err)
 	}
-	if _, _, err := s.Login("ALI_01", "wrong-pass"); err != errBadLogin {
+	if _, _, err := s.Login(ctx, "ALI_01", "wrong-pass"); err != errBadLogin {
 		t.Fatalf("noto'g'ri parol: %v", err)
 	}
-	if _, _, err := s.Login("ali_01", "secret1"); err != nil {
+	if _, _, err := s.Login(ctx, "nobody", "secret1"); err != errBadLogin {
+		t.Fatalf("mavjud bo'lmagan login: %v", err)
+	}
+	if _, _, err := s.Login(ctx, "ali_01", "secret1"); err != nil {
 		t.Fatalf("to'g'ri parol: %v", err)
 	}
 	res := &matchResult{Room: "zn-x", Started: time.Now().Add(-5 * time.Minute), Ended: time.Now(), ScoreT: 8, ScoreCT: 3, Winner: "T",
 		Players: []resultPlayer{{UserID: u.ID, Name: "Ali_01", Team: "T", Kills: 9, Deaths: 4, HS: 3}, {Name: "Mehmon", Team: "CT", Kills: 4, Deaths: 9}}}
-	ch, err := s.ApplyMatch(res)
+	ch, err := s.ApplyMatch(ctx, res)
 	if err != nil || ch[u.ID].Delta <= 0 {
 		t.Fatalf("g'olib reytingi oshishi kerak: %+v %v", ch, err)
 	}
-	s2, err := openStore(dir) // qayta ochish: hammasi diskdan tiklanishi kerak
-	if err != nil {
+	got, ok := s.Session(ctx, tok)
+	if !ok || got.Username != "Ali_01" || got.Rating != ch[u.ID].After || got.Kills != 9 || got.HS != 3 || got.Matches != 1 {
+		t.Fatalf("bazadagi holat: %+v ok=%v", got, ok)
+	}
+	if _, pos, hist, ok, err := s.Profile(ctx, "ali_01"); err != nil || !ok || pos != 1 || len(hist) != 1 || !hist[0].Won || hist[0].After != got.Rating {
+		t.Fatalf("profil/tarix: pos=%d hist=%+v err=%v", pos, hist, err)
+	}
+	var guests int
+	s.db.QueryRow(`SELECT count(*) FROM match_players WHERE user_id IS NULL AND name = 'Mehmon'`).Scan(&guests)
+	if guests != 1 {
+		t.Fatalf("mehmon o'yin tarixiga yozilishi kerak: %d", guests)
+	}
+	if err := s.Logout(ctx, tok); err != nil {
 		t.Fatal(err)
 	}
-	got, ok := s2.Session(tok)
-	if !ok || got.Username != "Ali_01" || got.Rating != ch[u.ID].After || got.Kills != 9 || got.HS != 3 || got.Matches != 1 {
-		t.Fatalf("qayta ochilganda holat tiklanmadi: %+v ok=%v", got, ok)
+	if _, ok := s.Session(ctx, tok); ok {
+		t.Fatal("chiqqandan keyin sessiya ishlamasligi kerak")
 	}
-	if _, pos, hist, ok := s2.Profile("ali_01"); !ok || pos != 1 || len(hist) != 1 || hist[0].Players[1].UserID != 0 {
-		t.Fatalf("profil/tarix: pos=%d hist=%d", pos, len(hist))
+}
+
+// Oldingi versiyaning fayl bazasidan (snapshot.json + matches.jsonl) import.
+func TestLegacyImport(t *testing.T) {
+	dir := t.TempDir()
+	salt := randBytes(16)
+	hash := hashPassword("eski-parol", salt, 1000)
+	token := "eski-sessiya-tokeni"
+	snap := map[string]any{
+		"version": 1, "next_user": 3, "next_match": 2,
+		"users": []map[string]any{
+			{"id": 1, "username": "Eski_Ali", "salt": salt, "hash": hash, "iter": 1000, "rating": 1042, "matches": 1, "wins": 1, "kills": 7, "deaths": 3, "hs": 2, "created": 1761100000},
+			{"id": 2, "username": "Eski_Bek", "salt": salt, "hash": hash, "iter": 1000, "rating": 958, "matches": 1, "wins": 0, "kills": 3, "deaths": 7, "hs": 1, "created": 1761100000},
+		},
+		"sessions": map[string]any{hex.EncodeToString(tokenHash(token)): map[string]any{"u": 1, "exp": time.Now().Add(time.Hour).Unix()}},
+	}
+	b, _ := json.Marshal(snap)
+	os.WriteFile(dir+"/snapshot.json", b, 0o600)
+	m := `{"id":1,"room":"zn-eski","started":1761100000,"ended":1761101000,"sT":8,"sCT":2,"winner":"T","players":[` +
+		`{"uid":1,"name":"Eski_Ali","team":"T","k":7,"d":3,"hs":2,"won":true,"before":1000,"after":1042},` +
+		`{"uid":2,"name":"Eski_Bek","team":"CT","k":3,"d":7,"hs":1,"won":false,"before":1000,"after":958},` +
+		`{"uid":0,"name":"Mehmon","team":"CT","k":0,"d":1,"hs":0,"won":false,"before":0,"after":0}]}` + "\n"
+	os.WriteFile(dir+"/matches.jsonl", []byte(m), 0o600)
+
+	s, ctx := testStore(t, dir), context.Background()
+	u, ok := s.Session(ctx, token)
+	if !ok || u.Username != "Eski_Ali" || u.Rating != 1042 || u.Kills != 7 {
+		t.Fatalf("eski sessiya va hisob ko'chmadi: %+v %v", u, ok)
+	}
+	if _, _, err := s.Login(ctx, "eski_bek", "eski-parol"); err != nil {
+		t.Fatalf("eski parol bilan kirish: %v", err)
+	}
+	if _, _, hist, _, _ := s.Profile(ctx, "Eski_Bek"); len(hist) != 1 || hist[0].Won || hist[0].After != 958 {
+		t.Fatalf("eski o'yinlar tarixi: %+v", hist)
+	}
+	nu, _, err := s.Register(ctx, "Yangi", "parol123") // id ketma-ketligi import qilinganlardan davom etadi
+	if err != nil || nu.ID != 3 {
+		t.Fatalf("yangi hisob id: %d %v", nu.ID, err)
+	}
+	if _, err := os.Stat(dir + "/snapshot.json"); !os.IsNotExist(err) {
+		t.Fatal("import qilingan fayl qayta nomlanishi kerak")
 	}
 }
 
 // ---- to'liq oqim: HTTP API + WebSocket orqali o'yin ----
 
 func newTestServer(t *testing.T) (*httptest.Server, *Store, *hub) {
-	st, err := openStore(t.TempDir())
-	if err != nil {
-		t.Fatal(err)
-	}
+	st := testStore(t, "")
 	a := newAPI(st, nil)
 	h := newHub(16, st)
 	mux := http.NewServeMux()

@@ -97,9 +97,9 @@ O'yinchilar login va parol bilan ro'yxatdan o'tadi. Parol PBKDF2-SHA256 bilan (6
 **Reyting** faqat onlayn o'yinlarda, hisobga kirgan o'yinchilarga yoziladi. Boshlang'ich reyting 1000. Hisoblash usuli: Elo, jamoalarning o'rtacha reytingiga qarab. Mehmonlar hisob-kitobda 1000 deb olinadi. G'alaba reytingni oshiradi, mag'lubiyat kamaytiradi, hisobdagi katta farq (masalan 8:0) o'zgarishni 1,5 baravargacha kattalashtiradi. Dastlabki 5 ta o'yin kalibrlash, shundan keyin daraja ochiladi: Oddiy askar → Askar → Kichik serjant → Serjant → Katta serjant → Leytenant → Kapitan → Mayor → Podpolkovnik → Polkovnik → General.
 
 Natijani server o'zi hisoblaydi:
-- O'yin xostning holatidan kuzatiladi.
-- O'ldirish faqat **o'lgan o'yinchining o'z xabari** bilan yoziladi.
-- O'yin kamida 8 g'alabagacha borishi kerak, ikkala jamoada ham o'yinchi bo'lishi shart va raundlar haddan tashqari tez tugamasligi kerak.
+- Raundni server o'zi yuritadi (pastdagi "Server hakamligi" bo'limi).
+- O'ldirish faqat server tasdiqlagan o'q tegishidan keyin (yoki o'ldirgan o'yinchi shu paytda granata otgan bo'lsa) yoziladi.
+- Natija format qoidasiga mos bo'lishi kerak (9 yoki 13 g'alaba, overtime). Ikkala jamoada ham o'yinchi bo'lishi shart va raundlar haddan tashqari tez tugamasligi kerak.
 - Bitta hisob bilan bitta xonaga ikki marta kirib bo'lmaydi.
 
 Zarbaning tekkani hali ham o'yinchi brauzerida hisoblanadi. Uni serverga o'tkazish ROADMAP'dagi keyingi bosqichlardan biri.
@@ -161,8 +161,18 @@ Hosting provayderida alohida firewall bo'lsa (masalan, bulut paneli), o'sha port
 ## Qanday ishlaydi
 
 - Har bir o'yinchi soniyasiga ~20 marta o'z holatini yuboradi: joylashuv, qarash yo'nalishi, jon, qurol, otilgan o'q va tekkan zarbalar. Server uni xonadagi qolganlarga uzatadi, yangi kelganga esa hozirgi holatni beradi.
-- Raund mantig'ini (vaqt, hisob, bomba, g'olib) o'yinchilardan biri, ya'ni **xost** yuritadi. Xost tanlovi avtomatik. U chiqib ketsa, keyingisi o'sha joydan davom ettiradi.
-- Zarbani otgan o'yinchining brauzeri hisoblaydi (client-side hit detection). Do'stlar orasida o'ynash uchun bu yetarli va tez. Ochiq turnir o'tkazmoqchi bo'lsangiz, firibgarlikka qarshi hisob-kitobni serverga o'tkazish kerak bo'ladi (ROADMAP, 3-bosqich).
+- Raund mantig'ini (vaqt, hisob, bomba, g'olib, yarim vaqt, overtime) **server** yuritadi va holatni soniyasiga 10 marta yuboradi. (Claude ichidagi versiyada serverning o'rnini o'yinchilardan biri — xost bajaradi.)
+- O'q tegishini otgan o'yinchining brauzeri aniqlaydi, chunki shunda o'yin tez seziladi. Lekin har bir tegishni server tekshiradi (pastda).
+
+### Server hakamligi
+
+- **O'q:** otgan va tekkan o'yinchi tirikmi, raqibmi, zarar qurolnikidan oshmaydimi, qurol imkonidan tez otilmaganmi, orada devor yo'qmi. Kechikishni hisobga olish uchun so'nggi ~0,5 soniyadagi holatlar va tananing chetlari tekshiriladi. Noto'g'ri tegish boshqalarga yuborilmaydi.
+- **Jon:** server har bir o'yinchining jonini o'zi hisoblaydi. Joni tugagan, lekin o'lmagan o'yinchiga o'lim buyuriladi. Bo'ysunmasa, boshqalarga o'lik ko'rsatiladi va keyingi raundgacha tirilmaydi.
+- **Harakat:** juda tez siljish (teleport, tezlik cheati) yoki devor ichiga kirish qabul qilinmaydi, o'yinchi oxirgi to'g'ri joyiga qaytariladi. Yangi raund faqat o'z bazasida boshlanadi.
+- **Bomba:** faqat A/B nuqtada, 3 soniya qimirlamay turilganda o'rnatiladi. Zararsizlantirish bomba yonida 7 soniya (to'plam bilan 4) turilgandagina qabul qilinadi. To'plam va zirh faqat xarid vaqtida paydo bo'lishi mumkin.
+- Shubhali harakatlar server logiga yoziladi (`docker compose logs zarba | grep hakam`).
+- Hali o'yinchining o'zida qoladiganlari: granata va bomba portlashi zarari, pul (iqtisod). Ular keyingi qadamlarda serverga o'tadi.
+- `ZARBA_DEBUG=1` faqat avtomatik testlar uchun (raund holatini o'zgartirishga ruxsat beradi). Serverda yoqmang.
 - Server har bir xabardan faqat kerakli maydonlarni o'qiydi. Hisobga kirgan o'yinchining ismini va reytingini server o'zi yozadi, shuning uchun boshqa birovning nomi bilan o'ynab bo'lmaydi.
 - Tekshiruv: `GET /healthz` hozirgi xonalar va o'yinchilar sonini qaytaradi.
 
@@ -172,7 +182,7 @@ WASD — harakat, sichqoncha — nishonga olish va otish, C yoki Ctrl — cho'kk
 
 Granatalar 4-slotda: 4 tugmasi granatani oladi, yana bosilsa keyingi turiga o'tadi. Chap tugma — uzoqqa, o'ng tugma — yaqinga otish; granata tugma qo'yib yuborilganda uchadi. Turlari: portlovchi ($300), ko'r qiluvchi ($200, ikkitagacha), tutun ($300, 18 soniya ko'rinishni to'sadi), yondiruvchi ($400, 7 soniya yonadi, tutun uni o'chiradi). Bir o'yinchida ko'pi bilan 4 ta granata bo'ladi. Himoyachilar zararsizlantirish to'plamini ($400) olsa, bomba 7 emas, 4 soniyada zararsizlanadi.
 
-O'yin CS kabi ikki yarimdan iborat. Sozlamalarda uzunlikni tanlaysiz: to'liq (MR12, 13 g'alabagacha, 12 raunddan keyin tomonlar almashadi) yoki qisqa (9 g'alabagacha, 8 raunddan keyin almashadi). Hisob teng bo'lsa (12:12 yoki 8:8), qo'shimcha vaqt boshlanadi: 6 raund, 4 g'alaba kerak, har biriga $12 500 beriladi, 3 raunddan keyin tomonlar almashadi. Botlarga qarshi ikkinchi yarimda siz himoyada bo'lasiz: botlar bombani olib, A yoki B nuqtani egallaydi va o'rnatadi, siz esa E bilan zararsizlantirasiz. Onlayn xonada formatni xost (birinchi kirgan o'yinchi) sozlamasi belgilaydi.
+O'yin CS kabi ikki yarimdan iborat. Sozlamalarda uzunlikni tanlaysiz: to'liq (MR12, 13 g'alabagacha, 12 raunddan keyin tomonlar almashadi) yoki qisqa (9 g'alabagacha, 8 raunddan keyin almashadi). Hisob teng bo'lsa (12:12 yoki 8:8), qo'shimcha vaqt boshlanadi: 6 raund, 4 g'alaba kerak, har biriga $12 500 beriladi, 3 raunddan keyin tomonlar almashadi. Botlarga qarshi ikkinchi yarimda siz himoyada bo'lasiz: botlar bombani olib, A yoki B nuqtani egallaydi va o'rnatadi, siz esa E bilan zararsizlantirasiz. Onlayn xonada formatni xonaga birinchi kirgan o'yinchining sozlamasi belgilaydi.
 
 Onlayn o'yinda granata otilganda faqat uning boshlang'ich holati yuboriladi, uchishini har bir brauzer bir xil qadam bilan o'zi hisoblaydi, shuning uchun tutun hammada bir joyga tushadi. Har bir o'yinchi o'ziga tekkan zarar va ko'r bo'lishni o'zi qo'llaydi. Jamoadoshning granatasi zarar bermaydi, o'zingizniki esa beradi.
 

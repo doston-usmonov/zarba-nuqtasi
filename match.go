@@ -1,15 +1,10 @@
 package main
 
-// O'yinni server tomonidan kuzatish. Server o'yinchilar yuborgan holatlardan
-// (presence) faqat kerakli maydonlarni o'qiydi:
-//   tm  — hozirgi tomon (T / CT), sq — jamoa (A / B; yarim vaqtda tomonlar almashadi,
-//         jamoa esa o'zgarmaydi), hc — to'liq o'yin mijozi, in — qaysi raundda tirilgan,
-//   g   — xostning o'yin holati (raund, faza, jamoalar hisobi sA/sB, format fm,
-//         o'yin identifikatori e),
-//   de  — o'lim hodisasi (kim o'ldirdi, boshgami).
-// Xost — xuddi mijozlardagidek: hc=1 va jamoasi bor mijozlar ichida eng kichik id.
-// O'ldirish faqat o'lgan o'yinchining o'z xabari bilan hisoblanadi: o'zini
-// "o'ldirdim" deb e'lon qilish hech narsa bermaydi.
+// O'yin natijasini kuzatish (reyting uchun). Raundni server o'zi yuritadi (referee.go),
+// bu yerda faqat kim qaysi jamoada nechta raund o'ynagani, o'limlar va server tasdiqlagan
+// o'ldirishlar yig'iladi. Presence'dan o'qiladigan maydonlar:
+//   tm — hozirgi tomon (T / CT), sq — jamoa (A / B; yarim vaqtda tomon almashadi, jamoa emas),
+//   hc — to'liq o'yin mijozi, in — qaysi raundda tirilgan.
 
 import (
 	"encoding/json"
@@ -17,15 +12,6 @@ import (
 	"strings"
 	"time"
 )
-
-type gState struct {
-	R  int    `json:"r"`
-	Ph string `json:"ph"`
-	SA int    `json:"sA"`
-	SB int    `json:"sB"`
-	Fm int    `json:"fm"` // yarim o'yindagi raundlar: 8 (qisqa) yoki 12 (to'liq, MR12)
-	E  string `json:"e"`
-}
 
 const otHalf = 3 // overtime: har yarimi 3 raund, 4 g'alaba kerak
 
@@ -41,20 +27,12 @@ func validFinal(fm, a, b int) bool {
 	return w >= fm+otHalf+1 && (w-fm-otHalf-1)%otHalf == 0 && l >= w-otHalf-1 && l <= w-2
 }
 
-type deathEv struct {
-	N  int    `json:"n"`
-	By string `json:"by"`
-	HS int    `json:"hs"`
-}
-
 type presInfo struct {
 	Tm string
 	Sq string
 	Nm string
 	Hc int
 	In int
-	G  *gState
-	De *deathEv
 }
 
 func parseInfo(m map[string]json.RawMessage) presInfo {
@@ -64,18 +42,6 @@ func parseInfo(m map[string]json.RawMessage) presInfo {
 	json.Unmarshal(m["nm"], &p.Nm)
 	json.Unmarshal(m["hc"], &p.Hc)
 	json.Unmarshal(m["in"], &p.In)
-	if raw, ok := m["g"]; ok && len(raw) > 0 && raw[0] == '{' {
-		var g gState
-		if json.Unmarshal(raw, &g) == nil {
-			p.G = &g
-		}
-	}
-	if raw, ok := m["de"]; ok && len(raw) > 0 && raw[0] == '{' {
-		var d deathEv
-		if json.Unmarshal(raw, &d) == nil {
-			p.De = &d
-		}
-	}
 	if p.Tm != "T" && p.Tm != "CT" {
 		p.Tm = ""
 	}
@@ -116,17 +82,6 @@ type matchResult struct {
 	Players         []resultPlayer
 }
 
-// hostIDLocked — mijozlar xostni qanday tanlasa, server ham shunday tanlaydi.
-func (r *room) hostIDLocked() string {
-	host := ""
-	for id, c := range r.clients {
-		if c.info.Hc == 1 && c.info.Sq != "" && (host == "" || id < host) {
-			host = id
-		}
-	}
-	return host
-}
-
 func (t *tracker) player(c *client) *tplayer {
 	key := "p" + c.id
 	if c.acct != nil {
@@ -161,54 +116,52 @@ func cleanGuestName(s string) string {
 	return s
 }
 
-// trackLocked c mijozning yangi holatini hisobga oladi. O'yin tugaganda natijani qaytaradi.
-func (r *room) trackLocked(c *client, info presInfo, now time.Time) *matchResult {
-	t := &r.tr
-	var res *matchResult
-	if g := info.G; g != nil && c.id == r.hostIDLocked() {
-		switch {
-		case g.Ph == "over":
-			if t.active && g.E == t.epoch {
-				res = t.finish(r.name, g, now)
-			}
-			t.active = false
-		case g.Ph == "warmup":
-			t.active = false // o'yinchilar chiqib ketdi — o'yin hisobga olinmaydi
-		case g.E != "" && g.E != t.epoch && (g.Ph == "freeze" || g.Ph == "live" || g.Ph == "post"):
-			*t = tracker{epoch: g.E, active: true, started: now, players: map[string]*tplayer{}}
-		}
-		t.round = g.R
+// presence: o'yinchi shu raundda qatnashganini hisobga oladi (qaysi jamoada).
+func (t *tracker) presence(c *client, info presInfo) {
+	if !t.active || info.Sq == "" || info.In <= 0 || info.In != t.round {
+		return
 	}
+	if p := t.player(c); p.last != info.In {
+		p.last = info.In
+		p.rounds[info.Sq]++
+	}
+}
 
-	died := false
-	if de := info.De; de != nil {
-		died = c.deSeen && de.N > c.lastDeN
-		c.lastDeN = max(c.lastDeN, de.N)
+// death: o'lim va (server tasdiqlagan bo'lsa) o'ldirgan o'yinchi.
+func (t *tracker) death(r *room, victim, killer *client, hs bool) {
+	if !t.active || victim.info.Sq == "" {
+		return
 	}
-	c.deSeen = true
-	if !t.active || info.Sq == "" {
-		return res
-	}
-	if info.In > 0 && info.In == t.round {
-		if p := t.player(c); p.last != info.In {
-			p.last = info.In
-			p.rounds[info.Sq]++
+	t.player(victim).death++
+	if killer != nil && killer != victim && killer.info.Sq != "" && killer.info.Sq != victim.info.Sq {
+		kp := t.player(killer)
+		kp.kills++
+		if hs {
+			kp.hs++
 		}
 	}
-	if died {
-		t.player(c).death++
-		if k := r.clients[info.De.By]; k != nil && k != c && k.info.Sq != "" && k.info.Sq != info.Sq {
-			kp := t.player(k)
-			kp.kills++
-			if info.De.HS == 1 {
-				kp.hs++
-			}
+}
+
+// phase: server raund holatini yangilagandan keyin chaqiriladi. O'yin tugasa natijani qaytaradi.
+func (t *tracker) phase(r *room, prev string, now time.Time) *matchResult {
+	g := r.gs
+	var res *matchResult
+	switch {
+	case g.Ph == "over" && prev != "over":
+		if t.active && g.E == t.epoch {
+			res = t.finish(r.name, g, now)
 		}
+		t.active = false
+	case g.Ph == "warmup":
+		t.active = false // o'yinchilar chiqib ketdi yoki o'yin tugadi
+	case g.E != "" && g.E != t.epoch && (g.Ph == "freeze" || g.Ph == "live" || g.Ph == "post"):
+		*t = tracker{epoch: g.E, active: true, started: now, players: map[string]*tplayer{}}
 	}
+	t.round = g.R
 	return res
 }
 
-func (t *tracker) finish(room string, g *gState, now time.Time) *matchResult {
+func (t *tracker) finish(room string, g *gameState, now time.Time) *matchResult {
 	if !validFinal(g.Fm, g.SA, g.SB) {
 		return nil
 	}

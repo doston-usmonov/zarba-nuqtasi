@@ -349,50 +349,113 @@ func TestAccountsAndRatedMatch(t *testing.T) {
 		t.Fatalf("takror ulanish: %v", m)
 	}
 
-	// qisqa format (fm=8): 8 raunddan keyin tomonlar almashadi, 9 g'alaba kerak
-	g := func(ph string, r, sA, sB int) map[string]any {
-		return map[string]any{"r": r, "ph": ph, "sA": sA, "sB": sB, "fm": 8, "e": "m1"}
-	}
-	pres := func(w *wsTest, nm, sq, tm string, in int, gs map[string]any, de any) {
-		w.send(map[string]any{"t": "p", "d": map[string]any{"v": 1, "hc": 1, "nm": nm, "sq": sq, "tm": tm, "in": in, "g": gs, "de": de}})
-	}
-	// uchala mijoz ham bir xil g yuboradi — kim xost bo'lishidan qat'i nazar
-	all := func(gs map[string]any, in int, deB any) {
-		tA, tB := "T", "CT"
-		if in > 8 { // ikkinchi yarim
-			tA, tB = "CT", "T"
+	// raundni server yuritadi; test uni qo'lda boshqaradi (taymer o'chiriladi)
+	h.mu.Lock()
+	rm := h.rooms[room]
+	h.mu.Unlock()
+	rm.mu.Lock()
+	rm.manual = true
+	rm.mu.Unlock()
+	tSpawn, ctSpawn := [3]float64{43, 0, 75}, [3]float64{43, 0, 9}
+	pres := func(w *wsTest, nm, sq, tm string, in int, at [3]float64, extra map[string]any) {
+		d := map[string]any{"v": 1, "hc": 1, "nm": nm, "sq": sq, "tm": tm, "in": in, "al": 1, "x": at[0], "y": at[1], "z": at[2], "pf": 8}
+		for k, v := range extra {
+			d[k] = v
 		}
-		pres(wa, "Yolg'onchi", "A", tA, in, gs, nil)
-		pres(wb, "Bek", "B", tB, in, gs, deB)
-		pres(wg, "Mehmon1", "B", tB, in, gs, nil)
-		time.Sleep(30 * time.Millisecond)
+		w.send(map[string]any{"t": "p", "d": d})
 	}
-	all(g("warmup", 0, 0, 0), 0, nil)
+	all := func(in int) {
+		tA, tB, sA, sB := "T", "CT", tSpawn, ctSpawn
+		if in > 8 { // ikkinchi yarim: tomonlar almashadi
+			tA, tB, sA, sB = "CT", "T", ctSpawn, tSpawn
+		}
+		pres(wa, "Yolg'onchi", "A", tA, in, sA, nil)
+		pres(wb, "Bek", "B", tB, in, sB, nil)
+		pres(wg, "Mehmon1", "B", tB, in, sB, nil)
+		time.Sleep(40 * time.Millisecond)
+	}
+	place := func(w *wsTest, at vec3) {
+		rm.mu.Lock()
+		p := rm.clients[w.id].ps
+		p.pos, p.posOK, p.moveAt = at, true, time.Now()
+		p.push(sample{t: time.Now(), p: at})
+		rm.mu.Unlock()
+	}
+	all(0)
 	// boshqalar Ali'ning ismini server yozgan holda ko'radi, "acc" bilan
 	upd := wb.readUntil(t, func(m map[string]any) bool { return m["t"] == "u" && m["id"] == wa.id })
 	p := upd["p"].(map[string]any)
 	if p["nm"] != "Ali" || p["acc"].(map[string]any)["r"].(float64) != 1000 {
 		t.Fatalf("server belgilagan nom/reyting: %v", p)
 	}
-	all(g("freeze", 1, 0, 0), 1, nil)
-	// test 9 raundni bir zumda "o'ynaydi": boshlanish vaqtini orqaga surib, "juda tez o'yin" tekshiruvidan o'tkazamiz
-	h.mu.Lock()
-	rm := h.rooms[room]
-	h.mu.Unlock()
 	rm.mu.Lock()
+	rm.tickLocked(time.Now(), .1) // isinish: format birinchi o'yinchining sozlamasidan
+	if rm.gs.Fm != 8 {
+		t.Fatalf("format: %d", rm.gs.Fm)
+	}
+	*rm.gs = gameState{R: 1, Ph: "live", Fm: 8, E: "m1", Bm: -1, T: 100, liveAt: time.Now()}
+	rm.tr.phase(rm, "warmup", time.Now())
 	if !rm.tr.active || rm.tr.epoch != "m1" {
 		t.Fatalf("o'yin boshlanishi kuzatilmadi: %+v", rm.tr)
 	}
+	// test 10 raundni bir zumda "o'ynaydi": boshlanish vaqtini orqaga surib, "juda tez o'yin" tekshiruvidan o'tkazamiz
 	rm.tr.started = rm.tr.started.Add(-10 * time.Minute)
 	rm.mu.Unlock()
-	// Bek o'ladi: Ali o'ldirdi, boshga
-	all(g("live", 1, 0, 0), 1, map[string]any{"n": 1, "by": wa.id, "w": "rifle", "hs": 1})
-	all(g("live", 1, 0, 0), 1, map[string]any{"n": 1, "by": wa.id, "w": "rifle", "hs": 1}) // takror — bir marta hisoblanadi
-	// mehmon o'zini "Ali'ni o'ldirdim" deb e'lon qiladi — hisobga olinmaydi (faqat qurbonning xabari ishonchli)
-	for r := 2; r <= 10; r++ {
-		all(g("live", r, r-1, min(r-1, 1)), r, map[string]any{"n": 1, "by": wa.id, "w": "rifle", "hs": 1})
+	all(1)
+	// Ali va Bek o'rtada bir-birini ko'radi, mehmon esa devor ortida
+	place(wa, vec3{43, 0, 40})
+	place(wb, vec3{43, 0, 30})
+	place(wg, vec3{30, 0, 9})
+	time.Sleep(700 * time.Millisecond) // kechikish oynasidan eski (bazadagi) holatlar chiqib ketsin
+	place(wa, vec3{43, 0, 40})
+	place(wb, vec3{43, 0, 30})
+	place(wg, vec3{30, 0, 9})
+	// mehmon devor ortidan Ali'ga "tegdi" — server bu tegishni boshqalarga yubormaydi
+	pres(wg, "Mehmon1", "B", "CT", 1, [3]float64{30, 0, 9}, map[string]any{"mk": "devor", "w": "rifle", "hi": []any{map[string]any{"i": 1, "t": wa.id, "d": 144, "pn": .8, "p": "h", "w": "rifle"}}})
+	marked := func(id, mk string) func(map[string]any) bool {
+		return func(m map[string]any) bool {
+			p, _ := m["p"].(map[string]any)
+			return m["t"] == "u" && m["id"] == id && p != nil && p["mk"] == mk
+		}
 	}
-	all(g("over", 10, 9, 1), 10, map[string]any{"n": 1, "by": wa.id, "w": "rifle", "hs": 1})
+	m := wa.readUntil(t, marked(wg.id, "devor"))
+	if hi := m["p"].(map[string]any)["hi"]; hi != nil {
+		t.Fatalf("devor ortidan tegish o'tib ketdi: %v", hi)
+	}
+	// Ali Bek'ning boshiga tegdi — bu haqiqiy
+	pres(wa, "Yolg'onchi", "A", "T", 1, [3]float64{43, 0, 40}, map[string]any{"mk": "bosh", "w": "rifle", "hi": []any{map[string]any{"i": 1, "t": wb.id, "d": 144, "pn": .775, "p": "h", "w": "rifle"}}})
+	m = wb.readUntil(t, marked(wa.id, "bosh"))
+	if hi, _ := m["p"].(map[string]any)["hi"].([]any); len(hi) != 1 {
+		t.Fatalf("haqiqiy tegish yetib bormadi: %v", m["p"])
+	}
+	// Bek o'ladi (Ali o'ldirdi), takror xabar bir marta hisoblanadi
+	for i := 0; i < 2; i++ {
+		pres(wb, "Bek", "B", "CT", 1, [3]float64{43, 0, 30}, map[string]any{"al": 0, "de": map[string]any{"n": 1, "by": wa.id, "w": "rifle", "hs": 1}})
+	}
+	// mehmon "meni Ali o'ldirdi" deydi, lekin Ali unga tegmagan — o'ldirish Ali'ga yozilmaydi
+	pres(wg, "Mehmon1", "B", "CT", 1, [3]float64{30, 0, 9}, map[string]any{"al": 0, "de": map[string]any{"n": 1, "by": wa.id, "w": "rifle", "hs": 1}})
+	m = wa.readUntil(t, func(m map[string]any) bool {
+		return m["t"] == "u" && m["id"] == wg.id && m["p"].(map[string]any)["de"] != nil
+	})
+	if by := m["p"].(map[string]any)["de"].(map[string]any)["by"]; by != "" {
+		t.Fatalf("tasdiqlanmagan o'ldirish: %v", by)
+	}
+	time.Sleep(50 * time.Millisecond)
+	for r := 2; r <= 10; r++ {
+		rm.mu.Lock()
+		rm.gs.R, rm.gs.Ph = r, "live"
+		rm.tr.phase(rm, "live", time.Now())
+		rm.mu.Unlock()
+		all(r)
+	}
+	rm.mu.Lock()
+	rm.gs.R, rm.gs.Ph, rm.gs.T, rm.gs.SA, rm.gs.SB = 10, "post", 0, 9, 1
+	res := rm.tickLocked(time.Now(), .1)
+	rm.mu.Unlock()
+	if res == nil {
+		t.Fatal("o'yin natijasi chiqmadi")
+	}
+	h.finishMatch(rm, res)
 
 	ra := wa.readUntil(t, func(m map[string]any) bool { return m["t"] == "rt" })
 	rb := wb.readUntil(t, func(m map[string]any) bool { return m["t"] == "rt" })
@@ -492,5 +555,175 @@ func TestVoiceSignal(t *testing.T) {
 		if bytes.Contains(p, []byte(`"sig"`)) {
 			t.Fatalf("boshqa xonaga xabar o'tib ketdi: %s", p)
 		}
+	}
+}
+
+// ---- server hakami: bazasiz unit test ----
+
+func newRefRoom() (*room, *client, *client) {
+	r := &room{name: "zn-hakam", clients: map[string]*client{}, gs: newGameState(), stop: make(chan struct{}), manual: true}
+	mk := func(id string) *client {
+		c := &client{id: id, room: r, send: make(chan []byte, 64), ps: newPState(), joined: time.Now()}
+		r.clients[id] = c
+		return c
+	}
+	return r, mk("a"), mk("b")
+}
+
+func refPres(r *room, c *client, d map[string]any) map[string]json.RawMessage {
+	raw, _ := json.Marshal(d)
+	var f map[string]json.RawMessage
+	json.Unmarshal(raw, &f)
+	info := parseInfo(f)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	c.info = info
+	r.refereeLocked(c, f, info, time.Now())
+	c.deSeen = true
+	out, _ := json.Marshal(f)
+	c.pres = out
+	return f
+}
+
+func drain(c *client) []map[string]any {
+	var out []map[string]any
+	for {
+		select {
+		case m := <-c.send:
+			var v map[string]any
+			json.Unmarshal(m, &v)
+			out = append(out, v)
+		default:
+			return out
+		}
+	}
+}
+
+func TestReferee(t *testing.T) {
+	r, a, b := newRefRoom()
+	base := func(c *client, sq, tm string, x, z float64, extra map[string]any) map[string]json.RawMessage {
+		d := map[string]any{"v": 1, "hc": 1, "sq": sq, "tm": tm, "in": 1, "al": 1, "x": x, "y": 0, "z": z, "w": "rifle"}
+		for k, v := range extra {
+			d[k] = v
+		}
+		return refPres(r, c, d)
+	}
+	*r.gs = gameState{R: 1, Ph: "live", Fm: 12, E: "x", Bm: -1, T: 100, liveAt: time.Now()}
+	// yangi hayot faqat bazada: B yarim xaritadan "tug'ilsa", server uni bazaga qaytaradi
+	f := base(b, "B", "CT", 43, 40, nil)
+	if string(f["z"]) != "9" {
+		t.Fatalf("bazadan tashqarida tug'ilish qabul qilindi: z=%s", f["z"])
+	}
+	base(a, "A", "T", 43, 75, nil)
+	base(b, "B", "CT", 43, 9, nil)
+	// teleport: bir zumda 30 metr — rad etiladi, "fix" yuboriladi
+	f = base(a, "A", "T", 43, 45, nil)
+	if string(f["z"]) != "75" {
+		t.Fatalf("teleport qabul qilindi: z=%s", f["z"])
+	}
+	if ms := drain(a); len(ms) == 0 || ms[len(ms)-1]["t"] != "fix" {
+		t.Fatalf("fix yuborilmadi: %v", ms)
+	}
+	// ikkalasini o'rtaga qo'yamiz (oddiy yurib kelgandek)
+	for _, c := range []*client{a, b} {
+		c.ps.pos, c.ps.moveAt = vec3{43, 0, map[string]float64{"a": 40, "b": 30}[c.id]}, time.Now()
+		c.ps.push(sample{t: time.Now(), p: c.ps.pos})
+	}
+	// juda katta zarar — rad etiladi
+	f = base(a, "A", "T", 43, 40, map[string]any{"hi": []any{map[string]any{"i": 1, "t": "b", "d": 400, "p": "c", "w": "rifle"}}})
+	if string(f["hi"]) != "null" {
+		t.Fatalf("katta zarar o'tdi: %s", f["hi"])
+	}
+	// haqiqiy tegish: 2 ta o'q boshga — server hisobida B ning joni tugaydi
+	f = base(a, "A", "T", 43, 40, map[string]any{"hi": []any{map[string]any{"i": 2, "t": "b", "d": 70, "p": "h", "w": "rifle"}, map[string]any{"i": 3, "t": "b", "d": 70, "p": "h", "w": "rifle"}}})
+	var kept []any
+	json.Unmarshal(f["hi"], &kept)
+	if len(kept) != 2 || b.ps.hp > 0 {
+		t.Fatalf("haqiqiy tegish: %s hp=%v", f["hi"], b.ps.hp)
+	}
+	// B o'lishni "unutadi" — server avval buyuradi, keyin boshqalarga o'lik ko'rsatadi
+	r.mu.Lock()
+	r.tickLocked(time.Now().Add(800*time.Millisecond), .1)
+	r.mu.Unlock()
+	if ms := drain(b); len(ms) == 0 || ms[0]["t"] != "kill" || ms[0]["by"] != "a" {
+		t.Fatalf("kill buyrug'i: %v", ms)
+	}
+	r.mu.Lock()
+	r.tickLocked(time.Now().Add(1600*time.Millisecond), .1)
+	r.mu.Unlock()
+	if b.ps.alive {
+		t.Fatal("server B ni o'ldirmadi")
+	}
+	f = base(b, "B", "CT", 43, 30, nil)
+	if string(f["al"]) != "0" {
+		t.Fatalf("o'lgan o'yinchi tirik ko'rsatilmoqda: al=%s", f["al"])
+	}
+	// raund: CT tomonida tirik qolmadi — T yutadi
+	r.mu.Lock()
+	r.tickLocked(time.Now(), .1)
+	r.mu.Unlock()
+	if r.gs.Ph != "post" || r.gs.W != "T" || r.gs.SA != 1 {
+		t.Fatalf("raund natijasi: %+v", r.gs)
+	}
+}
+
+func TestRefereePlant(t *testing.T) {
+	r, a, b := newRefRoom()
+	*r.gs = gameState{R: 1, Ph: "live", Fm: 12, E: "x", Bm: -1, T: 100, liveAt: time.Now()}
+	refPres(r, b, map[string]any{"v": 1, "sq": "B", "tm": "CT", "in": 1, "al": 1, "x": 43, "y": 0, "z": 9})
+	refPres(r, a, map[string]any{"v": 1, "sq": "A", "tm": "T", "in": 1, "al": 1, "x": 43, "y": 0, "z": 75})
+	site := vec3{16, 0, 18} // A nuqta
+	a.ps.pos = site
+	a.ps.push(sample{t: time.Now(), p: site})
+	// endigina kelib, darhol "o'rnatdim" — rad etiladi
+	refPres(r, a, map[string]any{"v": 1, "sq": "A", "tm": "T", "in": 1, "al": 1, "x": 16, "y": 0, "z": 18, "pl": map[string]any{"n": 1, "x": 16, "z": 18, "s": "A", "r": 1}})
+	if r.gs.B != nil {
+		t.Fatal("bomba bir zumda o'rnatildi")
+	}
+	// 3 soniya shu joyda turgan
+	for i := 0; i < 40; i++ {
+		a.ps.push(sample{t: time.Now().Add(time.Duration(-3200+i*80) * time.Millisecond), p: site})
+	}
+	refPres(r, a, map[string]any{"v": 1, "sq": "A", "tm": "T", "in": 1, "al": 1, "x": 16, "y": 0, "z": 18, "pl": map[string]any{"n": 2, "x": 16, "z": 18, "s": "A", "r": 1}})
+	if r.gs.B == nil || r.gs.B.S != "A" {
+		t.Fatalf("bomba o'rnatilmadi: %+v", r.gs)
+	}
+	// noto'g'ri nuqta nomi bilan — rad etiladi (B nuqtada emas)
+	r.gs.B = nil
+	refPres(r, a, map[string]any{"v": 1, "sq": "A", "tm": "T", "in": 1, "al": 1, "x": 16, "y": 0, "z": 18, "pl": map[string]any{"n": 3, "x": 16, "z": 18, "s": "B", "r": 1}})
+	if r.gs.B != nil {
+		t.Fatal("noto'g'ri nuqta qabul qilindi")
+	}
+}
+
+func TestRefereeDefuse(t *testing.T) {
+	r, a, b := newRefRoom()
+	*r.gs = gameState{R: 1, Ph: "live", Fm: 12, E: "x", Bm: -1, T: 100, liveAt: time.Now().Add(-time.Minute), B: &bombState{X: 70, Z: 18, S: "B", T: 30}}
+	refPres(r, a, map[string]any{"v": 1, "sq": "A", "tm": "T", "in": 1, "al": 1, "x": 43, "y": 0, "z": 75})
+	refPres(r, b, map[string]any{"v": 1, "sq": "B", "tm": "CT", "in": 1, "al": 1, "x": 43, "y": 0, "z": 9})
+	at := vec3{70.5, 0, 18}
+	stand := func(ms int) {
+		now := time.Now()
+		for i := ms; i >= 0; i -= 45 { // 22 Hz holatlar, eskisidan yangisiga
+			b.ps.push(sample{t: now.Add(-time.Duration(i) * time.Millisecond), p: at})
+		}
+		b.ps.pos = at
+	}
+	// 5 soniya bomba yonida — to'plamsiz (7 s) yetmaydi
+	stand(5000)
+	refPres(r, b, map[string]any{"v": 1, "sq": "B", "tm": "CT", "in": 1, "al": 1, "x": 70.5, "y": 0, "z": 18, "df": map[string]any{"n": 1, "r": 1}})
+	if r.gs.Ph != "live" {
+		t.Fatal("zararsizlantirish juda tez qabul qilindi")
+	}
+	// xarid vaqti o'tgach "to'plam" paydo bo'lmaydi
+	refPres(r, b, map[string]any{"v": 1, "sq": "B", "tm": "CT", "in": 1, "al": 1, "x": 70.5, "y": 0, "z": 18, "kt": 1, "df": map[string]any{"n": 2, "r": 1}})
+	if r.gs.Ph != "live" {
+		t.Fatal("xarid vaqtidan keyin paydo bo'lgan to'plam qabul qilindi")
+	}
+	// 7 soniya turgan bo'lsa — qabul qilinadi
+	stand(7300)
+	refPres(r, b, map[string]any{"v": 1, "sq": "B", "tm": "CT", "in": 1, "al": 1, "x": 70.5, "y": 0, "z": 18, "df": map[string]any{"n": 3, "r": 1}})
+	if r.gs.Ph != "post" || r.gs.W != "CT" || r.gs.Y != "defuse" {
+		t.Fatalf("zararsizlantirish qabul qilinmadi: %+v", r.gs)
 	}
 }

@@ -21,10 +21,12 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - [ ] Botlar ham granata otishi (tutun bilan yopish, ko'r qilib kirish)
 
 ## 3. Server hakamligi (anti-cheat)
-- [ ] Zarba tekshiruvini serverga o'tkazish (lag compensation bilan)
-- [ ] Harakat tezligi va pozitsiyani serverda tekshirish
-- [ ] Raund mantig'ini (vaqt, bomba, g'olib) xostdan serverga o'tkazish
-- [ ] Shundan keyin reyting "rasmiy" bo'ladi: natijani hech bir o'yinchi soxtalashtira olmaydi
+- ✅ Zarba tekshiruvi serverda (zarar, otish tezligi, devor, kechikishni hisobga olib), jonni server hisoblaydi
+- ✅ Harakat tezligi va pozitsiyani serverda tekshirish
+- ✅ Raund mantig'i (vaqt, bomba, g'olib, yarim vaqt, overtime) serverda, bomba o'rnatish/zararsizlantirish tekshiriladi
+- ✅ Reytingga faqat server tasdiqlagan o'ldirishlar yoziladi
+- [ ] Granata va bomba portlashi zararini serverda hisoblash
+- [ ] Iqtisodni (pul, xaridlar) serverda yuritish
 
 ## 4. Matchmaking
 - [ ] Reytingga qarab navbat: "O'yin topish" tugmasi

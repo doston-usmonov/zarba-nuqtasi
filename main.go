@@ -45,6 +45,10 @@ func main() {
 	a := newAPI(st, allowed)
 	h := newHub(maxPlayers, st)
 	h.voice = voiceFromEnv()
+	h.debug = os.Getenv("ZARBA_DEBUG") == "1"
+	if h.debug {
+		log.Printf("DIQQAT: ZARBA_DEBUG=1 — raund holatini mijoz o'zgartira oladi, faqat test uchun")
+	}
 	if h.voice.turnSecret != "" {
 		log.Printf("ovozli chat: TURN yoqilgan (port %s)", h.voice.turnPort)
 	} else {

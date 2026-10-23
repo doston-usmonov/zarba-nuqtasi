@@ -37,7 +37,9 @@ type client struct {
 	accJSON json.RawMessage // boshqalarga ko'rsatiladigan hisob ma'lumoti (nom, reyting, daraja)
 	info    presInfo
 	deSeen  bool
-	lastDeN int
+	ps      *pstate   // server hakamining shu o'yinchi haqidagi ma'lumoti
+	prefFm  int       // o'yinchi sozlamasidagi format (8/12)
+	joined  time.Time // xonaga kirgan vaqti
 }
 
 type room struct {
@@ -45,6 +47,9 @@ type room struct {
 	mu      sync.Mutex
 	clients map[string]*client
 	tr      tracker
+	gs      *gameState    // server yuritadigan raund holati
+	manual  bool          // testlar uchun: taymer raundni o'zi yuritmaydi
+	stop    chan struct{} // xona yopilganda raund taymeri to'xtaydi
 }
 
 type hub struct {
@@ -54,6 +59,7 @@ type hub struct {
 	maxPlayers int
 	store      *Store   // nil yoki tayyor emas — hisoblar o'chirilgan
 	voice      voiceCfg // ovozli chat uchun STUN/TURN
+	debug      bool     // ZARBA_DEBUG=1: e2e testlar raund holatini o'zgartira oladi (prod'da o'chiq)
 }
 
 func newHub(maxPlayers int, st *Store) *hub {
@@ -104,8 +110,9 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account) {
 	}
 	r := h.rooms[roomName]
 	if r == nil {
-		r = &room{name: roomName, clients: map[string]*client{}}
+		r = &room{name: roomName, clients: map[string]*client{}, gs: newGameState(), stop: make(chan struct{})}
 		h.rooms[roomName] = r
+		go r.run(h)
 	}
 	r.mu.Lock()
 	reject := ""
@@ -122,12 +129,13 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account) {
 		r.mu.Unlock()
 		if empty {
 			delete(h.rooms, roomName)
+			close(r.stop)
 		}
 		h.mu.Unlock()
 		ws.write(opText, jsonMsg(map[string]string{"t": "err", "code": reject}))
 		return
 	}
-	c := &client{id: newID(), ip: ip, room: r, ws: ws, send: make(chan []byte, sendQueue), acct: acct, accJSON: accJSON}
+	c := &client{id: newID(), ip: ip, room: r, ws: ws, send: make(chan []byte, sendQueue), acct: acct, accJSON: accJSON, ps: newPState(), joined: time.Now()}
 	// greeting + everyone already here, queued before anyone else can write to us
 	c.send <- jsonMsg(map[string]any{"t": "hello", "id": c.id, "ice": h.voice.iceFor(host, c.id, time.Now())})
 	type peer struct {
@@ -163,6 +171,7 @@ func (h *hub) leave(c *client) {
 	r.mu.Unlock()
 	if empty {
 		delete(h.rooms, r.name)
+		close(r.stop)
 	}
 	if h.perIP[c.ip]--; h.perIP[c.ip] <= 0 {
 		delete(h.perIP, c.ip)
@@ -218,6 +227,21 @@ func (h *hub) reader(c *client) {
 			}
 			continue
 		}
+		if m.T == "dbg" && h.debug {
+			var g gameState
+			if json.Unmarshal(m.D, &g) == nil {
+				r := c.room
+				r.mu.Lock()
+				live := r.gs.liveAt
+				*r.gs = g
+				r.gs.liveAt = live
+				if g.Ph == "live" && live.IsZero() {
+					r.gs.liveAt = time.Now()
+				}
+				r.mu.Unlock()
+			}
+			continue
+		}
 		if m.T == "sig" { // ovozli chat ulanishi
 			c.room.relaySignal(c, m.To, bytes.TrimSpace(m.D))
 			continue
@@ -235,6 +259,7 @@ func (h *hub) reader(c *client) {
 		}
 		// ism va hisob ma'lumotini server belgilaydi: boshqa o'yinchi nomini olib bo'lmaydi
 		delete(fields, "acc")
+		delete(fields, "g") // raundni server yuritadi
 		if c.acct != nil {
 			fields["nm"] = jsonMsg(c.acct.name)
 		}
@@ -242,6 +267,9 @@ func (h *hub) reader(c *client) {
 
 		r := c.room
 		r.mu.Lock()
+		c.info = info
+		r.refereeLocked(c, fields, info, now)
+		c.deSeen = true
 		if c.accJSON != nil {
 			fields["acc"] = c.accJSON
 		}
@@ -251,7 +279,7 @@ func (h *hub) reader(c *client) {
 			continue
 		}
 		c.pres, c.info = out, info
-		res := r.trackLocked(c, info, now)
+		r.tr.presence(c, info)
 		var buf bytes.Buffer
 		buf.WriteString(`{"t":"u","id":"`)
 		buf.WriteString(c.id)
@@ -260,9 +288,6 @@ func (h *hub) reader(c *client) {
 		buf.WriteByte('}')
 		r.broadcast(buf.Bytes(), c.id)
 		r.mu.Unlock()
-		if res != nil && h.store.Ready() {
-			go h.finishMatch(r, res)
-		}
 	}
 }
 

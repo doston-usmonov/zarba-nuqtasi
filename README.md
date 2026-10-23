@@ -131,8 +131,32 @@ API: `POST /api/register`, `POST /api/login`, `POST /api/logout`, `GET /api/me`,
 | `ALLOWED_ORIGINS` | bo'sh | Bo'sh bo'lsa faqat o'z domeni. `*` bo'lsa hammasi. Aks holda vergul bilan ajratilgan hostlar |
 | `DATABASE_URL` | bo'sh | PostgreSQL manzili. Bo'sh bo'lsa hisoblar o'chiq |
 | `DATA_DIR` | bo'sh (Docker'da `/data`) | Oldingi fayl bazasi papkasi (faqat bir martalik import uchun) |
+| `STUN_URLS` | `stun:stun.l.google.com:19302` | Ovozli chat uchun STUN serverlar (vergul bilan). `-` — o'chirish |
+| `TURN_SECRET` | bo'sh (Docker'da `.env` dan) | coturn bilan bir xil kalit. Bo'sh bo'lsa TURN ishlatilmaydi |
+| `TURN_HOST` | bo'sh | TURN domeni. Bo'sh bo'lsa o'yin ochilgan domen olinadi |
+| `TURN_PORT` | `3478` | TURN porti |
 
 Bitta IP manzildan bir vaqtda ko'pi bilan 8 ta ulanish qabul qilinadi. Bir o'yinchidan soniyasiga 60 tadan ortiq xabar kelsa, ortiqchasi tashlanadi. Bitta xabar 8 KB dan oshmaydi.
+
+## Ovozli chat
+
+Onlayn xonada o'yinchilar bir-biri bilan gaplashadi (faqat o'yinning o'z saytida; Claude ichidagi versiyada o'chiq). Sozlamalarda tanlanadi:
+
+- **Ovozli chat:** O'chiq, Jamoa (faqat jamoadoshlar eshitadi) yoki Hamma (raqiblar bilan ham, agar ular ham «Hamma»ni tanlagan bo'lsa).
+- **Mikrofon:** K tugmasini bosib gapirish (telefonda mikrofon tugmasi) yoki doim ochiq.
+- **Suhbat ovozi:** boshqalarning ovozi qanchalik baland eshitilishi.
+
+Gapirayotganlar radar ostida ko'rinadi. Ovoz brauzerlar o'rtasida to'g'ridan-to'g'ri (WebRTC) yuboriladi. Server faqat ulanish xabarlarini uzatadi va ovozni yozmaydi. Mikrofon faqat eshitishga ruxsati bor o'yinchilarga yuboriladi, shuning uchun raqib brauzerini o'zgartirib ham jamoa suhbatini eshita olmaydi.
+
+Ba'zi tarmoqlarda (mobil internet, ofis NAT) brauzerlar to'g'ridan-to'g'ri ulana olmaydi. Bunda ovoz `docker-compose.yml` dagi `turn` xizmati (coturn) orqali o'tadi. Uning kaliti `.env` dagi `ZARBA_TURN_SECRET`, uni `deploy/deploy.sh` o'zi yaratadi. Firewall'da quyidagilarni oching:
+
+```bash
+sudo ufw allow 3478/udp
+sudo ufw allow 3478/tcp
+sudo ufw allow 49160:49200/udp
+```
+
+Hosting provayderida alohida firewall bo'lsa (masalan, bulut paneli), o'sha portlarni u yerda ham oching. Server ichki IP orqasida bo'lsa (NAT), `turn` xizmati buyrug'iga `--external-ip=<tashqi IP>` qo'shing.
 
 ## Qanday ishlaydi
 
@@ -144,7 +168,7 @@ Bitta IP manzildan bir vaqtda ko'pi bilan 8 ta ulanish qabul qilinadi. Bir o'yin
 
 ## Boshqaruv
 
-WASD — harakat, sichqoncha — nishonga olish va otish, C yoki Ctrl — cho'kkalab yurish, Shift — sekin yurish, Bo'shliq — sakrash, R — qayta o'qlash, B — xarid, E (bosib turing) — bomba o'rnatish yoki zararsizlantirish, Tab — hisob, M — jamoani almashtirish.
+WASD — harakat, sichqoncha — nishonga olish va otish, C yoki Ctrl — cho'kkalab yurish, Shift — sekin yurish, Bo'shliq — sakrash, R — qayta o'qlash, B — xarid, E (bosib turing) — bomba o'rnatish yoki zararsizlantirish, Tab — hisob, M — jamoani almashtirish, K (bosib turing) — ovozli chatda gapirish.
 
 Granatalar 4-slotda: 4 tugmasi granatani oladi, yana bosilsa keyingi turiga o'tadi. Chap tugma — uzoqqa, o'ng tugma — yaqinga otish; granata tugma qo'yib yuborilganda uchadi. Turlari: portlovchi ($300), ko'r qiluvchi ($200, ikkitagacha), tutun ($300, 18 soniya ko'rinishni to'sadi), yondiruvchi ($400, 7 soniya yonadi, tutun uni o'chiradi). Bir o'yinchida ko'pi bilan 4 ta granata bo'ladi. Himoyachilar zararsizlantirish to'plamini ($400) olsa, bomba 7 emas, 4 soniyada zararsizlanadi.
 

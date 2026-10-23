@@ -37,7 +37,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 
 ## 6. Ijtimoiy
 - [ ] Xona ichida matnli chat (jamoa / hamma)
-- [ ] Ovozli chat (WebRTC)
+- ✅ Ovozli chat (WebRTC): jamoa yoki hamma, K bosib gapirish yoki doim ochiq mikrofon, TURN (coturn)
 - [ ] Do'stlar ro'yxati, profil sahifasi, batafsil statistika (qurollar bo'yicha, xaritalar bo'yicha)
 - [ ] Telegram orqali kirish, parolni tiklash
 

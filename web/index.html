@@ -194,6 +194,10 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .field input:focus{border-color:var(--atk);outline:none}
 .cta:disabled{opacity:.5;cursor:wait}
 #teamTag{font-size:13px;font-weight:600;max-width:240px}
+#voiceList{display:flex;flex-direction:column;gap:3px;font-size:13px;font-weight:600}
+#voiceList div{display:flex;align-items:center;gap:6px}
+#voiceList svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+#voiceList .a{color:var(--atk)} #voiceList .d{color:var(--def)}
 #pips i.t{background:var(--atk)}
 #pips b.sep{display:inline-block;width:6px}
 /* ---------- accounts & rating ---------- */
@@ -264,6 +268,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 [data-t="swap"]{right:calc(196px + env(safe-area-inset-right,0px));bottom:calc(62px + env(safe-area-inset-bottom,0px))}
 [data-t="use"]{right:calc(198px + env(safe-area-inset-right,0px));bottom:calc(136px + env(safe-area-inset-bottom,0px));font-size:11px}
 [data-t="scope"]{right:calc(110px + env(safe-area-inset-right,0px));bottom:calc(176px + env(safe-area-inset-bottom,0px))}
+[data-t="mic"]{right:calc(196px + env(safe-area-inset-right,0px));bottom:calc(208px + env(safe-area-inset-bottom,0px))}
 .tb.sm{position:static;width:auto;height:36px;border-radius:18px;padding:0 13px;font-size:12px}
 #tTop{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:max(12px, env(safe-area-inset-right,0px));display:flex;gap:8px;pointer-events:none}
 #tTop .tb{pointer-events:auto}
@@ -326,6 +331,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
     <div id="money">$800<span id="moneyDelta"></span></div>
     <div id="buyHint"><kbd>B</kbd> xarid menyusi</div>
     <div id="teamTag" hidden></div>
+    <div id="voiceList" aria-live="off"></div>
   </div>
   <div id="top">
     <div class="side t"><span>HUJUM</span><b id="scT">0</b></div>
@@ -370,6 +376,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
   <button class="tb" type="button" data-t="reload" aria-label="Qayta o'qlash"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg></button>
   <button class="tb" type="button" data-t="swap" aria-label="Qurolni almashtirish"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3-3M20 16H6l3 3"/></svg></button>
   <button class="tb" type="button" data-t="use" id="tUse">BOMBA</button>
+  <button class="tb" type="button" data-t="mic" id="tMic" aria-label="Gapirish (bosib turing)" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
   <button class="tb" type="button" data-t="scope" id="tScope" aria-label="Optika"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
 </div>
 <div id="rotate" hidden><div><svg viewBox="0 0 48 48"><rect x="15" y="6" width="18" height="32" rx="3"/><path d="M8 40a18 18 0 0 0 30 2M38 42l1-6-6 1"/></svg>Telefonni yotqizing</div></div>
@@ -465,6 +472,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <dt>Granata bilan</dt><dd>Chap tugma — uzoqqa, o'ng tugma — yaqinga otish (qo'yib yuborganda uchadi)</dd>
           <dt><kbd>Tab</kbd></dt><dd>Hisob jadvali</dd>
           <dt><kbd>M</kbd></dt><dd>Jamoani almashtirish (onlayn)</dd>
+          <dt><kbd>K</kbd> bosib turing</dt><dd>Ovozli chatda gapirish (onlayn)</dd>
           <dt><kbd>Esc</kbd></dt><dd>Pauza</dd>
         </dl>
       </div>
@@ -474,6 +482,10 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <label class="set" for="sFov">Ko'rish burchagi <input type="range" id="sFov" min="70" max="110" step="1"><output id="oFov"></output></label>
         <label class="set" for="sVol">Ovoz <input type="range" id="sVol" min="0" max="1" step="0.05"><output id="oVol"></output></label>
         <div class="set"><span>Nishon rangi</span><div class="swatches" id="swatches"></div><span></span></div>
+        <div class="set"><span>Ovozli chat</span><div class="seg" data-set="voice"><button type="button" data-v="off">O'chiq</button><button type="button" data-v="team">Jamoa</button><button type="button" data-v="all">Hamma</button></div><span></span></div>
+        <div class="set"><span>Mikrofon</span><div class="seg" data-set="mic"><button type="button" data-v="ptt">Bosib gapirish</button><button type="button" data-v="open">Doim ochiq</button></div><span></span></div>
+        <label class="set" for="sVoice">Suhbat ovozi <input type="range" id="sVoice" min="0" max="1" step="0.05"><output id="oVoice"></output></label>
+        <p class="note" id="voiceNote" style="margin:0;font-size:13px">Jamoa — faqat jamoadoshlaringiz eshitadi. Hamma — raqiblar ham, agar ular ham «Hamma»ni tanlagan bo'lsa. Gapirish: K tugmasini bosib turing.</p>
         <div class="set"><span>O'yin uzunligi</span><div class="seg" data-set="fmt"><button type="button" data-v="short">Qisqa · 9</button><button type="button" data-v="long">To'liq · 13</button></div><span></span></div>
       </div>
     </div>
@@ -551,7 +563,7 @@ const KB = (desk, touch) => isTouch ? touch : desk;
 
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
-const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long' }, loadSet());
+const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9 }, loadSet());
 function saveSet(){ try { localStorage.setItem('zn-set', JSON.stringify(SET)); } catch(e){} }
 const DIFFS = {
   easy:   { react:.85, acc:.18, hs:.07, turn:4.0, defuse:10 },
@@ -2149,10 +2161,11 @@ document.addEventListener('keydown', e => {
     case 'Space': if (!e.repeat) jumpQ = true; break;
     case 'Tab': showBoard(true); break;
     case 'KeyM': if (MODE === 'online') switchTeam(); break;
+    case 'KeyK': if (!e.repeat) voicePTT(true); break;
   }
 });
-document.addEventListener('keyup', e => { keys[e.code] = false; if (e.code === 'Tab') showBoard(false); });
-window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouseL = mouseR = false; showBoard(false); });
+document.addEventListener('keyup', e => { keys[e.code] = false; if (e.code === 'Tab') showBoard(false); if (e.code === 'KeyK') voicePTT(false); });
+window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouseL = mouseR = false; showBoard(false); voicePTT(false); });
 document.addEventListener('mousemove', e => {
   if (isTouch || !inGame() || S.paused || S.buyOpen) return;
   if (!locked && !noLock) return;
@@ -2193,7 +2206,7 @@ diffBtns.forEach(b => b.addEventListener('click', () => { SET.diff = b.dataset.d
 // segmented settings: <div class="seg" data-set="key"><button data-v="value">
 function syncSegs(){ document.querySelectorAll('.seg[data-set]').forEach(g => g.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(SET[g.dataset.set]) === b.dataset.v ? 'true' : 'false'))); }
 document.querySelectorAll('.seg[data-set]').forEach(g => g.addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; SET[g.dataset.set] = b.dataset.v; saveSet(); syncSegs(); if (SEG_HOOK[g.dataset.set]) SEG_HOOK[g.dataset.set](); }));
-const SEG_HOOK = {};
+const SEG_HOOK = { voice(){ if (MODE === 'online' && voiceMode() && VOICE.mic === 'none') voiceMic(); } };
 syncSegs();
 
 // settings (one panel moved between the menu and the pause sheet)
@@ -2204,6 +2217,7 @@ syncSegs();
   bind('sSens', 'sens', v => (+v).toFixed(2));
   bind('sFov', 'fov', v => v + '°', resize);
   bind('sVol', 'vol', v => Math.round(v*100) + '%', () => { if (master) master.gain.value = SET.vol; });
+  bind('sVoice', 'vvol', v => Math.round(v*100) + '%', () => VOICE.peers.forEach(v => { if (v.audio) v.audio.volume = clamp(SET.vvol, 0, 1); }));
   const sw = $('swatches'); ['#5cff8a','#ffe14a','#4ae3ff','#ffffff','#ff5bd1'].forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.style.background = c; b.setAttribute('aria-label', 'Nishon rangi ' + c); b.addEventListener('click', () => { SET.xc = c; saveSet(); syncXc(); }); sw.appendChild(b); });
   function syncXc(){ [...sw.children].forEach(b => b.setAttribute('aria-pressed', b.style.background && rgbHex(b.style.background) === SET.xc.toLowerCase() ? 'true' : 'false')); H.cross.style.setProperty('--c', SET.xc); }
   function rgbHex(s){ const m = s.match(/\d+/g); if (!m) return s; return '#' + m.slice(0,3).map(n => (+n).toString(16).padStart(2,'0')).join(''); }
@@ -2281,15 +2295,17 @@ function wsJoin(name){
       presence(p){ mine = p; dirty = true; if (ws && ws.readyState === 1){ try { ws.send(JSON.stringify({ t:'p', d:p })); } catch(e){} } return Promise.resolve(); },
       connected(){ return conn; },
       leave(){ closed = true; try { ws && ws.close(); } catch(e){} return Promise.resolve(); },
+      signal(to, d){ if (ws && ws.readyState === 1){ try { ws.send(JSON.stringify({ t:'sig', to, d })); } catch(e){} } },
     };
     const open = () => {
       ws = new WebSocket(url);
       ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch(e){ return; }
-        if (m.t === 'hello'){ me = m.id; conn = true; tries = 0; dirty = true; if (!settled){ settled = true; resolve(api); } }
+        if (m.t === 'hello'){ me = m.id; conn = true; tries = 0; dirty = true; if (Array.isArray(m.ice) && m.ice.length) VOICE.ice = m.ice; if (!settled){ settled = true; resolve(api); } }
         else if (m.t === 's'){ others.clear(); (m.peers || []).forEach(x => { if (x.id !== me && x.p) others.set(x.id, x.p); }); dirty = true; }
         else if (m.t === 'u'){ if (m.id !== me && m.p){ others.set(m.id, m.p); dirty = true; } }
         else if (m.t === 'l'){ if (others.delete(m.id)) dirty = true; }
         else if (m.t === 'rt'){ netRating(m); }
+        else if (m.t === 'sig'){ voiceSignal(String(m.from || ''), m.d); }
         else if (m.t === 'err' && !settled){ settled = true; closed = true; reject({ code:m.code || 'refused' }); } };
       ws.onclose = () => { conn = false; others.clear(); dirty = true;
         if (!settled){ settled = true; reject({ code:'upstream_error' }); return; }
@@ -2299,6 +2315,113 @@ function wsJoin(name){
     open();
   });
 }
+/* ================= VOICE CHAT =================
+   Browsers send their voice straight to each other (WebRTC); the game server only relays the
+   connection messages and hands out STUN/TURN. Who hears whom, as in CS: "Jamoa" — only your
+   team; "Hamma" — the enemy too, when they also chose "Hamma". The microphone is only ever
+   sent to players allowed to hear it (never to the other team on "Jamoa"). Server version only. */
+const VOICE = { ice:[{ urls:['stun:stun.l.google.com:19302'] }], stream:null, track:null, mic:'none', peers:new Map(), ptt:false, talking:false, level:0, an:null, buf:null, stepT:0, hinted:false, html:'' };
+function voiceAvailable(){ return !IN_ARTIFACT && typeof RTCPeerConnection === 'function'; }
+function voiceMode(){ if (MODE !== 'online' || !NET.room || !NET.room.signal || !voiceAvailable()) return 0; return SET.voice === 'all' ? 2 : SET.voice === 'team' ? 1 : 0; }
+function voicePTT(on){ VOICE.ptt = !!on; if (on && voiceMode() && VOICE.mic === 'none') voiceMic(); }
+async function voiceMic(){
+  if (VOICE.stream || VOICE.mic === 'pending' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+  VOICE.mic = 'pending';
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:true, autoGainControl:true }, video:false });
+    if (!voiceMode()){ st.getTracks().forEach(t => t.stop()); VOICE.mic = 'none'; return; }
+    VOICE.stream = st; VOICE.track = st.getAudioTracks()[0] || null; if (VOICE.track) VOICE.track.enabled = false; VOICE.mic = 'ok';
+    initAudio();
+    if (ac){ try { const src = ac.createMediaStreamSource(st); VOICE.an = ac.createAnalyser(); VOICE.an.fftSize = 512; VOICE.buf = new Float32Array(VOICE.an.fftSize); src.connect(VOICE.an); } catch(e){ VOICE.an = null; } }
+    VOICE.peers.forEach(v => voiceGate(v, true));
+    if (!VOICE.hinted){ VOICE.hinted = true; hint(SET.mic === 'open' ? 'Mikrofon yoqildi: sizni ' + (SET.voice === 'all' ? 'hamma' : 'jamoangiz') + ' eshitadi' : KB('Gapirish uchun K ni bosib turing', 'Gapirish uchun mikrofon tugmasini bosib turing'), 3500); }
+  } catch(e){ VOICE.mic = 'denied'; hint("Mikrofonga ruxsat berilmadi — boshqalarni eshitasiz, lekin gapira olmaysiz", 4000); }
+}
+function voiceStop(){
+  [...VOICE.peers.keys()].forEach(id => voiceClose(id, true));
+  if (VOICE.stream) VOICE.stream.getTracks().forEach(t => t.stop());
+  VOICE.stream = null; VOICE.track = null; VOICE.an = null; VOICE.mic = 'none'; VOICE.talking = false; VOICE.ptt = false; VOICE.html = ''; $('voiceList').innerHTML = '';
+}
+function voiceSend(to, d){ try { if (NET.room && NET.room.signal) NET.room.signal(to, d); } catch(e){} }
+function voicePeer(id){
+  const pc = new RTCPeerConnection({ iceServers:VOICE.ice });
+  const v = { id, pc, tx:null, audio:null, allowed:false, pending:[], born:S.time };
+  pc.onicecandidate = e => { if (e.candidate) voiceSend(id, { c:e.candidate.toJSON() }); };
+  pc.ontrack = e => {
+    if (!v.audio){ v.audio = document.createElement('audio'); v.audio.autoplay = true; v.audio.hidden = true; document.body.appendChild(v.audio); }
+    v.audio.srcObject = e.streams && e.streams[0] ? e.streams[0] : new MediaStream([e.track]);
+    v.audio.muted = !v.allowed; v.audio.volume = clamp(SET.vvol, 0, 1); v.audio.play().catch(() => {});
+  };
+  pc.onconnectionstatechange = () => { if (pc.connectionState === 'failed'){ const r = NET.remotes.get(id); if (r) r.vFail = S.time; voiceClose(id, false); } };
+  VOICE.peers.set(id, v); return v;
+}
+function voiceClose(id, bye){
+  const v = VOICE.peers.get(id); if (!v) return; VOICE.peers.delete(id);
+  try { v.pc.close(); } catch(e){}
+  if (v.audio){ v.audio.srcObject = null; v.audio.remove(); }
+  if (bye) voiceSend(id, { bye:1 });
+}
+// who may hear whom; the microphone track is attached only for those peers
+function voiceAllowed(r){ const mode = voiceMode(); return !!(r && r.team && player.team && mode > 0 && r.vo > 0 && (r.sq === NET.sq || (mode === 2 && r.vo === 2))); }
+function voiceGate(v, force){
+  const allowed = voiceAllowed(NET.remotes.get(v.id));
+  if (allowed !== v.allowed || force){ v.allowed = allowed; if (v.tx) v.tx.sender.replaceTrack(allowed && VOICE.track ? VOICE.track : null).catch(() => {}); }
+  if (v.audio){ v.audio.muted = !allowed; v.audio.volume = clamp(SET.vvol, 0, 1); }
+}
+async function voiceOffer(v){
+  try {
+    v.tx = v.pc.addTransceiver('audio', { direction:'sendrecv', streams:VOICE.stream ? [VOICE.stream] : [] });
+    voiceGate(v, true);
+    await v.pc.setLocalDescription(await v.pc.createOffer());
+    voiceSend(v.id, { sdp:{ type:'offer', sdp:v.pc.localDescription.sdp } });
+  } catch(e){ voiceClose(v.id, false); }
+}
+const cleanSdp = x => x && typeof x === 'object' && (x.type === 'offer' || x.type === 'answer') && typeof x.sdp === 'string' && x.sdp.length < 6000 ? { type:x.type, sdp:x.sdp } : null;
+async function voiceSignal(from, d){
+  if (!d || typeof d !== 'object' || !voiceMode() || !NET.remotes.has(from)) return;
+  let v = VOICE.peers.get(from);
+  try {
+    if (d.bye){ voiceClose(from, false); return; }
+    const sdp = cleanSdp(d.sdp);
+    if (sdp && sdp.type === 'offer'){
+      if (!NET.me || from >= NET.me) return;   // the lower id always makes the offer
+      if (v) voiceClose(from, false);
+      v = voicePeer(from);
+      await v.pc.setRemoteDescription(sdp);
+      v.tx = v.pc.getTransceivers()[0] || null; if (v.tx) v.tx.direction = 'sendrecv';
+      voiceGate(v, true);
+      await v.pc.setLocalDescription(await v.pc.createAnswer());
+      voiceSend(from, { sdp:{ type:'answer', sdp:v.pc.localDescription.sdp } });
+      for (const c of v.pending.splice(0)) await v.pc.addIceCandidate(c).catch(() => {});
+    } else if (sdp && sdp.type === 'answer' && v && v.pc.signalingState === 'have-local-offer'){
+      await v.pc.setRemoteDescription(sdp);
+      for (const c of v.pending.splice(0)) await v.pc.addIceCandidate(c).catch(() => {});
+    } else if (d.c && typeof d.c === 'object' && v){
+      const c = { candidate:String(d.c.candidate || '').slice(0, 600), sdpMid:d.c.sdpMid == null ? null : String(d.c.sdpMid).slice(0, 32), sdpMLineIndex:d.c.sdpMLineIndex == null ? null : num(d.c.sdpMLineIndex) };
+      if (v.pc.remoteDescription) await v.pc.addIceCandidate(c).catch(() => {}); else if (v.pending.length < 40) v.pending.push(c);
+    }
+  } catch(e){ voiceClose(from, false); }
+}
+function voiceFrame(dt){
+  const mode = voiceMode();
+  if (!mode){ if (VOICE.peers.size || VOICE.stream) voiceStop(); return; }
+  if (VOICE.track){
+    const tx = SET.mic === 'open' || VOICE.ptt; VOICE.track.enabled = tx;
+    let lv = 0; if (VOICE.an && tx){ VOICE.an.getFloatTimeDomainData(VOICE.buf); let q = 0; for (let i=0;i<VOICE.buf.length;i++) q += VOICE.buf[i]*VOICE.buf[i]; lv = Math.sqrt(q/VOICE.buf.length); }
+    VOICE.level = lv; VOICE.talking = tx && (SET.mic === 'ptt' || lv > .012);
+  } else VOICE.talking = false;
+  VOICE.stepT -= dt; if (VOICE.stepT > 0) return; VOICE.stepT = .4;
+  for (const r of NET.remotes.values()){
+    let v = VOICE.peers.get(r.peer);
+    if (!(r.vo > 0 && r.team)){ if (v) voiceClose(r.peer, false); continue; }
+    if (!v && NET.me && NET.me < r.peer && S.time - (r.vFail || -99) > 8){ v = voicePeer(r.peer); voiceOffer(v); }
+    if (v){ voiceGate(v); if (v.pc.connectionState !== 'connected' && S.time - v.born > 20){ r.vFail = S.time; voiceClose(r.peer, true); } }
+  }
+  for (const id of [...VOICE.peers.keys()]) if (!NET.remotes.has(id)) voiceClose(id, false);
+}
+if (!voiceAvailable()){ $('voiceNote').textContent = "Ovozli chat o'yinning o'z saytida ishlaydi; bu ko'rinishda o'chiq."; }
+else if (isTouch) $('voiceNote').textContent = $('voiceNote').textContent.replace('K tugmasini', 'mikrofon tugmasini');
+
 const NET = { room:null, me:null, name:'', code:'umumiy', sq:null, host:false, g:null, gSrc:null, hitSeq:0, hits:[], shot:null, shotN:0, death:null, deathN:0, nade:null, nadeN:0, plant:null, plantN:0, def:null, defN:0,
   seen:{}, remotes:new Map(), inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, tickLast:0, joinT:0, cdShown:-1, beepT:0 };
 if (!IN_ARTIFACT) $('onlineNote').textContent = "Do'stlaringizga shu sahifa havolasini yuboring va bir xil xona kodini kiriting. Jamoalar avtomatik teng bo'linadi.";
@@ -2332,7 +2455,7 @@ function hitMark(kill){ H.hit.className = ''; void H.hit.offsetWidth; H.hit.styl
 function updateRemote(r, pr, dt){
   if (pr !== r.lastPres){
     r.lastPres = pr;
-    const team = pr.tm === 'CT' ? 'CT' : 'T', name = cleanName(pr.nm); r.sq = pr.sq === 'B' ? 'B' : 'A';
+    const team = pr.tm === 'CT' ? 'CT' : 'T', name = cleanName(pr.nm); r.sq = pr.sq === 'B' ? 'B' : 'A'; r.vo = pr.vo === 2 ? 2 : pr.vo === 1 ? 1 : 0; r.vt = pr.vt === 1;
     const a = pr.acc;
     r.acc = a && typeof a === 'object' && typeof a.u === 'string' ? { r:num(a.r)|0, rk:String(a.rk || '').slice(0, 24), rc:safeColor(a.rc), cal:!!a.cal } : null;
     if (team !== r.team || !r.m){ r.team = team; r.name = name; dressRemote(r); }
@@ -2413,7 +2536,7 @@ function buildPres(){
   const it = curItem();
   return { v:1, hc:1, nm:NET.name, sq:NET.sq, tm:player.team, x:r2(player.pos.x), y:r2(player.pos.y), z:r2(player.pos.z), yw:r2(player.yaw), pt:r2(player.pitch), cr:r2(player.crouch),
     al:player.alive ? 1 : 0, hp:Math.max(0, Math.round(player.hp)), w:it ? it.id : 'knife', mv:(player.alive && player.ground && Math.hypot(player.vel.x, player.vel.z) > 3.1) ? 1 : 0,
-    k:player.kills, d:player.deaths, in:NET.inRound, sh:NET.shot, hi:NET.hits.length ? NET.hits : null, de:NET.death, gn:NET.nade, pl:NET.plant, df:NET.def, g: NET.host ? gOut(NET.g) : null };
+    k:player.kills, d:player.deaths, in:NET.inRound, sh:NET.shot, hi:NET.hits.length ? NET.hits : null, de:NET.death, gn:NET.nade, pl:NET.plant, df:NET.def, vo:voiceMode(), vt:VOICE.talking ? 1 : 0, g: NET.host ? gOut(NET.g) : null };
 }
 
 function gSideScore(g, side){ if (!g || !g.r) return 0; return sideOfSquad('A', g.r, g.fm) === side ? g.sA : g.sB; }
@@ -2565,7 +2688,7 @@ function netFrame(dt){
   if (!player.team) return;
   if (S.phase === 'live') NET.liveT += dt;
   if (S.buyOpen && !canBuy()) closeBuy(true);
-  updatePlayer(dt); updateWeapon(dt); netPlantDefuse(dt); updateNades(dt);
+  updatePlayer(dt); updateWeapon(dt); netPlantDefuse(dt); updateNades(dt); voiceFrame(dt);
   if (bomb.planted){ NET.beepT -= dt; if (NET.beepT <= 0){ NET.beepT = Math.max(.1, .15 + (bomb.timer/40)*.95); sfxBeep(); bomb.led.material.opacity = 1; } bomb.led.material.opacity = Math.max(0, bomb.led.material.opacity - dt*6); }
   spotT -= dt;
   if (spotT <= 0 && player.alive){ spotT = .15; viewDir(_d, player.yaw, player.pitch);
@@ -2584,7 +2707,14 @@ function netPips(){
   if (player.team) all.push({ team:player.team, alive:player.alive });
   H.pips.innerHTML = pipsHTML(all);
 }
+function voiceHUD(){
+  const talk = []; if (VOICE.talking) talk.push({ name:'Siz', team:player.team });
+  NET.remotes.forEach(r => { const v = VOICE.peers.get(r.peer); if (r.vt && v && v.allowed) talk.push({ name:r.name, team:r.team }); });
+  const html = talk.map(t => `<div class="${t.team === 'CT' ? 'd' : 'a'}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>${escH(t.name)}</span></div>`).join('');
+  if (html !== VOICE.html){ VOICE.html = html; $('voiceList').innerHTML = html; }
+}
 function netHUD(){
+  voiceHUD();
   const g = NET.g; H.scT.textContent = gSideScore(g, 'T'); H.scCT.textContent = gSideScore(g, 'CT'); netPips();
   const tt = $('teamTag'); tt.hidden = false;
   tt.textContent = (player.team ? 'Jamoa: ' + TEAM_NAME[player.team] : 'Jamoa tanlanmoqda…') + ' · Xona: ' + NET.code + ' · ' + (NET.remotes.size + 1) + " o'yinchi" + (NET.room && !NET.room.connected() ? ' · aloqa uzildi' : '');
@@ -2620,6 +2750,7 @@ async function joinOnline(){
   }
   btn.disabled = false; note.textContent = DEFAULT_NOTE;
   goOnline(named);
+  if (voiceMode() && voiceAvailable()) voiceMic();
 }
 function goOnline(named){
   MODE = 'online'; NET.room = named;
@@ -2635,6 +2766,7 @@ function goOnline(named){
   goFullscreen(); requestLock(); canvas.focus({ preventScroll:true });
 }
 function leaveOnline(){
+  voiceStop();
   if (NET.room){ const r = NET.room; NET.room = null; r.leave().catch(() => {}); }
   NET.remotes.forEach(removeRemote); NET.remotes.clear(); NET.g = null;
   MODE = 'bots'; player.team = 'T'; bots.forEach(b => b.m.g.visible = true); $('teamTag').hidden = true; bomb.mesh.visible = false; bomb.planted = false;
@@ -2805,6 +2937,7 @@ const TOUCH = { mx:0, my:0, mag:0, crouch:false };
       if (S.paused) return;
       if (t === 'buy'){ if (S.buyOpen) closeBuy(); else if (canBuy()) openBuy(); else hint("Xarid faqat o'z bazangizda va raund boshida mumkin"); return; }
       if (t === 'team'){ if (MODE === 'online') switchTeam(); return; }
+      if (t === 'mic'){ voicePTT(true); return; }
       if (!player.alive){ cycleSpec(); return; }
       switch (t){
         case 'fire': fid = e.pointerId; fx = e.clientX; fy = e.clientY; mouseL = true; firePressed = true; break;
@@ -2813,11 +2946,12 @@ const TOUCH = { mx:0, my:0, mag:0, crouch:false };
         case 'reload': startReload(); break;
         case 'swap': cycle(); break;
         case 'use': keys.KeyE = true; break;
+        case 'mic': voicePTT(true); break;
         case 'scope': { const w = curW(); if (w.kind === 'nade'){ mouseR = true; break; } if (w.kind === 'sniper' && player.drawT <= 0 && player.reloadT <= 0){ player.scope = (player.scope + 1) % 3; sfxClick(); } break; }
       }
     }, { passive:false });
     b.addEventListener('pointermove', e => { if (e.pointerId === fid){ look(e.clientX - fx, e.clientY - fy); fx = e.clientX; fy = e.clientY; } });
-    const up = e => { b.classList.remove('down'); if (t === 'fire' && e.pointerId === fid){ fid = null; mouseL = false; } if (t === 'use') keys.KeyE = false; if (t === 'scope') mouseR = false; };
+    const up = e => { b.classList.remove('down'); if (t === 'fire' && e.pointerId === fid){ fid = null; mouseL = false; } if (t === 'use') keys.KeyE = false; if (t === 'scope') mouseR = false; if (t === 'mic') voicePTT(false); };
     b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
     b.addEventListener('contextmenu', e => e.preventDefault());
   });
@@ -2835,12 +2969,13 @@ function touchFrame(){
   if (!show) return;
   $('tBuy').hidden = !canBuy() && !S.buyOpen;
   $('tTeam').hidden = MODE !== 'online';
+  $('tMic').hidden = !voiceMode() || SET.mic === 'open'; $('tMic').classList.toggle('on', VOICE.ptt);
   $('tScope').hidden = !player.alive || (curW().kind !== 'sniper' && curW().kind !== 'nade');
   const site = player.alive && ((player.team === 'T' && player.bomb) || (player.team === 'CT' && bomb.planted));
   $('tUse').hidden = !site;
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAIN LOOP ================= */
 let swayX = 0, swayY = 0, hitFade = 0, vignT = 0, shakeT = 0, last = performance.now();

@@ -12,7 +12,14 @@ IMAGE="${IMAGE:-ghcr.io/doston-usmonov/zarba-nuqtasi}"
 git fetch --quiet origin main
 local_rev=$(git rev-parse HEAD)
 remote_rev=$(git rev-parse origin/main)
-[ "$local_rev" = "$remote_rev" ] && exit 0
+if [ "$local_rev" = "$remote_rev" ]; then
+  # kod yangi, lekin .env da yangi kalit yo'q (eski deploy.sh bilan yangilangan) — bir marta qayta o'rnatamiz
+  if ! grep -qs '^ZARBA_TURN_SECRET=' .env; then
+    echo ".env da ZARBA_TURN_SECRET yo'q: deploy.sh qayta ishga tushirilmoqda"
+    ZARBA_LOCKED=1 exec ./deploy/deploy.sh
+  fi
+  exit 0
+fi
 
 # Actions image'ni hali yig'ayotgan bo'lsa, keyingi daqiqada qayta urinamiz
 if ! docker manifest inspect "$IMAGE:$remote_rev" >/dev/null 2>&1; then

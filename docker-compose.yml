@@ -58,8 +58,32 @@ services:
       ALLOWED_ORIGINS: ""    # bo'sh — faqat o'z domeningiz; "*" — hamma joydan
       DATABASE_URL: postgres://zarba:${ZARBA_DB_PASSWORD}@db:5432/zarba?sslmode=disable
       DATA_DIR: /data        # oldingi versiyaning fayl bazasi: birinchi ishga tushishda Postgres'ga import qilinadi
+      TURN_SECRET: ${ZARBA_TURN_SECRET:-}   # ovozli chat uchun TURN (pastdagi "turn" xizmati bilan bir xil)
+      TURN_PORT: "3478"
     volumes:
       - zarba-data:/data
+
+  # Ovozli chat uchun TURN server: o'yinchilar to'g'ridan-to'g'ri ulana olmasa (mobil internet, NAT),
+  # ovoz shu server orqali o'tadi. Faqat vaqtinchalik login-parol bilan ishlaydi (o'yin serveri beradi).
+  # Firewall'da ochish kerak: 3478/udp, 3478/tcp va 49160-49200/udp (README → Ovozli chat).
+  turn:
+    image: coturn/coturn:4.18
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TURN_SECRET: ${ZARBA_TURN_SECRET:-}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ -z "$$TURN_SECRET" ]; then echo "ZARBA_TURN_SECRET yo'q: ./deploy/deploy.sh ni ishga tushiring"; exec sleep infinity; fi
+        exec turnserver -n --log-file=stdout --listening-port=3478 --min-port=49160 --max-port=49200 \
+          --use-auth-secret --static-auth-secret="$$TURN_SECRET" --realm=zarba --fingerprint \
+          --no-cli --no-tls --no-dtls --no-multicast-peers --stale-nonce=600 --user-quota=12 --total-quota=300 \
+          --denied-peer-ip=0.0.0.0-0.255.255.255 --denied-peer-ip=10.0.0.0-10.255.255.255 \
+          --denied-peer-ip=100.64.0.0-100.127.255.255 --denied-peer-ip=127.0.0.0-127.255.255.255 \
+          --denied-peer-ip=169.254.0.0-169.254.255.255 --denied-peer-ip=172.16.0.0-172.31.255.255 \
+          --denied-peer-ip=192.168.0.0-192.168.255.255 --denied-peer-ip=::1 \
+          --denied-peer-ip=fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
 
 volumes:
   zarba-pg:

@@ -183,7 +183,7 @@ func newTestServer(t *testing.T) (*httptest.Server, *Store, *hub) {
 		if err != nil {
 			return
 		}
-		h.serve(ws, r.URL.Query().Get("room"), r.RemoteAddr+newID(), acct)
+		h.serve(ws, r.URL.Query().Get("room"), r.RemoteAddr+newID(), r.Host, acct)
 	})
 	return httptest.NewServer(mux), st, h
 }
@@ -226,9 +226,10 @@ func newTestClient(base string) *testClient {
 
 // minimal WebSocket mijoz (testlar uchun)
 type wsTest struct {
-	c  net.Conn
-	br *bufio.Reader
-	id string
+	c     net.Conn
+	br    *bufio.Reader
+	id    string
+	hello map[string]any
 }
 
 func dialWS(t *testing.T, tc *testClient, room string) *wsTest {
@@ -255,7 +256,7 @@ func dialWS(t *testing.T, tc *testClient, room string) *wsTest {
 	for {
 		m := w.read(t)
 		if m["t"] == "hello" {
-			w.id = m["id"].(string)
+			w.id, w.hello = m["id"].(string), m
 			return w
 		}
 	}
@@ -445,6 +446,51 @@ func TestValidFinal(t *testing.T) {
 	for _, c := range bad {
 		if validFinal(c[0], c[1], c[2]) {
 			t.Errorf("noto'g'ri natija qabul qilindi: fm=%d %d:%d", c[0], c[1], c[2])
+		}
+	}
+}
+
+func TestVoiceSignal(t *testing.T) {
+	srv, _, h := newTestServer(t)
+	defer srv.Close()
+	h.voice = voiceCfg{stun: []string{"stun:stun.example.uz:3478"}, turnSecret: "maxfiy", turnPort: "3478"}
+	tc := newTestClient(srv.URL)
+	a, b := dialWS(t, tc, "zn-ovoz"), dialWS(t, tc, "zn-ovoz")
+	other := dialWS(t, tc, "zn-boshqa")
+
+	// hello: STUN va vaqtinchalik TURN login-paroli
+	ice := a.hello["ice"].([]any)
+	if len(ice) != 2 {
+		t.Fatalf("ice: %v", ice)
+	}
+	turn := ice[1].(map[string]any)
+	user, cred := turn["username"].(string), turn["credential"].(string)
+	if !strings.HasSuffix(user, ":"+a.id) || cred != turnCredential("maxfiy", user) || turn["urls"].([]any)[0] != "turn:127.0.0.1:3478?transport=udp" {
+		t.Fatalf("turn: %v", turn)
+	}
+
+	// xabar faqat ko'rsatilgan o'yinchiga boradi, "from" ni server yozadi
+	a.send(map[string]any{"t": "sig", "to": b.id, "from": "soxta", "d": map[string]any{"sdp": map[string]any{"type": "offer", "sdp": "v=0"}}})
+	m := b.readUntil(t, func(m map[string]any) bool { return m["t"] == "sig" })
+	if m["from"] != a.id || m["d"].(map[string]any)["sdp"].(map[string]any)["type"] != "offer" {
+		t.Fatalf("sig: %v", m)
+	}
+	// boshqa xonadagi o'yinchiga uzatilmaydi
+	a.send(map[string]any{"t": "sig", "to": other.id, "d": map[string]any{"c": "x"}})
+	other.send(map[string]any{"t": "p", "d": map[string]any{"v": 1}})
+	a.send(map[string]any{"t": "p", "d": map[string]any{"v": 1, "nm": "Ali"}})
+	b.readUntil(t, func(m map[string]any) bool { return m["t"] == "u" && m["id"] == a.id })
+	// "other" faqat o'z xonasining xabarlarini (s) olgan bo'lishi kerak
+	for {
+		other.c.SetReadDeadline(time.Now().Add(300 * time.Millisecond))
+		var hdr [2]byte
+		if _, err := io.ReadFull(other.br, hdr[:]); err != nil {
+			break
+		}
+		p := make([]byte, int(hdr[1]&0x7f))
+		io.ReadFull(other.br, p)
+		if bytes.Contains(p, []byte(`"sig"`)) {
+			t.Fatalf("boshqa xonaga xabar o'tib ketdi: %s", p)
 		}
 	}
 }

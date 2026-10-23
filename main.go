@@ -44,6 +44,12 @@ func main() {
 	}
 	a := newAPI(st, allowed)
 	h := newHub(maxPlayers, st)
+	h.voice = voiceFromEnv()
+	if h.voice.turnSecret != "" {
+		log.Printf("ovozli chat: TURN yoqilgan (port %s)", h.voice.turnPort)
+	} else {
+		log.Printf("ovozli chat: faqat STUN (TURN_SECRET berilmagan — ba'zi tarmoqlarda ovoz o'tmasligi mumkin)")
+	}
 
 	sub, err := fs.Sub(webFS, "web")
 	if err != nil {
@@ -70,7 +76,7 @@ func main() {
 		if err != nil {
 			return
 		}
-		h.serve(ws, room, clientIP(r), acct)
+		h.serve(ws, room, clientIP(r), r.Host, acct)
 	})
 	a.routes(mux)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {

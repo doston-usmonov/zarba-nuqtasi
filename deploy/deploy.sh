@@ -19,6 +19,11 @@ if ! grep -qs '^ZARBA_DB_PASSWORD=' .env; then
   ( umask 077; echo "ZARBA_DB_PASSWORD=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')" >> .env )
   echo ".env yaratildi (PostgreSQL paroli)"
 fi
+# ovozli chat uchun TURN kaliti (o'yin serveri va coturn bir xil kalitdan foydalanadi)
+if ! grep -qs '^ZARBA_TURN_SECRET=' .env; then
+  ( umask 077; echo "ZARBA_TURN_SECRET=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')" >> .env )
+  echo ".env ga TURN kaliti qo'shildi"
+fi
 docker compose pull --quiet
 docker compose up -d --remove-orphans
 docker image prune -f >/dev/null

@@ -52,7 +52,8 @@ type hub struct {
 	rooms      map[string]*room
 	perIP      map[string]int
 	maxPlayers int
-	store      *Store // nil yoki tayyor emas — hisoblar o'chirilgan
+	store      *Store   // nil yoki tayyor emas — hisoblar o'chirilgan
+	voice      voiceCfg // ovozli chat uchun STUN/TURN
 }
 
 func newHub(maxPlayers int, st *Store) *hub {
@@ -84,7 +85,7 @@ func accPublic(u User) json.RawMessage {
 }
 
 // serve runs one player's connection until it closes.
-func (h *hub) serve(ws *wsConn, roomName, ip string, acct *account) {
+func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account) {
 	defer ws.close()
 	var accJSON json.RawMessage
 	if acct != nil && h.store.Ready() {
@@ -128,7 +129,7 @@ func (h *hub) serve(ws *wsConn, roomName, ip string, acct *account) {
 	}
 	c := &client{id: newID(), ip: ip, room: r, ws: ws, send: make(chan []byte, sendQueue), acct: acct, accJSON: accJSON}
 	// greeting + everyone already here, queued before anyone else can write to us
-	c.send <- jsonMsg(map[string]string{"t": "hello", "id": c.id})
+	c.send <- jsonMsg(map[string]any{"t": "hello", "id": c.id, "ice": h.voice.iceFor(host, c.id, time.Now())})
 	type peer struct {
 		ID string          `json:"id"`
 		P  json.RawMessage `json:"p"`
@@ -200,10 +201,18 @@ func (h *hub) reader(c *client) {
 		}
 		tokens--
 		var m struct {
-			T string          `json:"t"`
-			D json.RawMessage `json:"d"`
+			T  string          `json:"t"`
+			D  json.RawMessage `json:"d"`
+			To string          `json:"to"`
 		}
-		if json.Unmarshal(data, &m) != nil || m.T != "p" {
+		if json.Unmarshal(data, &m) != nil {
+			continue
+		}
+		if m.T == "sig" { // ovozli chat ulanishi
+			c.room.relaySignal(c, m.To, bytes.TrimSpace(m.D))
+			continue
+		}
+		if m.T != "p" {
 			continue
 		}
 		d := bytes.TrimSpace(m.D)

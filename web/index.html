@@ -2,6 +2,10 @@
 <html lang="uz">
 <head>
 <meta charset="utf-8">
+<meta name="theme-color" content="#15130f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Brauzerdagi taktik otishma: botlarga qarshi yoki do'stlar bilan onlayn.">
 <style>[hidden]{display:none!important}img{max-width:100%}</style>
@@ -188,6 +192,78 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 #teamTag{font-size:13px;font-weight:600;max-width:240px}
 #pips i.t{background:var(--atk)}
 #pips b.sep{display:inline-block;width:6px}
+/* ---------- touch (phones, tablets) ---------- */
+.touch-only{display:none!important}
+.touch .touch-only{display:flex!important}
+.touch .desk-only{display:none!important}
+.touch, .touch body{overscroll-behavior:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#touch{position:fixed;inset:0;pointer-events:none}
+#tZone{position:absolute;inset:0;pointer-events:auto;touch-action:none}
+#tStick{position:absolute;width:128px;height:128px;margin:-64px 0 0 -64px;border-radius:50%;background:rgba(243,239,230,.07);border:2px solid rgba(243,239,230,.22);pointer-events:none;opacity:.55;transition:opacity .15s}
+#tStick.on{opacity:1}
+#tStick i{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(243,239,230,.32);border:2px solid rgba(243,239,230,.5)}
+.tb{position:absolute;pointer-events:auto;touch-action:none;width:58px;height:58px;border-radius:50%;border:2px solid rgba(243,239,230,.35);background:rgba(14,13,11,.42);color:var(--ink);display:grid;place-items:center;padding:0;font-family:var(--f-display);font-weight:700;font-size:13px;letter-spacing:.04em;-webkit-user-select:none;user-select:none;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.tb svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.tb.down,.tb.on{background:rgba(242,181,68,.28);border-color:var(--atk)}
+.tb.fire{width:92px;height:92px;border-color:rgba(255,91,74,.7);background:rgba(120,30,20,.32)}
+.tb.fire svg{width:40px;height:40px}
+.tb.fire.down{background:rgba(255,91,74,.4)}
+[data-t="fire"]{right:calc(26px + env(safe-area-inset-right,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px))}
+[data-t="jump"]{right:calc(42px + env(safe-area-inset-right,0px));bottom:calc(136px + env(safe-area-inset-bottom,0px))}
+[data-t="crouch"]{right:calc(132px + env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+[data-t="reload"]{right:calc(122px + env(safe-area-inset-right,0px));bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+[data-t="swap"]{right:calc(196px + env(safe-area-inset-right,0px));bottom:calc(62px + env(safe-area-inset-bottom,0px))}
+[data-t="use"]{right:calc(198px + env(safe-area-inset-right,0px));bottom:calc(136px + env(safe-area-inset-bottom,0px));font-size:11px}
+[data-t="scope"]{right:calc(110px + env(safe-area-inset-right,0px));bottom:calc(176px + env(safe-area-inset-bottom,0px))}
+.tb.sm{position:static;width:auto;height:36px;border-radius:18px;padding:0 13px;font-size:12px}
+#tTop{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:max(12px, env(safe-area-inset-right,0px));display:flex;gap:8px;pointer-events:none}
+#tTop .tb{pointer-events:auto}
+#rotate{position:fixed;inset:0;z-index:20;display:grid;place-items:center;text-align:center;background:rgba(16,14,11,.94);color:var(--ink);font-family:var(--f-display);font-size:20px;padding:24px;box-sizing:border-box}
+#rotate svg{width:72px;height:72px;fill:none;stroke:var(--atk);stroke-width:2;margin:0 auto 14px;display:block}
+.touch #radar{width:104px;height:104px}
+.touch #tl{top:calc(8px + env(safe-area-inset-top,0px));gap:4px}
+.touch #money{font-size:17px}
+.touch #buyHint,.touch #slots{display:none}
+.touch #teamTag{font-size:11px;max-width:150px}
+.touch #top{top:calc(8px + env(safe-area-inset-top,0px))}
+.touch #top .side{min-width:58px;padding:3px 9px;gap:6px}
+.touch #top .side b{font-size:19px}
+.touch #top .side span{font-size:9px}
+.touch #clockBox{min-width:70px;padding:3px 10px}
+.touch #clock{font-size:19px}
+.touch #feed{top:calc(54px + env(safe-area-inset-top,0px))}
+.touch #feed div{font-size:12px;padding:2px 8px}
+.touch #bl{left:50%;transform:translateX(calc(-100% - 6px));gap:6px;bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+.touch .vital{padding:3px 9px 3px 7px;gap:6px}
+.touch .vital svg{width:16px;height:16px}
+.touch .vital b{font-size:21px}
+.touch .vital .bar{width:44px}
+.touch #br{right:auto;left:50%;transform:translateX(6px);bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+.touch #ammoBox{padding:3px 10px}
+.touch #mag{font-size:24px}
+.touch #res{font-size:13px}
+.touch #wname{font-size:11px;margin-right:4px}
+.touch #msg{top:20%}
+.touch #msgT{font-size:24px}
+.touch #msgS{font-size:13px}
+.touch #hintline{bottom:calc(52px + env(safe-area-inset-bottom,0px));font-size:12px;white-space:normal;max-width:56vw;text-align:center}
+.touch #dead{bottom:calc(56px + env(safe-area-inset-bottom,0px));max-width:56vw}
+.touch #prog{top:58%}
+@media (max-height:520px){
+  .overlay{padding-block:calc(12px + env(safe-area-inset-top,0px)) calc(12px + env(safe-area-inset-bottom,0px))}
+  .sheet{gap:20px;grid-template-columns:1fr}
+  .modes{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));align-items:start}
+  .eyebrow{font-size:10px}
+  .col{gap:12px}
+  h1{font-size:40px}
+  h1 span{display:inline;margin-left:.25em}
+  .lead{font-size:14px;line-height:1.4}
+  .panel{padding:12px 14px;gap:10px}
+  .cta{padding:11px 20px;font-size:15px}
+  .diff button{padding:7px 12px;min-width:80px;font-size:14px}
+  .keys{font-size:13px;gap:5px 10px}
+  .field input{padding:8px 10px}
+}
 @media (prefers-reduced-motion:reduce){ #msg,#dmgDir,#moneyDelta{transition:none} }
 </style>
 
@@ -229,6 +305,25 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 
 <div id="dead" hidden><b id="deadT">Siz halok bo'ldingiz</b><p id="deadS"></p></div>
 
+<div id="touch" hidden>
+  <div id="tZone"></div>
+  <div id="tStick"><i></i></div>
+  <div id="tTop">
+    <button class="tb sm" type="button" data-t="buy" id="tBuy">$ Xarid</button>
+    <button class="tb sm" type="button" data-t="team" id="tTeam">Jamoa</button>
+    <button class="tb sm" type="button" data-t="board">Hisob</button>
+    <button class="tb sm" type="button" data-t="pause" aria-label="Pauza">II</button>
+  </div>
+  <button class="tb fire" type="button" data-t="fire" aria-label="Otish"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>
+  <button class="tb" type="button" data-t="jump" aria-label="Sakrash"><svg viewBox="0 0 24 24"><path d="M6 14l6-6 6 6"/><path d="M6 19l6-6 6 6"/></svg></button>
+  <button class="tb" type="button" data-t="crouch" aria-label="Cho'kkalash"><svg viewBox="0 0 24 24"><path d="M6 6l6 6 6-6"/><path d="M5 18h14"/></svg></button>
+  <button class="tb" type="button" data-t="reload" aria-label="Qayta o'qlash"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg></button>
+  <button class="tb" type="button" data-t="swap" aria-label="Qurolni almashtirish"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3-3M20 16H6l3 3"/></svg></button>
+  <button class="tb" type="button" data-t="use" id="tUse">BOMBA</button>
+  <button class="tb" type="button" data-t="scope" id="tScope" aria-label="Optika"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
+</div>
+<div id="rotate" hidden><div><svg viewBox="0 0 48 48"><rect x="15" y="6" width="18" height="32" rx="3"/><path d="M8 40a18 18 0 0 0 30 2M38 42l1-6-6 1"/></svg>Telefonni yotqizing</div></div>
+
 <div id="board" hidden></div>
 
 <section id="buy" class="overlay" hidden>
@@ -268,11 +363,22 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <p class="note" id="onlineNote">Do'stlaringiz shu sahifani ochib, bir xil xona kodini kiritsa, birga o'ynaysiz. Jamoalar avtomatik teng bo'linadi.</p>
       </div>
       </div>
-      <p class="note" id="touchNote" hidden><span class="warn">Bu o'yin klaviatura va sichqoncha uchun mo'ljallangan.</span> Kompyuterda oching.</p>
+      <p class="note" id="touchNote" hidden>Telefonda o'ynash uchun uni yotqizing. Ekran tugmalari o'yin boshlanganda chiqadi.</p>
       <p class="note" id="errNote" hidden><span class="warn">3D kutubxona yuklanmadi.</span> Internet aloqasini tekshirib, sahifani yangilang.</p>
     </div>
     <div class="col">
-      <div class="panel">
+      <div class="panel touch-only">
+        <h3>Telefonda boshqaruv</h3>
+        <dl class="keys">
+          <dt>Chap tomon</dt><dd>Barmoqni surib yurish (ozgina sursangiz — sekin, ovozsiz)</dd>
+          <dt>O'ng tomon</dt><dd>Barmoqni surib nishonga olish</dd>
+          <dt>Qizil tugma</dt><dd>Otish. Bosib turgan holda surib nishonni ham to'g'rilash mumkin</dd>
+          <dt>Tugmalar</dt><dd>Sakrash, cho'kkalash, qayta o'qlash, qurol almashtirish, optika</dd>
+          <dt>BOMBA</dt><dd>Bosib turing: o'rnatish yoki zararsizlantirish</dd>
+          <dt>Yuqorida</dt><dd>Xarid, jamoa (onlayn), hisob, pauza</dd>
+        </dl>
+      </div>
+      <div class="panel desk-only">
         <h3>Boshqaruv</h3>
         <dl class="keys">
           <dt><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></dt><dd>Harakat</dd>
@@ -348,11 +454,13 @@ const LOCK_KEYS = ['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','KeyR','KeyT','KeyN
 function goFullscreen(){
   if (IN_ARTIFACT || window.top !== window || document.fullscreenElement || !document.documentElement.requestFullscreen) return;
   document.documentElement.requestFullscreen({ navigationUI:'hide' })
-    .then(() => navigator.keyboard && navigator.keyboard.lock ? navigator.keyboard.lock(LOCK_KEYS).then(() => { KBLOCK = true; }) : null)
+    .then(() => isTouch ? (screen.orientation && screen.orientation.lock ? screen.orientation.lock('landscape').catch(() => {}) : null)
+      : navigator.keyboard && navigator.keyboard.lock ? navigator.keyboard.lock(LOCK_KEYS).then(() => { KBLOCK = true; }) : null)
     .catch(() => {});
 }
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement){ KBLOCK = false; try { navigator.keyboard && navigator.keyboard.unlock && navigator.keyboard.unlock(); } catch(e){} } });
-if (isTouch) $('touchNote').hidden = false;
+if (isTouch){ $('touchNote').hidden = false; document.documentElement.classList.add('touch'); document.addEventListener('gesturestart', e => e.preventDefault()); }
+const KB = (desk, touch) => isTouch ? touch : desk;
 
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
@@ -475,7 +583,7 @@ function astar(sx,sz,gx,gz){
 /* ================= RENDERER / WORLD ================= */
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, powerPreference:'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isTouch ? 1.3 : 1.75));
 renderer.autoClear = false;
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
@@ -498,7 +606,7 @@ scene.add(new THREE.HemisphereLight(lin(0xdfe9f7), lin(0x8a7253), .62));
 const SUN_DIR = new V3(46, 84, 30).normalize();
 const sun = new THREE.DirectionalLight(lin(0xffe9cc), 2.4);
 sun.position.copy(SUN_DIR).multiplyScalar(110).add(new V3(MAPW/2, 0, MAPH/2)); sun.target.position.set(MAPW/2, 0, MAPH/2);
-sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+sun.castShadow = true; sun.shadow.mapSize.set(isTouch ? 1024 : 2048, isTouch ? 1024 : 2048);
 Object.assign(sun.shadow.camera, { left:-64, right:64, top:64, bottom:-64, near:20, far:240 });
 sun.shadow.bias = -.0004; sun.shadow.normalBias = .03;
 scene.add(sun); scene.add(sun.target);
@@ -1184,7 +1292,7 @@ function startRound(){
   });
   $('dead').hidden = true; H.scope.hidden = true; H.cross.style.display = '';
   updatePips(); updateHUD();
-  showMsg(S.round === 1 ? 'Birinchi raund' : S.round + '-raund', S.round === 1 ? "Pistolet raundi. B tugmasi bilan xarid qiling, keyin bombani A yoki B ga olib boring." : 'Hisob ' + S.scT + ' : ' + S.scCT + ". Xarid qiling va rejani tanlang.", 'atk', 3600);
+  showMsg(S.round === 1 ? 'Birinchi raund' : S.round + '-raund', S.round === 1 ? "Pistolet raundi. " + KB('B tugmasi', '$ Xarid tugmasi') + " bilan xarid qiling, keyin bombani A yoki B ga olib boring." : 'Hisob ' + S.scT + ' : ' + S.scCT + ". Xarid qiling va rejani tanlang.", 'atk', 3600);
 }
 
 function endRound(winner, reason, how){
@@ -1346,8 +1454,8 @@ function playerDie(bt, w, hs){
   if (MODE === 'online'){ NET.death = { n:++NET.deathN, by: bt ? bt.peer : '', w: w.id || 'pistol', hs: hs ? 1 : 0 }; NET.deadT = 0; if (bt) feed(bt.name, teamCls(bt.team), w.name, 'Siz', teamCls(player.team), hs, true); else feed('Bomba', 'a', '', 'Siz', teamCls(player.team), false, true); }
   else if (bt){ bt.kills++; feed(bt.name, 'd', w.name, 'Siz', 'a', hs, true); }
   $('deadT').textContent = bt ? `${bt.name} sizni o'ldirdi` : "Siz halok bo'ldingiz";
-  $('deadS').textContent = bt ? `${w.name}${hs ? ', boshga' : ''} · uning joni ${Math.max(1, Math.ceil(bt.hp))} qoldi` + (bomb.planted ? ' · Chap tugma — kuzatiladigan botni almashtirish' : '') : '';
-  if (MODE === 'online') $('deadS').textContent += NET.g && NET.g.ph === 'warmup' ? " · 3 soniyadan keyin qayta tug'ilasiz" : ' · Chap tugma — jamoadoshni kuzatish';
+  $('deadS').textContent = bt ? `${w.name}${hs ? ', boshga' : ''} · uning joni ${Math.max(1, Math.ceil(bt.hp))} qoldi` + (bomb.planted ? (' · ' + KB('Chap tugma', 'Ekranga bosing') + ' — kuzatiladigan botni almashtirish') : '') : '';
+  if (MODE === 'online') $('deadS').textContent += NET.g && NET.g.ph === 'warmup' ? " · 3 soniyadan keyin qayta tug'ilasiz" : (' · ' + KB('Chap tugma', 'Ekranga bosing') + ' — jamoadoshni kuzatish');
   $('dead').hidden = false; H.scope.hidden = true; H.cross.style.display = 'none';
   updatePips(); if (MODE !== 'online') checkRoundEnd();
 }
@@ -1508,7 +1616,7 @@ function bombExplode(){
 }
 
 /* ================= INPUT ================= */
-const keys = {}; let mouseL = false, firePressed = false, locked = false, noLock = false, jumpQ = false;
+const keys = {}; let mouseL = false, firePressed = false, locked = false, noLock = isTouch, jumpQ = false;
 function inGame(){ return S.phase !== 'menu' && S.phase !== 'over'; }
 let lockFails = 0;
 function requestLock(){
@@ -1544,7 +1652,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keyup', e => { keys[e.code] = false; if (e.code === 'Tab') showBoard(false); });
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouseL = false; showBoard(false); });
 document.addEventListener('mousemove', e => {
-  if (!inGame() || S.paused || S.buyOpen) return;
+  if (isTouch || !inGame() || S.paused || S.buyOpen) return;
   if (!locked && !noLock) return;
   if (!player.alive) return;
   const zoom = player.scope === 1 ? .45 : player.scope === 2 ? .18 : 1;
@@ -1816,7 +1924,7 @@ function hostStep(dt, valid){
 }
 
 function respawnWarm(){ spawnAt(player.team); player.alive = true; player.hp = 100; player.money = 16000; refill(); NET.inRound = 0; NET.deadT = 0; S.deathT = 0; player.planting = 0; $('dead').hidden = true; H.cross.style.display = ''; drawWeapon(); }
-function enterWarmup(){ respawnWarm(); showMsg('Isinish', "O'yin har ikki jamoada kamida bittadan o'yinchi bo'lganda boshlanadi. M — jamoani almashtirish.", teamMsg(player.team), 4200); }
+function enterWarmup(){ respawnWarm(); showMsg('Isinish', "O'yin har ikki jamoada kamida bittadan o'yinchi bo'lganda boshlanadi. " + KB('M', 'Jamoa tugmasi') + " — jamoani almashtirish.", teamMsg(player.team), 4200); }
 function spawnRound(g){
   const survived = player.alive && NET.inRound > 0;
   if (g.r === 1){ player.money = 800; player.kills = player.deaths = player.hs = 0; player.dmg = 0; NET.loss = 0; resetInv(); }
@@ -1829,7 +1937,7 @@ function spawnRound(g){
   showMsg(g.r + '-raund', 'Siz ' + TEAM_NAME[player.team] + ' jamoasidasiz. ' + (player.team === 'T' ? "B — xarid, keyin bombani A yoki B ga olib boring." : "B — xarid, keyin A va B nuqtalarni himoya qiling."), teamMsg(player.team), 3400);
 }
 function lateJoin(){ spawnAt(player.team); player.alive = false; NET.inRound = 0; S.deathT = 3; player.deathPos.set(player.pos.x, 3, player.pos.z); player.killer = null;
-  $('deadT').textContent = 'Keyingi raund kutilmoqda'; $('deadS').textContent = "Raund davom etmoqda. Chap tugma — jamoadoshni kuzatish"; $('dead').hidden = false; H.cross.style.display = 'none'; }
+  $('deadT').textContent = 'Keyingi raund kutilmoqda'; $('deadS').textContent = "Raund davom etmoqda. " + KB('Chap tugma', 'Ekranga bosing') + " — jamoadoshni kuzatish"; $('dead').hidden = false; H.cross.style.display = 'none'; }
 function award(g){
   const win = g.w === player.team, why = { kill:"raqib jamoa yo'q qilindi", bomb:'bomba portladi', defuse:'bomba zararsizlantirildi', time:'vaqt tugadi' }[g.y] || '';
   if (win){ addMoney(g.y === 'bomb' ? 3500 : 3250, "raund g'alabasi"); NET.loss = 0; }
@@ -1857,7 +1965,7 @@ function clientPhase(dt){
   if (ph === 'live' && NET.lastPh === 'freeze') showMsg('Boshladik!', player.team === 'T' ? "Bombani A yoki B nuqtaga o'rnating" : 'A va B nuqtalarni himoya qiling', teamMsg(player.team), 1600);
   const planted = ph === 'live' && !!g.b;
   if (planted && !bomb.planted){ NET.planted = true; bomb.pos.set(g.b.x, 0, g.b.z); bomb.mesh.position.copy(bomb.pos); bomb.mesh.visible = true; NET.beepT = 0;
-    showMsg("Bomba o'rnatildi", g.b.s + ' nuqtasi · ' + (player.team === 'CT' ? 'E ni bosib turib zararsizlantiring (7 soniya)' : 'Uni himoya qiling!'), teamMsg(player.team), 3200); }
+    showMsg("Bomba o'rnatildi", g.b.s + ' nuqtasi · ' + (player.team === 'CT' ? KB('E ni', 'BOMBA tugmasini') + ' bosib turib zararsizlantiring (7 soniya)' : 'Uni himoya qiling!'), teamMsg(player.team), 3200); }
   bomb.planted = planted; if (planted) bomb.timer = g.b.t;
   if (ph === 'post' && g.bm === g.r && g.r > 0 && NET.boomKey !== key){ NET.boomKey = key; netBoom(); }
   if (!planted && ph !== 'post') bomb.mesh.visible = false;
@@ -1867,7 +1975,7 @@ function clientPhase(dt){
   NET.lastPh = ph;
 }
 function pickTeam(){ let t = 0, c = 0; NET.remotes.forEach(r => { if (r.team === 'T') t++; else if (r.team === 'CT') c++; });
-  player.team = t < c ? 'T' : c < t ? 'CT' : (rand() < .5 ? 'T' : 'CT'); hint('Siz ' + TEAM_NAME[player.team] + ' jamoasidasiz · M — almashtirish', 3500); }
+  player.team = t < c ? 'T' : c < t ? 'CT' : (rand() < .5 ? 'T' : 'CT'); hint('Siz ' + TEAM_NAME[player.team] + ' jamoasidasiz · ' + KB('M', 'Jamoa tugmasi') + ' — almashtirish', 3500); }
 function switchTeam(){
   if (!player.team) return; const g = NET.g;
   if (g && (g.ph === 'live' || g.ph === 'post') && player.alive && NET.inRound === g.r){ hint("Raund davomida jamoani almashtirib bo'lmaydi"); return; }
@@ -1999,6 +2107,96 @@ function leaveOnline(){
   MODE = 'bots'; player.team = 'T'; bots.forEach(b => b.m.g.visible = true); $('teamTag').hidden = true; bomb.mesh.visible = false; bomb.planted = false;
 }
 
+
+/* ================= TOUCH CONTROLS ================= */
+const TOUCH = { mx:0, my:0, mag:0, crouch:false };
+(function(){
+  if (!isTouch) return;
+  const zone = $('tZone'), stick = $('tStick'), knob = stick.firstElementChild, R0 = 52;
+  let sid = null, sx = 0, sy = 0, lid = null, lx = 0, ly = 0;
+  const homeStick = () => { stick.style.left = 'calc(96px + env(safe-area-inset-left, 0px))'; stick.style.top = 'calc(100% - 104px - env(safe-area-inset-bottom, 0px))'; knob.style.transform = ''; stick.classList.remove('on'); };
+  homeStick();
+  const look = (dx, dy) => {
+    if (!player.alive || S.paused || S.buyOpen || !inGame()) return;
+    const zoom = player.scope === 1 ? .45 : player.scope === 2 ? .18 : 1, k = SET.sens * .12 * DEG * zoom;
+    player.yaw -= dx*k; player.pitch = clamp(player.pitch - dy*k, -1.52, 1.52);
+    swayX += dx*.0004*zoom; swayY += dy*.0004*zoom;
+  };
+  zone.addEventListener('pointerdown', e => {
+    e.preventDefault(); initAudio();
+    if (!inGame() || S.paused) return;
+    if (!player.alive){ cycleSpec(); return; }
+    try { zone.setPointerCapture(e.pointerId); } catch(_){}
+    if (e.clientX < innerWidth*.42 && sid === null){
+      sid = e.pointerId; sx = clamp(e.clientX, 70, innerWidth*.42); sy = clamp(e.clientY, 70, innerHeight - 70);
+      stick.style.left = sx + 'px'; stick.style.top = sy + 'px'; stick.classList.add('on');
+    } else if (lid === null){ lid = e.pointerId; lx = e.clientX; ly = e.clientY; }
+  }, { passive:false });
+  zone.addEventListener('pointermove', e => {
+    if (e.pointerId === sid){
+      let dx = e.clientX - sx, dy = e.clientY - sy; const m = Math.hypot(dx, dy);
+      if (m > R0){ dx *= R0/m; dy *= R0/m; }
+      knob.style.transform = `translate(${dx}px,${dy}px)`;
+      TOUCH.mx = dx/R0; TOUCH.my = dy/R0; TOUCH.mag = Math.min(1, m/R0);
+    } else if (e.pointerId === lid){ look(e.clientX - lx, e.clientY - ly); lx = e.clientX; ly = e.clientY; }
+  });
+  const end = e => {
+    if (e.pointerId === sid){ sid = null; TOUCH.mx = TOUCH.my = TOUCH.mag = 0; homeStick(); }
+    if (e.pointerId === lid) lid = null;
+  };
+  zone.addEventListener('pointerup', end); zone.addEventListener('pointercancel', end);
+
+  const cycle = () => { const order = [1,2,3,5].filter(s => s === 5 ? player.bomb : !!player.inv[s]); const i = order.indexOf(player.slot); switchSlot(order[(i + 1) % order.length]); };
+  let boardOn = false;
+  document.querySelectorAll('#touch [data-t]').forEach(b => {
+    const t = b.dataset.t; let fid = null, fx = 0, fy = 0;
+    b.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation(); initAudio();
+      if (!inGame()) return;
+      try { b.setPointerCapture(e.pointerId); } catch(_){}
+      b.classList.add('down');
+      if (t === 'pause'){ if (!S.paused) pauseGame(); return; }
+      if (t === 'board'){ boardOn = !boardOn; showBoard(boardOn); b.classList.toggle('on', boardOn); return; }
+      if (S.paused) return;
+      if (t === 'buy'){ if (S.buyOpen) closeBuy(); else if (canBuy()) openBuy(); else hint("Xarid faqat o'z bazangizda va raund boshida mumkin"); return; }
+      if (t === 'team'){ if (MODE === 'online') switchTeam(); return; }
+      if (!player.alive){ cycleSpec(); return; }
+      switch (t){
+        case 'fire': fid = e.pointerId; fx = e.clientX; fy = e.clientY; mouseL = true; firePressed = true; break;
+        case 'jump': jumpQ = true; break;
+        case 'crouch': TOUCH.crouch = !TOUCH.crouch; b.classList.toggle('on', TOUCH.crouch); break;
+        case 'reload': startReload(); break;
+        case 'swap': cycle(); break;
+        case 'use': keys.KeyE = true; break;
+        case 'scope': { const w = curW(); if (w.kind === 'sniper' && player.drawT <= 0 && player.reloadT <= 0){ player.scope = (player.scope + 1) % 3; sfxClick(); } break; }
+      }
+    }, { passive:false });
+    b.addEventListener('pointermove', e => { if (e.pointerId === fid){ look(e.clientX - fx, e.clientY - fy); fx = e.clientX; fy = e.clientY; } });
+    const up = e => { b.classList.remove('down'); if (t === 'fire' && e.pointerId === fid){ fid = null; mouseL = false; } if (t === 'use') keys.KeyE = false; };
+    b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
+    b.addEventListener('contextmenu', e => e.preventDefault());
+  });
+  const release = () => { mouseL = false; keys.KeyE = false; sid = lid = null; TOUCH.mx = TOUCH.my = TOUCH.mag = 0; homeStick(); };
+  window.addEventListener('blur', release);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) release(); });
+})();
+let tuiShown = false, rotShown = false;
+function touchFrame(){
+  if (!isTouch) return;
+  const show = inGame() && !$('hud').hidden;
+  if (show !== tuiShown){ tuiShown = show; $('touch').hidden = !show; if (!show){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); } }
+  const rot = show && innerHeight > innerWidth;
+  if (rot !== rotShown){ rotShown = rot; $('rotate').hidden = !rot; }
+  if (!show) return;
+  $('tBuy').hidden = !canBuy() && !S.buyOpen;
+  $('tTeam').hidden = MODE !== 'online';
+  $('tScope').hidden = !player.alive || curW().kind !== 'sniper';
+  const site = player.alive && ((player.team === 'T' && player.bomb) || (player.team === 'CT' && bomb.planted));
+  $('tUse').hidden = !site;
+  if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
+}
+if (location.hash === '#zn-debug') window.__zn = { player, S, TOUCH };
+
 /* ================= MAIN LOOP ================= */
 let swayX = 0, swayY = 0, hitFade = 0, vignT = 0, shakeT = 0, last = performance.now();
 const camTarget = new V3();
@@ -2007,6 +2205,7 @@ function frame(now){
   const dt = Math.min(.05, (now - last)/1000); last = now;
   if (!S.paused || MODE === 'online'){ S.time += dt; step(dt); }
   render(dt);
+  touchFrame();
 }
 
 function step(dt){
@@ -2039,13 +2238,13 @@ let spotT = 0;
 function updatePlayer(dt){
   if (!player.alive) return;
   const w = curW(), canMove = S.phase !== 'freeze' && player.planting <= 0;
-  const crouchKey = keys.KeyC || (KBLOCK && (keys.ControlLeft || keys.ControlRight));
+  const crouchKey = keys.KeyC || TOUCH.crouch || (KBLOCK && (keys.ControlLeft || keys.ControlRight));
   player.crouch += ((crouchKey && !S.paused ? 1 : 0) - player.crouch) * Math.min(1, dt*12);
   let fwd = 0, str = 0;
-  if (canMove && !S.paused){ if (keys.KeyW || keys.ArrowUp) fwd += 1; if (keys.KeyS || keys.ArrowDown) fwd -= 1; if (keys.KeyD) str += 1; if (keys.KeyA) str -= 1; }
+  if (canMove && !S.paused){ if (keys.KeyW || keys.ArrowUp) fwd += 1; if (keys.KeyS || keys.ArrowDown) fwd -= 1; if (keys.KeyD) str += 1; if (keys.KeyA) str -= 1; if (TOUCH.mag > .12){ fwd -= TOUCH.my; str += TOUCH.mx; } }
   const sy = Math.sin(player.yaw), cyy = Math.cos(player.yaw);
   let wx = -sy*fwd + cyy*str, wz = -cyy*fwd - sy*str; const wl = Math.hypot(wx,wz); if (wl > 0){ wx /= wl; wz /= wl; }
-  let maxSp = w.speed * (keys.ShiftLeft || keys.ShiftRight ? .52 : 1) * (player.crouch > .5 ? .34 : 1) * (player.scope > 0 ? .55 : 1);
+  let maxSp = w.speed * (keys.ShiftLeft || keys.ShiftRight || (TOUCH.mag > .12 && TOUCH.mag < .6) ? .52 : 1) * (player.crouch > .5 ? .34 : 1) * (player.scope > 0 ? .55 : 1);
   if (player.tagT > 0){ player.tagT -= dt; maxSp *= .55; }
   const v = player.vel;
   if (player.ground){
@@ -2079,7 +2278,7 @@ function updateWeapon(dt){
   player.punchY *= Math.exp(-dt*7); player.punchX *= Math.exp(-dt*7);
   player.kick *= Math.exp(-dt*11);
   if (!player.alive || S.phase === 'freeze'){ firePressed = false; return; }
-  if (w.kind !== 'bomb' && mouseL && (w.auto || firePressed)) playerFire();
+  if (w.kind !== 'bomb' && ((mouseL && w.auto) || firePressed)) playerFire();   // firePressed: a tap shorter than one frame still fires
   firePressed = false;
 }
 

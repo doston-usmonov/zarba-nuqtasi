@@ -194,6 +194,9 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .field input:focus{border-color:var(--atk);outline:none}
 .cta:disabled{opacity:.5;cursor:wait}
 #teamTag{font-size:13px;font-weight:600;max-width:240px}
+#perf{position:absolute;top:calc(74px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-family:var(--f-display);font-size:12px;font-weight:600;color:var(--ink);background:rgba(14,13,11,.45);padding:2px 8px;border-radius:4px;white-space:nowrap;font-variant-numeric:tabular-nums}
+#perf .bad{color:#ff7a5c}
+.touch #perf{top:calc(50px + env(safe-area-inset-top,0px));font-size:10px}
 #voiceList{display:flex;flex-direction:column;gap:3px;font-size:13px;font-weight:600}
 #voiceList div{display:flex;align-items:center;gap:6px}
 #voiceList svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
@@ -343,6 +346,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
   <div id="cross"><i></i><i></i><i></i><i></i></div>
   <div id="hit"></div>
   <div id="dmgDir"></div>
+  <div id="perf" hidden></div>
   <div id="vign"></div>
   <div id="smokeW"></div>
   <div id="flashW"></div>
@@ -485,6 +489,9 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <label class="set" for="sFov">Ko'rish burchagi <input type="range" id="sFov" min="70" max="110" step="1"><output id="oFov"></output></label>
         <label class="set" for="sVol">Ovoz <input type="range" id="sVol" min="0" max="1" step="0.05"><output id="oVol"></output></label>
         <div class="set"><span>Nishon rangi</span><div class="swatches" id="swatches"></div><span></span></div>
+        <div class="set"><span>Grafika</span><div class="seg" data-set="gfx"><button type="button" data-v="auto">Avto</button><button type="button" data-v="low">Past</button><button type="button" data-v="mid">O'rta</button><button type="button" data-v="high">Yuqori</button></div><span></span></div>
+        <div class="set"><span>FPS va ping</span><div class="seg" data-set="perf"><button type="button" data-v="off">Yashirish</button><button type="button" data-v="on">Ko'rsatish</button></div><span></span></div>
+        <p class="note" id="gpuNote" style="margin:0;font-size:13px" hidden></p>
         <div class="set"><span>Ovozli chat</span><div class="seg" data-set="voice"><button type="button" data-v="off">O'chiq</button><button type="button" data-v="team">Jamoa</button><button type="button" data-v="all">Hamma</button></div><span></span></div>
         <div class="set"><span>Mikrofon</span><div class="seg" data-set="mic"><button type="button" data-v="ptt">Bosib gapirish</button><button type="button" data-v="open">Doim ochiq</button></div><span></span></div>
         <div class="set desk-only"><span>Gapirish tugmasi</span><div class="seg"><button type="button" id="pttBind" title="Bosing, keyin klaviaturadagi yoki sichqonchadagi tugmani bosing">K</button></div><span></span></div>
@@ -567,7 +574,7 @@ const KB = (desk, touch) => isTouch ? touch : desk;
 
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
-const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK' }, loadSet());
+const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off' }, loadSet());
 function saveSet(){ try { localStorage.setItem('zn-set', JSON.stringify(SET)); } catch(e){} }
 const DIFFS = {
   easy:   { react:.85, acc:.18, hs:.07, turn:4.0, defuse:10 },
@@ -2062,12 +2069,12 @@ function deploySmoke(n){
   const g = new THREE.Group(); scene.add(g);
   const mats = [0xa9a79f, 0x95938b, 0xbab8b0].map(col => new THREE.SpriteMaterial({ map:SMOKETEX, color:col, transparent:true, depthWrite:false, opacity:0 }));
   const parts = [];
-  for (let i=0;i<44;i++){
+  for (let i=0, n=QUAL[GFX.level].smoke;i<n;i++){
     const a = rand()*Math.PI*2, rr = Math.sqrt(rand())*SMOKE_R*.82, off = new V3(Math.cos(a)*rr, -1 + rand()*2.4, Math.sin(a)*rr);
     // keep puffs on this side of walls
     for (let k=0;k<3 && !los(c, _tmp.copy(c).add(off));k++) off.multiplyScalar(.5);
     if (!los(c, _tmp.copy(c).add(off))) off.set(0, off.y*.3, 0);
-    const s = new THREE.Sprite(mats[i % 3]); const sc = 3 + rand()*2; s.scale.set(sc, sc, 1); s.position.copy(c); g.add(s);
+    const s = new THREE.Sprite(mats[i % 3]); const sc = (3 + rand()*2)*QUAL[GFX.level].smokeScale; s.scale.set(sc, sc, 1); s.position.copy(c); g.add(s);
     parts.push({ s, off, sc, ph:rand()*6 });
   }
   const sm = { p, c, g, mats, parts, t:0, dens:0 }; smokes.push(sm);
@@ -2393,6 +2400,7 @@ function wsJoin(name){
       leave(){ closed = true; try { ws && ws.close(); } catch(e){} return Promise.resolve(); },
       signal(to, d){ if (ws && ws.readyState === 1){ try { ws.send(JSON.stringify({ t:'sig', to, d })); } catch(e){} } },
     };
+    setInterval(() => { if (!closed && ws && ws.readyState === 1){ try { ws.send(JSON.stringify({ t:'ping', c:performance.now() })); } catch(e){} } }, 2000);
     const open = () => {
       ws = new WebSocket(url);
       ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch(e){ return; }
@@ -2402,6 +2410,7 @@ function wsJoin(name){
         else if (m.t === 'l'){ if (others.delete(m.id)) dirty = true; }
         else if (m.t === 'rt'){ netRating(m); }
         else if (m.t === 'sig'){ voiceSignal(String(m.from || ''), m.d); }
+        else if (m.t === 'pong'){ const rtt = performance.now() - num(m.c); if (rtt >= 0 && rtt < 10000) NET.ping = NET.ping ? NET.ping*.7 + rtt*.3 : rtt; }
         else if (m.t === 'err' && !settled){ settled = true; closed = true; reject({ code:m.code || 'refused' }); } };
       ws.onclose = () => { conn = false; others.clear(); dirty = true;
         if (!settled){ settled = true; reject({ code:'upstream_error' }); return; }
@@ -3104,6 +3113,56 @@ function touchFrame(){
 }
 if (location.hash === '#zn-debug') window.__zn = { killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
+/* ================= GRAPHICS QUALITY & PERFORMANCE ================= */
+// Most stutter on weak or integrated GPUs comes from the pixel count, the full-map sun shadow redrawn
+// every frame and the extra point lights. "Avto" starts high (medium on phones) and steps down when
+// the frame rate stays low; a software renderer (no GPU acceleration) goes straight to "Past".
+const QUAL = {
+  low:  { dpr:1,    dprT:.85, shadows:false, size:1024, every:1, lights:0, smoke:22, smokeScale:1.3 },
+  mid:  { dpr:1.25, dprT:1,   shadows:true,  size:1024, every:2, lights:1, smoke:32, smokeScale:1.12 },
+  high: { dpr:1.75, dprT:1.3, shadows:true,  size:2048, every:1, lights:2, smoke:44, smokeScale:1 },
+};
+const GFX = { level:'high', auto:'high', frame:0, fpsT:0, fpsN:0, fps:60, ms:16, slow:0, perfT:0, gpu:'' };
+(function(){ try { const gl = renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); GFX.gpu = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : ''; } catch(e){} })();
+const SOFT_GPU = /swiftshader|llvmpipe|softpipe|software|basic render/i.test(GFX.gpu);
+if (SOFT_GPU){ const n = $('gpuNote'); n.hidden = false; n.textContent = "Brauzerda grafik tezlatgich o'chiq (" + (GFX.gpu.match(/swiftshader|llvmpipe|softpipe|software[a-z ]*|basic render[a-z ]*/i) || ['dasturiy'])[0] + "), shuning uchun o'yin sekin ishlaydi. Chrome: Sozlamalar → Tizim → «Grafik tezlashtirishdan foydalanish»ni yoqib, brauzerni qayta oching."; }
+GFX.auto = SOFT_GPU ? 'low' : isTouch ? 'mid' : 'high';
+function applyQuality(){
+  const lv = SET.gfx === 'auto' ? GFX.auto : (QUAL[SET.gfx] ? SET.gfx : 'high'), q = QUAL[lv], prev = QUAL[GFX.level];
+  GFX.level = lv;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isTouch ? q.dprT : q.dpr)); resize();
+  if (q.shadows !== renderer.shadowMap.enabled){
+    renderer.shadowMap.enabled = q.shadows; sun.castShadow = q.shadows;
+    scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.needsUpdate = true); });
+  }
+  if (sun.shadow.mapSize.x !== q.size){ sun.shadow.mapSize.set(q.size, q.size); if (sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map = null; } }
+  renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
+  nadeLight.visible = fireLights[0].visible = q.lights >= 2; muzzleLight.visible = boomLight.visible = q.lights >= 1;
+  return prev !== q;
+}
+SEG_HOOK.gfx = () => { GFX.slow = 0; applyQuality(); };
+SEG_HOOK.perf = () => { $('perf').hidden = SET.perf !== 'on'; };
+function perfFrame(now){
+  const dt = Math.min(5, Math.max(0, (now - (GFX.last || now))/1000)); GFX.last = now;   // real time, not the capped game step
+  GFX.frame++;
+  if (renderer.shadowMap.enabled && GFX.frame % QUAL[GFX.level].every === 0) renderer.shadowMap.needsUpdate = true;
+  GFX.fpsN++; GFX.fpsT += dt;
+  if (GFX.fpsT >= .5){
+    GFX.fps = GFX.fpsN/GFX.fpsT; GFX.ms = 1000*GFX.fpsT/GFX.fpsN; GFX.fpsN = 0; GFX.fpsT = 0;
+    // automatic quality: a few seconds of low frame rate during play steps the quality down
+    const playing = inGame() && !S.paused && !document.hidden;
+    if (SET.gfx === 'auto' && playing && GFX.level !== 'low'){
+      GFX.slow = GFX.fps < 40 ? GFX.slow + 1 : Math.max(0, GFX.slow - 1);
+      if (GFX.slow >= 8){ GFX.slow = 0; GFX.auto = GFX.level === 'high' ? 'mid' : 'low'; applyQuality(); hint('Kadrlar soni past: grafika avtomatik pasaytirildi (' + (GFX.auto === 'mid' ? "O'rta" : 'Past') + ')', 3200); }
+    }
+    if (SET.perf === 'on' && inGame()){
+      const ping = MODE === 'online' && NET.ping ? Math.round(NET.ping) : null, f = Math.round(GFX.fps);
+      $('perf').innerHTML = `<span class="${f < 40 ? 'bad' : ''}">FPS ${f}</span> · ${GFX.ms.toFixed(0)} ms` + (ping !== null ? ` · <span class="${ping > 150 ? 'bad' : ''}">ping ${ping} ms</span>` : '') + ` · ${({ low:'Past', mid:"O'rta", high:'Yuqori' })[GFX.level]}`;
+    }
+  }
+  $('perf').hidden = SET.perf !== 'on' || !inGame();
+}
+
 /* ================= MAIN LOOP ================= */
 let swayX = 0, swayY = 0, hitFade = 0, vignT = 0, shakeT = 0, last = performance.now();
 const camTarget = new V3();
@@ -3112,6 +3171,7 @@ function frame(now){
   const dt = Math.min(.05, (now - last)/1000); last = now;
   if (!S.paused || MODE === 'online'){ S.time += dt; step(dt); }
   render(dt);
+  perfFrame(now);
   touchFrame();
 }
 
@@ -3312,7 +3372,7 @@ function resize(){
   camera.aspect = w/h; camera.fov = 2*Math.atan(Math.tan(SET.fov*DEG/2)/camera.aspect)/DEG; camera.updateProjectionMatrix();
   vmCam.aspect = w/h; vmCam.updateProjectionMatrix();
 }
-window.addEventListener('resize', resize); resize();
+window.addEventListener('resize', resize); resize(); applyQuality();
 
 // menu backdrop: place bots on their sites so the scene looks alive
 bots.forEach((b, i) => { const h = [HOLDS.A[0], HOLDS.B[0], HOLDS.M[0], HOLDS.A[1], HOLDS.B[1]][i]; b.pos.set(cw(h[0][0]), 0, cw(h[0][1])); b.yaw = Math.atan2(cw(h[1][0]) - b.pos.x, cw(h[1][1]) - b.pos.z); b.m.g.position.copy(b.pos); b.m.g.rotation.y = b.yaw; });

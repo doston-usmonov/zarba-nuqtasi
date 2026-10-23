@@ -204,8 +204,18 @@ func (h *hub) reader(c *client) {
 			T  string          `json:"t"`
 			D  json.RawMessage `json:"d"`
 			To string          `json:"to"`
+			C  json.Number     `json:"c"`
 		}
 		if json.Unmarshal(data, &m) != nil {
+			continue
+		}
+		if m.T == "ping" { // mijoz ping'ni o'lchaydi
+			if f, err := m.C.Float64(); err == nil {
+				select {
+				case c.send <- jsonMsg(map[string]any{"t": "pong", "c": f}):
+				default:
+				}
+			}
 			continue
 		}
 		if m.T == "sig" { // ovozli chat ulanishi

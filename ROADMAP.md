@@ -11,11 +11,12 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Ro'yxatdan o'tish, Elo reyting, darajalar, reyting jadvali, o'yinlar tarixi
 
 ## 2. O'yin qoidalari CS'ga yaqinroq
-- [ ] Granatalar: portlovchi, tutun, ko'r qiluvchi, yondiruvchi (xarid menyusida, 4-slot)
+- ✅ Granatalar: portlovchi, tutun, ko'r qiluvchi, yondiruvchi (xarid menyusida, 4-slot, onlayn sinxron)
 - [ ] Yarim vaqtda tomonlarni almashtirish, CS2 kabi MR12 (13 g'alabagacha) va overtime
-- [ ] Defuse kit (himoyachilar uchun zararsizlantirish 5 soniyada)
+- ✅ Zararsizlantirish to'plami (himoyachilar uchun: 7 o'rniga 4 soniya)
 - [ ] Qurolni tashlash va ko'tarish, o'lgan o'yinchining quroli yerda qolishi
 - [ ] Jamoadoshga pul/qurol berish
+- [ ] Botlar ham granata otishi (tutun bilan yopish, ko'r qilib kirish)
 
 ## 3. Server hakamligi (anti-cheat)
 - [ ] Zarba tekshiruvini serverga o'tkazish (lag compensation bilan)

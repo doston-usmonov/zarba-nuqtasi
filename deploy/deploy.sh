@@ -23,12 +23,18 @@ docker compose pull --quiet
 docker compose up -d --remove-orphans
 docker image prune -f >/dev/null
 
-for _ in $(seq 1 20); do
-  if out=$(curl -fsS localhost:8080/healthz 2>/dev/null); then
+# server javob berishi va baza tayyor bo'lishini kutamiz ("db":"starting" -> "ok")
+out=""
+for _ in $(seq 1 60); do
+  if out=$(curl -fsS localhost:8080/healthz 2>/dev/null) && ! grep -q '"db":"starting"' <<<"$out"; then
     echo "Yangilandi: $(git log -1 --format='%h %s') — $out"
     exit 0
   fi
   sleep 1
 done
-echo "Server 20 soniyada javob bermadi: docker compose logs --tail 50" >&2
+if [ -n "$out" ]; then
+  echo "Server ishlayapti, lekin baza 60 soniyada tayyor bo'lmadi: $out — docker compose logs --tail 50 db zarba" >&2
+else
+  echo "Server 60 soniyada javob bermadi: docker compose logs --tail 50" >&2
+fi
 exit 1

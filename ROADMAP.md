@@ -15,8 +15,9 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Yarim vaqtda tomonlarni almashtirish, MR12 (13 g'alabagacha) yoki qisqa o'yin (9 g'alabagacha), overtime (MR3)
 - ✅ Botlarga qarshi ikkinchi yarimda himoyada o'ynash: botlar bombani olib, nuqtani egallab, o'rnatadi
 - ✅ Zararsizlantirish to'plami (himoyachilar uchun: 7 o'rniga 4 soniya)
-- [ ] Qurolni tashlash va ko'tarish, o'lgan o'yinchining quroli yerda qolishi
-- [ ] Jamoadoshga pul/qurol berish
+- ✅ Qurolni tashlash (G) va ko'tarish (E), o'lgan o'yinchining quroli yerda qoladi, yangi qurol olinganda eskisi tushadi
+- ✅ Jamoadoshga qurol berish (sotib olib, G bilan tashlab berish)
+- [ ] Jamoadoshga pul berish
 - [ ] Botlar ham granata otishi (tutun bilan yopish, ko'r qilib kirish)
 
 ## 3. Server hakamligi (anti-cheat)

@@ -367,6 +367,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
   <div id="tTop">
     <button class="tb sm" type="button" data-t="buy" id="tBuy">$ Xarid</button>
     <button class="tb sm" type="button" data-t="team" id="tTeam">Jamoa</button>
+    <button class="tb sm" type="button" data-t="drop" id="tDrop">Tashlash</button>
     <button class="tb sm" type="button" data-t="board">Hisob</button>
     <button class="tb sm" type="button" data-t="pause" aria-label="Pauza">II</button>
   </div>
@@ -465,6 +466,8 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <dt><kbd>C</kbd> <kbd>Ctrl</kbd></dt><dd>Cho'kkalash va cho'kkalab yurish (Ctrl — to'liq ekranda)</dd>
           <dt><kbd>Bo'shliq</kbd></dt><dd>Sakrash</dd>
           <dt><kbd>R</kbd></dt><dd>Qayta o'qlash</dd>
+          <dt><kbd>G</kbd></dt><dd>Qurolni tashlash (jamoadoshga berish uchun ham)</dd>
+          <dt><kbd>E</kbd> qurolga qarab</dt><dd>Yerdagi qurolni olish (bo'sh slotga ustidan yurganda o'zi olinadi)</dd>
           <dt><kbd>E</kbd> bosib turing</dt><dd>Bombani o'rnatish yoki zararsizlantirish</dd>
           <dt><kbd>B</kbd></dt><dd>Xarid menyusi</dd>
           <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>5</kbd> <kbd>Q</kbd></dt><dd>Qurol tanlash</dd>
@@ -550,7 +553,7 @@ const IN_ARTIFACT = !!(window.claude && typeof window.claude.use === 'function')
 let KBLOCK = false;
 // as its own site: go full screen and lock only the game's keys, so Ctrl+W/T/N can't close the tab while
 // Alt+Tab, the Windows key and Esc still reach the system (Esc leaves full screen at once)
-const LOCK_KEYS = ['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','KeyR','KeyT','KeyN','KeyF','KeyC','KeyB','KeyM','KeyH','KeyP','KeyL','KeyO','KeyU','KeyI','KeyJ','KeyK','Digit1','Digit2','Digit3','Digit4','Digit5','Space','ControlLeft','ControlRight']
+const LOCK_KEYS = ['KeyG','KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','KeyR','KeyT','KeyN','KeyF','KeyC','KeyB','KeyM','KeyH','KeyP','KeyL','KeyO','KeyU','KeyI','KeyJ','KeyK','Digit1','Digit2','Digit3','Digit4','Digit5','Space','ControlLeft','ControlRight']
 function goFullscreen(){
   if (IN_ARTIFACT || window.top !== window || document.fullscreenElement || !document.documentElement.requestFullscreen) return;
   document.documentElement.requestFullscreen({ navigationUI:'hide' })
@@ -1354,7 +1357,7 @@ function updatePips(){ if (MODE === 'online') return netPips(); const bs = botsS
 function updateSlots(){
   const rows = []; const add = (k, name, cur) => rows.push(`<div class="${cur ? 'cur' : ''}"><span>${name}</span><span class="k">${k}</span></div>`);
   if (player.inv[1]) add(1, W[player.inv[1].id].name, player.slot === 1);
-  add(2, W[player.inv[2].id].name, player.slot === 2); add(3, W.knife.name, player.slot === 3);
+  if (player.inv[2]) add(2, W[player.inv[2].id].name, player.slot === 2); add(3, W.knife.name, player.slot === 3);
   if (nadeTotal()) add(4, NADE_IDS.filter(id => player.nades[id]).map(id => W[id].name + (player.nades[id] > 1 ? ' ×' + player.nades[id] : '')).join(', '), player.slot === 4);
   if (player.bomb) add(5, W.bomb.name, player.slot === 5);
   H.slots.innerHTML = rows.join('');
@@ -1370,7 +1373,7 @@ function updateHUD(){
   if (w.kind === 'nade' && player.nadeSel){ H.mag.textContent = player.nades[player.nadeSel]; H.res.textContent = ''; H.mag.classList.remove('low'); }
   else if (it && it.mag !== undefined){ H.mag.textContent = it.mag; H.res.textContent = '/ ' + it.res; H.mag.classList.toggle('low', it.mag <= Math.ceil(w.mag*.2)); } else { H.mag.textContent = '—'; H.res.textContent = ''; H.mag.classList.remove('low'); }
   H.money.firstChild.nodeValue = '$' + player.money;
-  const key = [player.slot, player.inv[1] && player.inv[1].id, player.inv[2].id, player.bomb, player.nadeSel, player.nades.he, player.nades.flash, player.nades.smoke, player.nades.molly].join('|');
+  const key = [player.slot, player.inv[1] && player.inv[1].id, player.inv[2] && player.inv[2].id, player.bomb, player.nadeSel, player.nades.he, player.nades.flash, player.nades.smoke, player.nades.molly].join('|');
   if (key !== lastHudKey){ updateSlots(); lastHudKey = key; }
   H.buyHint.style.visibility = canBuy() ? 'visible' : 'hidden';
   if (MODE === 'online') netHUD(); else { $('teamTag').hidden = true; H.scT.textContent = sideScore('T'); H.scCT.textContent = sideScore('CT'); }
@@ -1442,11 +1445,11 @@ function startRound(){
   bomb.planted = false; bomb.mesh.visible = false; bomb.defuser = null; bomb.timer = 40; bomb.dropped = false; bomb.carrier = null; bomb.picker = null;
   if (newHalf){ player.alive = false; S.loss = 0; player.money = isOT(S.round, HH) ? 12500 : 800; }
   if (!player.alive) resetInv();
-  clearNades();
+  clearNades(); clearDrops();
   spawnAt(player.team);
   player.alive = true; player.hp = 100; player.bomb = player.team === 'T'; player.planting = 0; player.scope = 0; player.reloadT = 0; player.recoil = 0; player.punchY = player.punchX = 0;
   if (player.slot === 4 && !nadeTotal()) player.slot = 2;
-  if (!player.inv[player.slot] && player.slot !== 5 && player.slot !== 4) player.slot = 2; if (player.slot === 5) player.slot = player.inv[1] ? 1 : 2;
+  if (!player.inv[player.slot] && player.slot !== 5 && player.slot !== 4) player.slot = bestSlot(); if (player.slot === 5) player.slot = bestSlot();
   // refill ammo of kept weapons
   [1,2].forEach(k => { const it = player.inv[k]; if (it){ it.mag = W[it.id].mag; it.res = W[it.id].res; } });
   drawWeapon();
@@ -1608,6 +1611,7 @@ function knifeAttack(heavy){
 }
 
 function botKilled(b, w, hs){
+  botDropGun(b);
   if (b.hasBomb) dropBomb(b);
   b.alive = false; if (bomb.picker === b) assignPicker(); b.deadT = 0; b.deadT0 = S.time; b.deaths++; player.kills++; if (hs) player.hs++;
   addMoney(w.kill, '');
@@ -1654,6 +1658,7 @@ function damagePlayer(bt, w, part, dist){
 }
 function playerDie(bt, w, hs){
   player.alive = false; player.hp = 0; player.deaths++; player.deathPos.copy(camera.position); player.killer = bt; S.deathT = 0;
+  dropOnDeath();
   player.planting = 0; H.prog.hidden = true;
   if (MODE === 'online'){ NET.death = { n:++NET.deathN, by: bt ? bt.peer : '', w: w.id || 'pistol', hs: hs ? 1 : 0 }; NET.deadT = 0; if (bt) feed(bt.name, teamCls(bt.team), w.name, 'Siz', teamCls(player.team), hs, true); else if (w.kind === 'nade') feed('Siz', teamCls(player.team), w.name, 'Siz', teamCls(player.team), false, true); else feed('Bomba', 'a', '', 'Siz', teamCls(player.team), false, true); }
   else if (bt){ bt.kills++; feed(bt.name, 'd', w.name, 'Siz', 'a', hs, true); }
@@ -1870,7 +1875,7 @@ function plantBomb(){
   bomb.planted = true; bomb.timer = 40; bomb.beepT = 0; bomb.site = siteAt(player.pos);
   bomb.pos.set(player.pos.x + Math.sin(-player.yaw)*.4*0, player.pos.y, player.pos.z); bomb.mesh.position.copy(bomb.pos); bomb.mesh.rotation.y = player.yaw; bomb.mesh.visible = true;
   player.bomb = false; player.planting = 0; S.roundPlanted = true;
-  player.slot = player.inv[1] ? 1 : 2; drawWeapon();
+  player.slot = bestSlot(); drawWeapon();
   addMoney(300, "bomba o'rnatildi");
   showMsg("Bomba o'rnatildi", bomb.site + " nuqtasi · 40 soniyadan keyin portlaydi. Uni himoya qiling!", 'atk', 3200);
   bots.forEach(b => { if (b.alive){ b.mode = 'retake'; b.path = null; b.alertPos = bomb.pos.clone(); b.alertT = S.time; } });
@@ -1918,7 +1923,7 @@ function nadeInput(){
   if (player.nadeNext && player.nadeT <= 0){
     player.nadeNext = false;
     if (player.nadeSel) drawWeapon();
-    else { const ls = player.lastSlot, ok = ls !== 4 && (ls === 5 ? player.bomb : !!player.inv[ls]); player.slot = ok ? ls : (player.inv[1] ? 1 : 2); drawWeapon(); }
+    else { const ls = player.lastSlot, ok = ls !== 4 && (ls === 5 ? player.bomb : !!player.inv[ls]); player.slot = ok ? ls : (bestSlot()); drawWeapon(); }
     return;
   }
   if (player.drawT > 0 || player.fireCd > 0 || player.nadeT > 0 || !player.nadeSel) return;
@@ -2130,6 +2135,94 @@ function renderNades(dt){
   else if (H.flashW.style.opacity !== '0') H.flashW.style.opacity = 0;
 }
 
+/* ================= WEAPONS ON THE GROUND ================= */
+// A dead soldier's best gun stays where he fell; G drops your own gun, buying a new one drops the old one.
+// Walk over a gun to pick it up into an empty slot, or look at it and press E to swap.
+// Online: drops and pickups travel as small event lists in the presence (dr / pk); every client
+// simulates the same fall with a fixed step, ground guns vanish at the start of each round.
+const drops = new Map(), DROP_MAX = 30, DROP_H = 1/120;
+let dropSeq = 0, pickTarget = null, pickTargetT = 0;
+const DROP_PROTO = {};
+function dropProto(w){ if (!DROP_PROTO[w]){ const g = GUNS[w]().G; g.traverse(o => { if (o.isMesh){ o.castShadow = true; } }); DROP_PROTO[w] = g; } return DROP_PROTO[w]; }
+function bestSlot(){ return player.inv[1] ? 1 : player.inv[2] ? 2 : 3; }
+function spawnDrop(id, w, mag, res, pos, vel){
+  if (drops.has(id) || !W[w] || !W[w].mag || NET_PICKED.has(id)) return null;
+  const g = new THREE.Group(), m = dropProto(w).clone(); m.rotation.set(0, 0, Math.PI/2); g.add(m); g.position.copy(pos); scene.add(g);
+  const d = { id, w, mag:Math.max(0, mag|0), res:Math.max(0, res|0), p:pos.clone(), v:vel.clone(), ground:false, acc:0, g, yaw:Math.atan2(vel.x, vel.z) || rand()*6, born:S.time };
+  g.rotation.y = d.yaw; drops.set(id, d);
+  if (drops.size > DROP_MAX){ const first = drops.keys().next().value; removeDrop(first); }
+  return d;
+}
+function removeDrop(id){ const d = drops.get(id); if (!d) return; scene.remove(d.g); drops.delete(id); if (pickTarget === d) pickTarget = null; }
+function clearDrops(){ [...drops.keys()].forEach(removeDrop); NET_PICKED.clear(); }
+function dropStep(d, h){
+  if (d.ground) return;
+  d.v.y -= 15*h;
+  const ox = d.p.x, oz = d.p.z, r = moveEntity(d.p, d.v.x*h, d.v.z*h, .12, false);
+  if (r.bx) d.v.x *= -.3; if (r.bz) d.v.z *= -.3;
+  d.p.y += d.v.y*h;
+  const gy = groundAt(d.p.x, d.p.z, d.p.y + .3, .12);
+  if (d.p.y <= gy){ d.p.y = gy; if (d.v.y < -2.5){ d.v.y *= -.25; d.v.x *= .5; d.v.z *= .5; } else { d.v.y = 0; d.v.x *= .82; d.v.z *= .82; if (Math.hypot(d.v.x, d.v.z) < .25) d.ground = true; } }
+}
+function updateDrops(dt){
+  for (const d of drops.values()){ d.acc += dt; while (d.acc >= DROP_H && !d.ground){ d.acc -= DROP_H; dropStep(d, DROP_H); } d.g.position.set(d.p.x, d.p.y + .04, d.p.z); }
+  if (!player.alive || S.phase === 'menu' || S.phase === 'over'){ pickTarget = null; return; }
+  // the gun under your crosshair (or at your feet)
+  viewDir(_d, player.yaw, player.pitch); let best = null, bs = 0;
+  for (const d of drops.values()){
+    _tmp.set(d.p.x - camera.position.x, d.p.y + .05 - camera.position.y, d.p.z - camera.position.z);
+    const dist = _tmp.length(), flat = Math.hypot(d.p.x - player.pos.x, d.p.z - player.pos.z);
+    if (dist > 2.6 || Math.abs(d.p.y - player.pos.y) > 1.4) continue;
+    const aim = _tmp.dot(_d)/Math.max(dist, .01), score = flat < .9 ? 2 : aim > .9 ? aim : 0;
+    if (score > bs && los(camera.position, _tmp2.set(d.p.x, d.p.y + .1, d.p.z))){ bs = score; best = d; }
+  }
+  // auto pick-up into an empty slot when walking over it (not a gun you just threw)
+  if (best && !player.inv[W[best.w].slot] && Math.hypot(best.p.x - player.pos.x, best.p.z - player.pos.z) < 1 && S.time - (best.mine || -9) > 1.2) return pickUp(best);
+  if (best !== pickTarget){ pickTarget = best; if (best && !isTouch) hint(KB('E', 'OLISH') + ' — ' + W[best.w].name + ' (' + best.mag + '/' + best.res + ') ni olish', 1800); }
+}
+function pickUp(d){
+  if (!d || !player.alive || !drops.has(d.id)) return false;
+  const w = W[d.w], cur = player.inv[w.slot];
+  if (cur) throwGun(w.slot, .5);   // swap: what you held lands at your feet
+  removeDrop(d.id);
+  player.inv[w.slot] = { id:d.w, mag:d.mag, res:d.res }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); sfxClick();
+  if (MODE === 'online'){ NET.picks.push({ n:++NET.pickN, id:d.id }); if (NET.picks.length > 6) NET.picks.shift(); }
+  return true;
+}
+// throw the gun in a slot (G, buying a replacement, swapping, dying)
+function throwGun(slot, speed){
+  const it = player.inv[slot]; if (!it || !W[it.id].mag) return null;
+  player.inv[slot] = null;
+  viewDir(_d, player.yaw, Math.max(-.3, Math.min(.6, player.pitch)));
+  const pos = new V3(player.pos.x + _d.x*.4, player.alive ? camera.position.y - .35 : player.pos.y + .9, player.pos.z + _d.z*.4);
+  if (blockedAt(pos.x, pos.z, pos.y, .12, false)) pos.set(player.pos.x, pos.y, player.pos.z);
+  const vel = new V3(_d.x*speed + player.vel.x*.6, 1.6 + _d.y*speed*.5, _d.z*speed + player.vel.z*.6);
+  pos.set(r2(pos.x), r2(pos.y), r2(pos.z)); vel.set(r2(vel.x), r2(vel.y), r2(vel.z));
+  const id = (MODE === 'online' ? (NET.me || 'x') : 'p') + ':' + (++dropSeq);
+  const d = spawnDrop(id, it.id, it.mag, it.res, pos, vel); if (d) d.mine = S.time;
+  if (MODE === 'online'){ NET.drops.push({ n:++NET.dropN, id, w:it.id, mg:it.mag, rs:it.res, r:netRoundTag(), x:pos.x, y:pos.y, z:pos.z, vx:vel.x, vy:vel.y, vz:vel.z }); if (NET.drops.length > 6) NET.drops.shift(); }
+  return d;
+}
+function dropCurrent(){
+  if (!player.alive || S.paused || player.reloadT > 0 || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot]) return;
+  throwGun(player.slot, 4.2); player.slot = bestSlot(); drawWeapon(); sfxThrow();
+}
+function dropOnDeath(){ const s = player.inv[1] ? 1 : player.inv[2] ? 2 : 0; if (s) throwGun(s, 1.2); }
+function botDropGun(b){
+  const w = W[b.weapon]; if (!w || !w.mag) return;
+  spawnDrop('b' + b.i + ':' + S.round + ':' + (++dropSeq), b.weapon, Math.max(0, b.mag), w.res, new V3(b.pos.x, b.pos.y + .9, b.pos.z), new V3(Math.sin(b.yaw)*.8 + (rand()-.5), 1.2, Math.cos(b.yaw)*.8 + (rand()-.5)));
+}
+// online helpers
+const NET_PICKED = new Set();
+function netRoundTag(){ const g = NET.g; return g && g.ph !== 'warmup' ? g.r : 0; }
+function netDropEvents(r, pr){
+  if (Array.isArray(pr.dr)) for (const e of pr.dr){ if (!e || typeof e !== 'object') continue; const n = num(e.n); if (n <= r.dropN) continue; r.dropN = n;
+    const w = String(e.w); if (!W[w] || !W[w].mag || num(e.r) !== netRoundTag()) continue;
+    spawnDrop(String(e.id).slice(0, 40), w, clamp(num(e.mg), 0, W[w].mag), clamp(num(e.rs), 0, W[w].res), new V3(clamp(num(e.x), 0, MAPW), clamp(num(e.y), 0, 8), clamp(num(e.z), 0, MAPH)), new V3(clamp(num(e.vx), -12, 12), clamp(num(e.vy), -12, 12), clamp(num(e.vz), -12, 12))); }
+  if (Array.isArray(pr.pk)) for (const e of pr.pk){ if (!e || typeof e !== 'object') continue; const n = num(e.n); if (n <= r.pickN) continue; r.pickN = n;
+    const id = String(e.id).slice(0, 40); NET_PICKED.add(id); removeDrop(id); }
+}
+
 /* ================= INPUT ================= */
 const keys = {}; let mouseL = false, mouseR = false, firePressed = false, locked = false, noLock = isTouch, jumpQ = false;
 function inGame(){ return S.phase !== 'menu' && S.phase !== 'over'; }
@@ -2160,6 +2253,8 @@ document.addEventListener('keydown', e => {
     case 'Digit1': switchSlot(1); break; case 'Digit2': switchSlot(2); break; case 'Digit3': switchSlot(3); break; case 'Digit4': switchSlot(4); break; case 'Digit5': switchSlot(5); break;
     case 'KeyQ': switchSlot(player.lastSlot); break;
     case 'KeyR': startReload(); break;
+    case 'KeyG': dropCurrent(); break;
+    case 'KeyE': if (!e.repeat && pickTarget) pickUp(pickTarget); break;
     case 'Space': if (!e.repeat) jumpQ = true; break;
     case 'Tab': showBoard(true); break;
     case 'KeyM': if (MODE === 'online') switchTeam(); break;
@@ -2193,7 +2288,7 @@ function pauseGame(){ S.paused = true; mouseL = mouseR = false; $('pause').hidde
 function resumeGame(){ S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); requestLock(); canvas.focus({ preventScroll:true }); }
 $('resumeBtn').addEventListener('click', () => { goFullscreen(); resumeGame(); });
 $('quitBtn').addEventListener('click', () => { S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); toMenu(); });
-function toMenu(){ if (MODE === 'online') leaveOnline(); clearNades(); S.phase = 'menu'; $('hud').hidden = true; $('dead').hidden = true; $('over').hidden = true; $('menu').hidden = false; showBoard(false); if (document.pointerLockElement) document.exitPointerLock(); bots.forEach(b => { b.m.g.visible = true; }); }
+function toMenu(){ if (MODE === 'online') leaveOnline(); clearNades(); clearDrops(); S.phase = 'menu'; $('hud').hidden = true; $('dead').hidden = true; $('over').hidden = true; $('menu').hidden = false; showBoard(false); if (document.pointerLockElement) document.exitPointerLock(); bots.forEach(b => { b.m.g.visible = true; }); }
 $('onlineBtn').addEventListener('click', () => { joinOnline(); });
 $('nick').value = SET.nick || ''; $('roomCode').value = SET.room || 'umumiy';
 $('startBtn').addEventListener('click', () => { initAudio(); goFullscreen(); startMatch(); requestLock(); canvas.focus({ preventScroll:true }); });
@@ -2230,7 +2325,7 @@ function openBuy(){ S.buyOpen = true; mouseL = false; renderBuy(); $('buy').hidd
 function closeBuy(silent){ S.buyOpen = false; $('buy').hidden = true; if (!silent && inGame() && !S.paused) requestLock(); else if (silent && inGame() && !noLock) hint('Davom etish uchun ekranni bosing', 2500); }
 $('buyClose').addEventListener('click', () => closeBuy());
 function owns(id){ if (W[id] && W[id].kind === 'nade') return player.nades[id] >= W[id].max; if (id === 'kit') return player.kit;
-  return (player.inv[1] && player.inv[1].id === id) || player.inv[2].id === id || (id === 'kevlar' && player.armor >= 100) || (id === 'helmet' && player.armor >= 100 && player.helmet); }
+  return (player.inv[1] && player.inv[1].id === id) || (player.inv[2] && player.inv[2].id === id) || (id === 'kevlar' && player.armor >= 100) || (id === 'helmet' && player.armor >= 100 && player.helmet); }
 function priceOf(id){ if (id === 'helmet' && player.armor >= 100 && !player.helmet) return 350; return (W[id] || GEAR[id]).price; }
 function renderBuy(){
   const g = $('buyGrid'); g.innerHTML = '';
@@ -2254,7 +2349,7 @@ function buy(id){
   const price = priceOf(id); if (player.money < price || owns(id)) return;
   if (W[id] && W[id].kind === 'nade'){ if (nadeTotal() >= NADE_MAX) return; player.nades[id]++; if (!player.nadeSel || !player.nades[player.nadeSel]) player.nadeSel = id; }
   else if (id === 'kit'){ if (player.team !== 'CT') return; player.kit = true; }
-  else if (W[id]){ const w = W[id]; player.inv[w.slot] = { id, mag:w.mag, res:w.res }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); }
+  else if (W[id]){ const w = W[id]; if (player.inv[w.slot]) throwGun(w.slot, .7); player.inv[w.slot] = { id, mag:w.mag, res:w.res }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); }
   else if (id === 'kevlar'){ player.armor = 100; }
   else if (id === 'helmet'){ player.armor = 100; player.helmet = true; }
   player.money -= price; sfxClick(); renderBuy(); updateHUD();
@@ -2424,7 +2519,7 @@ if (!voiceAvailable()){ $('voiceNote').textContent = "Ovozli chat o'yinning o'z 
 else if (isTouch) $('voiceNote').querySelector('.desk-txt').textContent = 'Gapirish: mikrofon tugmasini bosib turing.';
 
 /* push-to-talk binding: any key or an extra mouse button (middle, side buttons 4 and 5), like CS */
-const PTT_TAKEN = ['KeyW','KeyA','KeyS','KeyD','KeyE','KeyR','KeyQ','KeyB','KeyC','KeyM','Space','Tab','Escape','ShiftLeft','ShiftRight','ControlLeft','ControlRight','Digit1','Digit2','Digit3','Digit4','Digit5','ArrowUp','ArrowDown','F11'];
+const PTT_TAKEN = ['KeyG','KeyW','KeyA','KeyS','KeyD','KeyE','KeyR','KeyQ','KeyB','KeyC','KeyM','Space','Tab','Escape','ShiftLeft','ShiftRight','ControlLeft','ControlRight','Digit1','Digit2','Digit3','Digit4','Digit5','ArrowUp','ArrowDown','F11'];
 function pttLabel(c){
   const m = /^Mouse(\d)$/.exec(c || ''); if (m) return { 3:"G'ildirak tugmasi", 4:'Sichqoncha 4 (yon)', 5:'Sichqoncha 5 (yon)' }[m[1]] || 'Sichqoncha ' + m[1];
   if (/^Key[A-Z]$/.test(c)) return c.slice(3); if (/^Digit\d$/.test(c)) return c.slice(5);
@@ -2451,7 +2546,7 @@ document.addEventListener('mousedown', e => pttMouse(e, true));
 document.addEventListener('mouseup', e => pttMouse(e, false));
 document.addEventListener('auxclick', e => { if (inGame() && e.button !== 0) e.preventDefault(); });
 
-const NET = { room:null, me:null, name:'', code:'umumiy', sq:null, host:false, g:null, gSrc:null, hitSeq:0, hits:[], shot:null, shotN:0, death:null, deathN:0, nade:null, nadeN:0, plant:null, plantN:0, def:null, defN:0,
+const NET = { room:null, me:null, name:'', code:'umumiy', sq:null, drops:[], dropN:0, picks:[], pickN:0, host:false, g:null, gSrc:null, hitSeq:0, hits:[], shot:null, shotN:0, death:null, deathN:0, nade:null, nadeN:0, plant:null, plantN:0, def:null, defN:0,
   seen:{}, remotes:new Map(), inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, tickLast:0, joinT:0, cdShown:-1, beepT:0 };
 if (!IN_ARTIFACT) $('onlineNote').textContent = "Do'stlaringizga shu sahifa havolasini yuboring va bir xil xona kodini kiriting. Jamoalar avtomatik teng bo'linadi.";
 const DEFAULT_NOTE = $('onlineNote').textContent;
@@ -2465,7 +2560,7 @@ for (let z=0;z<GH;z++) for (let x=0;x<GW;x++){ const t = grid[z*GW+x]; if (t ===
 function spawnAt(team){ const list = SPAWNS[team] || SPAWNS.T, c = list[(rand()*list.length)|0]; player.pos.set(cw(c[0]) + (rand()-.5)*.6, 0, cw(c[1]) + (rand()-.5)*.6); player.vel.set(0,0,0); player.yaw = team === 'CT' ? Math.PI : 0; player.pitch = 0; }
 function resetInv(){ player.inv = { 1:null, 2:{ id:'pistol', mag:20, res:120 }, 3:{ id:'knife' } }; player.slot = 2; player.armor = 0; player.helmet = false;
   player.nades = { he:0, flash:0, smoke:0, molly:0 }; player.nadeSel = null; player.nadeHold = null; player.nadeT = 0; player.nadeNext = false; player.kit = false; }
-function refill(){ [1,2].forEach(k => { const it = player.inv[k]; if (it){ it.mag = W[it.id].mag; it.res = W[it.id].res; } }); if (player.slot === 5 || (player.slot === 4 ? !nadeTotal() : !player.inv[player.slot])) player.slot = player.inv[1] ? 1 : 2; }
+function refill(){ [1,2].forEach(k => { const it = player.inv[k]; if (it){ it.mag = W[it.id].mag; it.res = W[it.id].res; } }); if (player.slot === 5 || (player.slot === 4 ? !nadeTotal() : !player.inv[player.slot])) player.slot = bestSlot(); }
 
 function targetList(){ return MODE === 'online' ? [...NET.remotes.values()].filter(r => r.alive && r.team && r.team !== player.team) : bots.filter(b => b.alive); }
 
@@ -2476,7 +2571,7 @@ function nameTag(text, team){
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:new THREE.CanvasTexture(c), transparent:true, depthWrite:false })); s.scale.set(1.6,.4,1); s.position.y = 2.2; return s;
 }
 function makeRemote(p){ const pr = p.presence; return { peer:p.peer, team:null, name:'', m:null, tag:null, pos:new V3(num(pr.x), num(pr.y), num(pr.z)), tpos:new V3(), yaw:0, tyaw:0, kneel:0, cr:0, alive:false, hp:100, w:'pistol', mv:false, k:0, d:0, lastPres:null,
-  shotN: pr.sh ? num(pr.sh.n) : 0, deathN: pr.de ? num(pr.de.n) : 0, nadeN: pr.gn ? num(pr.gn.n) : 0, stepT:0, deadT:1, spotT:-99, walk:0, flashT:0, moving:false }; }
+  shotN: pr.sh ? num(pr.sh.n) : 0, deathN: pr.de ? num(pr.de.n) : 0, nadeN: pr.gn ? num(pr.gn.n) : 0, dropN:0, pickN:0, stepT:0, deadT:1, spotT:-99, walk:0, flashT:0, moving:false }; }
 function dressRemote(r){ if (r.m) scene.remove(r.m.g); r.m = buildBot(r.team === 'CT' ? PAL_CT : PAL_T); r.tag = nameTag(r.name, r.team); r.m.g.add(r.tag); scene.add(r.m.g); }
 function removeRemote(r){ if (r.m) scene.remove(r.m.g); }
 function hitMark(kill){ H.hit.className = ''; void H.hit.offsetWidth; H.hit.style.opacity = 1; H.hit.className = kill ? 'kill' : ''; hitFade = .18; }
@@ -2507,6 +2602,7 @@ function updateRemote(r, pr, dt){
     const gn = pr.gn;
     if (gn && typeof gn === 'object'){ const n = num(gn.n); if (n > r.nadeN){ r.nadeN = n; const k = String(gn.k);
       if (W[k] && W[k].kind === 'nade') spawnNade(k, new V3(clamp(num(gn.x), 0, MAPW), clamp(num(gn.y), 0, 8), clamp(num(gn.z), 0, MAPH)), new V3(clamp(num(gn.vx), -30, 30), clamp(num(gn.vy), -30, 30), clamp(num(gn.vz), -30, 30)), r, r.team); } }
+    netDropEvents(r, pr);
     // their hits on me
     if (Array.isArray(pr.hi) && NET.me){ const s0 = NET.seen[r.peer] || 0; let mx = s0;
       for (const h of pr.hi){ if (!h || typeof h !== 'object' || h.t !== NET.me) continue; const i = num(h.i); if (i > s0){ mx = Math.max(mx, i); netApplyHit(r, h); } }
@@ -2565,7 +2661,7 @@ function buildPres(){
   const it = curItem();
   return { v:1, hc:1, nm:NET.name, sq:NET.sq, tm:player.team, x:r2(player.pos.x), y:r2(player.pos.y), z:r2(player.pos.z), yw:r2(player.yaw), pt:r2(player.pitch), cr:r2(player.crouch),
     al:player.alive ? 1 : 0, hp:Math.max(0, Math.round(player.hp)), w:it ? it.id : 'knife', mv:(player.alive && player.ground && Math.hypot(player.vel.x, player.vel.z) > 3.1) ? 1 : 0,
-    k:player.kills, d:player.deaths, in:NET.inRound, sh:NET.shot, hi:NET.hits.length ? NET.hits : null, de:NET.death, gn:NET.nade, pl:NET.plant, df:NET.def, vo:voiceMode(), vt:VOICE.talking ? 1 : 0, g: NET.host ? gOut(NET.g) : null };
+    k:player.kills, d:player.deaths, in:NET.inRound, sh:NET.shot, hi:NET.hits.length ? NET.hits : null, de:NET.death, gn:NET.nade, dr:NET.drops.length ? NET.drops : null, pk:NET.picks.length ? NET.picks : null, pl:NET.plant, df:NET.def, vo:voiceMode(), vt:VOICE.talking ? 1 : 0, g: NET.host ? gOut(NET.g) : null };
 }
 
 function gSideScore(g, side){ if (!g || !g.r) return 0; return sideOfSquad('A', g.r, g.fm) === side ? g.sA : g.sB; }
@@ -2598,7 +2694,7 @@ function hostStep(dt, valid){
 }
 
 function respawnWarm(){ spawnAt(player.team); player.alive = true; player.hp = 100; player.money = 16000; refill(); NET.inRound = 0; NET.deadT = 0; S.deathT = 0; player.planting = 0; $('dead').hidden = true; H.cross.style.display = ''; drawWeapon(); }
-function enterWarmup(){ respawnWarm(); showMsg('Isinish', "O'yin har ikki jamoada kamida bittadan o'yinchi bo'lganda boshlanadi. " + KB('M', 'Jamoa tugmasi') + " — jamoani almashtirish.", teamMsg(player.team), 4200); }
+function enterWarmup(){ clearDrops(); respawnWarm(); showMsg('Isinish', "O'yin har ikki jamoada kamida bittadan o'yinchi bo'lganda boshlanadi. " + KB('M', 'Jamoa tugmasi') + " — jamoani almashtirish.", teamMsg(player.team), 4200); }
 function spawnRound(g){
   const newHalf = halfStart(g.r, g.fm), survived = player.alive && NET.inRound > 0 && !newHalf;
   player.team = sideOfSquad(NET.sq, g.r, g.fm);
@@ -2608,7 +2704,7 @@ function spawnRound(g){
   refill(); spawnAt(player.team);
   player.alive = true; player.hp = 100; player.planting = 0; player.scope = 0; player.recoil = 0; player.punchX = player.punchY = 0;
   NET.inRound = g.r; NET.plant = null; NET.def = null; NET.planted = false; NET.liveT = 0; NET.defuseT = 0; S.deathT = 0;
-  bomb.planted = false; bomb.mesh.visible = false; H.prog.hidden = true; clearNades();
+  bomb.planted = false; bomb.mesh.visible = false; H.prog.hidden = true; clearNades(); clearDrops();
   $('dead').hidden = true; H.cross.style.display = ''; drawWeapon(); updateHUD();
   showMsg(newHalf ? (isOT(g.r, g.fm) ? "Qo'shimcha vaqt" : 'Ikkinchi yarim') : g.r + '-raund', (newHalf && sideOfSquad(NET.sq, g.r - 1, g.fm) !== player.team ? 'Tomonlar almashdi: endi siz ' + TEAM_NAME[player.team] + ' tomondasiz. ' : 'Siz ' + TEAM_NAME[player.team] + ' jamoasidasiz. ') + (player.team === 'T' ? "B — xarid, keyin bombani A yoki B ga olib boring." : "B — xarid, keyin A va B nuqtalarni himoya qiling."), teamMsg(player.team), newHalf ? 5200 : 3400);
 }
@@ -2689,7 +2785,7 @@ function defuseTime(){ return player.kit ? 4 : 7; }
 function netPlantDefuse(dt){
   const g = NET.g, wantE = !!keys.KeyE && !S.paused;
   player.bomb = player.team === 'T' && !!g && (g.ph === 'live' || g.ph === 'freeze') && !g.b && !(NET.plant && NET.plant.r === g.r) && NET.inRound === g.r && player.alive;
-  if (!player.bomb && player.slot === 5){ player.slot = player.inv[1] ? 1 : 2; drawWeapon(); }
+  if (!player.bomb && player.slot === 5){ player.slot = bestSlot(); drawWeapon(); }
   const stop = () => { if (player.planting > 0 || NET.defuseT > 0){ player.planting = 0; NET.defuseT = 0; H.prog.hidden = true; } };
   if (!g || !player.alive || g.ph !== 'live') return stop();
   if (player.team === 'T'){
@@ -2700,7 +2796,7 @@ function netPlantDefuse(dt){
     if (player.planting === 0){ player.vel.x = player.vel.z = 0; if (player.slot !== 5){ player.lastSlot = player.slot; player.slot = 5; drawWeapon(); player.drawT = 0; } }
     const before = player.planting; player.planting += dt; if (Math.floor(before*3) !== Math.floor(player.planting*3)) sfxPlantKey();
     H.prog.hidden = false; H.progLbl.textContent = "Bomba o'rnatilmoqda — " + site + ' nuqta'; H.progBar.style.background = 'var(--atk)'; H.progBar.style.width = Math.min(100, player.planting/3.2*100) + '%';
-    if (player.planting >= 3.2){ NET.plant = { n:++NET.plantN, x:r2(player.pos.x), z:r2(player.pos.z), s:site, r:g.r }; player.planting = 0; H.prog.hidden = true; player.slot = player.inv[1] ? 1 : 2; drawWeapon(); addMoney(300, "bomba o'rnatildi"); }
+    if (player.planting >= 3.2){ NET.plant = { n:++NET.plantN, x:r2(player.pos.x), z:r2(player.pos.z), s:site, r:g.r }; player.planting = 0; H.prog.hidden = true; player.slot = bestSlot(); drawWeapon(); addMoney(300, "bomba o'rnatildi"); }
   } else {
     const near = g.b && Math.hypot(player.pos.x - g.b.x, player.pos.z - g.b.z) < 1.7;
     if (!near || !wantE || !player.ground || (NET.def && NET.def.r === g.r)){ if (wantE && g.b && !near && (!player._defHint || S.time - player._defHint > 2.5)){ hint('Zararsizlantirish uchun bombaga yaqin turing'); player._defHint = S.time; } return stop(); }
@@ -2717,7 +2813,7 @@ function netFrame(dt){
   if (!player.team) return;
   if (S.phase === 'live') NET.liveT += dt;
   if (S.buyOpen && !canBuy()) closeBuy(true);
-  updatePlayer(dt); updateWeapon(dt); netPlantDefuse(dt); updateNades(dt); voiceFrame(dt);
+  updatePlayer(dt); updateWeapon(dt); netPlantDefuse(dt); updateNades(dt); updateDrops(dt); voiceFrame(dt);
   if (bomb.planted){ NET.beepT -= dt; if (NET.beepT <= 0){ NET.beepT = Math.max(.1, .15 + (bomb.timer/40)*.95); sfxBeep(); bomb.led.material.opacity = 1; } bomb.led.material.opacity = Math.max(0, bomb.led.material.opacity - dt*6); }
   spotT -= dt;
   if (spotT <= 0 && player.alive){ spotT = .15; viewDir(_d, player.yaw, player.pitch);
@@ -2783,7 +2879,7 @@ async function joinOnline(){
 }
 function goOnline(named){
   MODE = 'online'; NET.room = named;
-  Object.assign(NET, { me:null, host:false, g:null, gSrc:null, hits:[], shot:null, death:null, plant:null, def:null, seen:{}, inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, joinT:1.6, cdShown:-1, tickLast:performance.now() });
+  Object.assign(NET, { drops:[], picks:[], me:null, host:false, g:null, gSrc:null, hits:[], shot:null, death:null, plant:null, def:null, seen:{}, inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, joinT:1.6, cdShown:-1, tickLast:performance.now() });
   player.team = null; NET.sq = null; player.alive = false; player.hp = 100; player.kills = player.deaths = player.hs = 0; player.dmg = 0; resetInv(); player.money = 16000; player.killer = null;
   spawnAt('T'); player.deathPos.set(player.pos.x, 3, player.pos.z);
   bots.forEach(b => { b.alive = false; b.m.g.visible = false; });
@@ -2974,7 +3070,8 @@ const TOUCH = { mx:0, my:0, mag:0, crouch:false };
         case 'crouch': TOUCH.crouch = !TOUCH.crouch; b.classList.toggle('on', TOUCH.crouch); break;
         case 'reload': startReload(); break;
         case 'swap': cycle(); break;
-        case 'use': keys.KeyE = true; break;
+        case 'use': if (pickTarget && !(player.team === 'T' && player.bomb && siteAt(player.pos)) && !(player.team === 'CT' && bomb.planted)) pickUp(pickTarget); else keys.KeyE = true; break;
+        case 'drop': dropCurrent(); break;
         case 'mic': voicePTT(true); break;
         case 'scope': { const w = curW(); if (w.kind === 'nade'){ mouseR = true; break; } if (w.kind === 'sniper' && player.drawT <= 0 && player.reloadT <= 0){ player.scope = (player.scope + 1) % 3; sfxClick(); } break; }
       }
@@ -3001,10 +3098,11 @@ function touchFrame(){
   $('tMic').hidden = !voiceMode() || SET.mic === 'open'; $('tMic').classList.toggle('on', VOICE.ptt);
   $('tScope').hidden = !player.alive || (curW().kind !== 'sniper' && curW().kind !== 'nade');
   const site = player.alive && ((player.team === 'T' && player.bomb) || (player.team === 'CT' && bomb.planted));
-  $('tUse').hidden = !site;
+  $('tUse').hidden = !site && !pickTarget; $('tUse').textContent = pickTarget && !site ? 'OLISH' : 'BOMBA';
+  $('tDrop').hidden = !player.alive || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot];
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAIN LOOP ================= */
 let swayX = 0, swayY = 0, hitFade = 0, vignT = 0, shakeT = 0, last = performance.now();
@@ -3031,6 +3129,7 @@ function step(dt){
   updateWeapon(dt);
   updatePlant(dt);
   updateNades(dt);
+  updateDrops(dt);
   if (S.phase !== 'freeze') for (const b of bots) updateBot(b, dt);
   if (bomb.planted){
     bomb.timer -= dt; bomb.beepT -= dt;

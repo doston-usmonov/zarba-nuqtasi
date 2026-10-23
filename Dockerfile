@@ -3,11 +3,14 @@ WORKDIR /src
 COPY go.mod ./
 COPY *.go ./
 COPY web ./web
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /zarba .
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /zarba . \
+ && mkdir -p /out/data
 
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /zarba /zarba
-ENV ADDR=:8080
+# hisoblar va reyting shu yerda saqlanadi (docker-compose'da volume ulanadi)
+COPY --from=build --chown=65532:65532 /out/data /data
+ENV ADDR=:8080 DATA_DIR=/data
 EXPOSE 8080
 USER nonroot
 ENTRYPOINT ["/zarba"]

@@ -12,3 +12,8 @@ services:
     environment:
       MAX_PLAYERS: "16"      # bitta xonadagi o'yinchilar chegarasi
       ALLOWED_ORIGINS: ""    # bo'sh — faqat o'z domeningiz; "*" — hamma joydan
+    volumes:
+      - zarba-data:/data     # hisoblar, reyting, o'yinlar tarixi va kunlik zaxira nusxalar
+
+volumes:
+  zarba-data:

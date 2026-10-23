@@ -2,3 +2,4 @@
 /zarba-server
 *.exe
 .DS_Store
+/data/

@@ -1,3 +1,4 @@
 deploy
 *.md
 .git
+data

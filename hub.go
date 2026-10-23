@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"log"
 	"sync"
 	"time"
 )
@@ -17,19 +18,32 @@ const (
 	pingEvery   = 25 * time.Second
 )
 
+// account — /ws ulanishida cookie orqali aniqlangan hisob (nil — mehmon).
+type account struct {
+	id   int64
+	name string
+}
+
 type client struct {
 	id   string
 	ip   string
 	room *room
 	ws   *wsConn
 	send chan []byte
-	pres json.RawMessage // guarded by room.mu
+	acct *account
+	// quyidagilar room.mu ostida
+	pres    json.RawMessage
+	accJSON json.RawMessage // boshqalarga ko'rsatiladigan hisob ma'lumoti (nom, reyting, daraja)
+	info    presInfo
+	deSeen  bool
+	lastDeN int
 }
 
 type room struct {
 	name    string
 	mu      sync.Mutex
 	clients map[string]*client
+	tr      tracker
 }
 
 type hub struct {
@@ -37,10 +51,11 @@ type hub struct {
 	rooms      map[string]*room
 	perIP      map[string]int
 	maxPlayers int
+	store      *Store // nil — hisoblar o'chirilgan
 }
 
-func newHub(maxPlayers int) *hub {
-	return &hub{rooms: map[string]*room{}, perIP: map[string]int{}, maxPlayers: maxPlayers}
+func newHub(maxPlayers int, st *Store) *hub {
+	return &hub{rooms: map[string]*room{}, perIP: map[string]int{}, maxPlayers: maxPlayers, store: st}
 }
 
 func newID() string {
@@ -62,9 +77,20 @@ func (h *hub) stats() (rooms, players int) {
 
 func jsonMsg(v any) []byte { b, _ := json.Marshal(v); return b }
 
+func accPublic(u User) json.RawMessage {
+	rk := rankOf(u.Rating, u.Matches)
+	return jsonMsg(map[string]any{"u": u.Username, "r": u.Rating, "rk": rk.Name, "rc": rk.Color, "cal": rk.Calibrating})
+}
+
 // serve runs one player's connection until it closes.
-func (h *hub) serve(ws *wsConn, roomName, ip string) {
+func (h *hub) serve(ws *wsConn, roomName, ip string, acct *account) {
 	defer ws.close()
+	var accJSON json.RawMessage
+	if acct != nil && h.store != nil {
+		if u, ok := h.store.User(acct.id); ok {
+			accJSON = accPublic(u)
+		}
+	}
 	h.mu.Lock()
 	if h.perIP[ip] >= perIPLimit {
 		h.mu.Unlock()
@@ -77,13 +103,26 @@ func (h *hub) serve(ws *wsConn, roomName, ip string) {
 		h.rooms[roomName] = r
 	}
 	r.mu.Lock()
+	reject := ""
 	if len(r.clients) >= h.maxPlayers {
+		reject = "room_full"
+	}
+	for _, o := range r.clients {
+		if acct != nil && o.acct != nil && o.acct.id == acct.id {
+			reject = "already_in_room"
+		}
+	}
+	if reject != "" {
+		empty := len(r.clients) == 0
 		r.mu.Unlock()
+		if empty {
+			delete(h.rooms, roomName)
+		}
 		h.mu.Unlock()
-		ws.write(opText, jsonMsg(map[string]string{"t": "err", "code": "room_full"}))
+		ws.write(opText, jsonMsg(map[string]string{"t": "err", "code": reject}))
 		return
 	}
-	c := &client{id: newID(), ip: ip, room: r, ws: ws, send: make(chan []byte, sendQueue)}
+	c := &client{id: newID(), ip: ip, room: r, ws: ws, send: make(chan []byte, sendQueue), acct: acct, accJSON: accJSON}
 	// greeting + everyone already here, queued before anyone else can write to us
 	c.send <- jsonMsg(map[string]string{"t": "hello", "id": c.id})
 	type peer struct {
@@ -104,7 +143,7 @@ func (h *hub) serve(ws *wsConn, roomName, ip string) {
 
 	done := make(chan struct{})
 	go c.writer(done)
-	c.reader()
+	h.reader(c)
 	close(done)
 	h.leave(c)
 }
@@ -139,7 +178,7 @@ func (r *room) broadcast(msg []byte, except string) {
 	}
 }
 
-func (c *client) reader() {
+func (h *hub) reader(c *client) {
 	tokens, last := float64(msgPerSec), time.Now()
 	for {
 		data, err := c.ws.read(maxPresence + 256)
@@ -164,20 +203,76 @@ func (c *client) reader() {
 			continue
 		}
 		d := bytes.TrimSpace(m.D)
-		if len(d) == 0 || len(d) > maxPresence || d[0] != '{' || !json.Valid(d) {
+		if len(d) == 0 || len(d) > maxPresence || d[0] != '{' {
 			continue
 		}
+		var fields map[string]json.RawMessage
+		if json.Unmarshal(d, &fields) != nil {
+			continue
+		}
+		// ism va hisob ma'lumotini server belgilaydi: boshqa o'yinchi nomini olib bo'lmaydi
+		delete(fields, "acc")
+		if c.acct != nil {
+			fields["nm"] = jsonMsg(c.acct.name)
+		}
+		info := parseInfo(fields)
+
+		r := c.room
+		r.mu.Lock()
+		if c.accJSON != nil {
+			fields["acc"] = c.accJSON
+		}
+		out, err := json.Marshal(fields)
+		if err != nil {
+			r.mu.Unlock()
+			continue
+		}
+		c.pres, c.info = out, info
+		res := r.trackLocked(c, info, now)
 		var buf bytes.Buffer
 		buf.WriteString(`{"t":"u","id":"`)
 		buf.WriteString(c.id)
 		buf.WriteString(`","p":`)
-		buf.Write(d)
+		buf.Write(out)
 		buf.WriteByte('}')
-		r := c.room
-		r.mu.Lock()
-		c.pres = append(json.RawMessage(nil), d...)
 		r.broadcast(buf.Bytes(), c.id)
 		r.mu.Unlock()
+		if res != nil && h.store != nil {
+			go h.finishMatch(r, res)
+		}
+	}
+}
+
+// finishMatch reytinglarni yozadi va o'yinchilarga natijani yuboradi.
+func (h *hub) finishMatch(r *room, res *matchResult) {
+	changes, err := h.store.ApplyMatch(res)
+	if err != nil {
+		log.Printf("o'yin natijasi saqlanmadi (%s): %v", r.name, err)
+		return
+	}
+	if len(changes) == 0 {
+		return
+	}
+	log.Printf("o'yin tugadi: xona=%s hisob=%d:%d g'olib=%s reytingli o'yinchilar=%d", r.name, res.ScoreT, res.ScoreCT, res.Winner, len(changes))
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, c := range r.clients {
+		if c.acct == nil {
+			continue
+		}
+		ch, ok := changes[c.acct.id]
+		if !ok {
+			continue
+		}
+		if u, ok := h.store.User(c.acct.id); ok {
+			c.accJSON = accPublic(u)
+		}
+		msg := jsonMsg(map[string]any{"t": "rt", "before": ch.Before, "after": ch.After, "delta": ch.Delta, "won": ch.Won,
+			"rank": rankOf(ch.After, ch.Matches), "matches": ch.Matches})
+		select {
+		case c.send <- msg:
+		default:
+		}
 	}
 }
 

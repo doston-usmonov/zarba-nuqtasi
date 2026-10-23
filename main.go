@@ -32,7 +32,18 @@ func main() {
 		maxPlayers = 16
 	}
 	allowed := parseOrigins(env("ALLOWED_ORIGINS", ""))
-	h := newHub(maxPlayers)
+
+	// Hisoblar va reyting. Ma'lumotlar papkasi ochilmasa ham o'yin ishlayveradi — faqat mehmon sifatida.
+	dataDir := env("DATA_DIR", "data")
+	st, err := openStore(dataDir)
+	if err != nil {
+		log.Printf("DIQQAT: hisoblar o'chirildi, %s ochilmadi: %v", dataDir, err)
+		st = nil
+	} else {
+		log.Printf("hisoblar: %s", dataDir)
+	}
+	a := newAPI(st, allowed)
+	h := newHub(maxPlayers, st)
 
 	sub, err := fs.Sub(webFS, "web")
 	if err != nil {
@@ -51,12 +62,17 @@ func main() {
 			http.Error(w, "xona nomi noto'g'ri", http.StatusBadRequest)
 			return
 		}
+		var acct *account
+		if u, ok := a.currentUser(r); ok {
+			acct = &account{id: u.ID, name: u.Username}
+		}
 		ws, err := upgrade(w, r)
 		if err != nil {
 			return
 		}
-		h.serve(ws, room, clientIP(r))
+		h.serve(ws, room, clientIP(r), acct)
 	})
+	a.routes(mux)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		rooms, players := h.stats()
 		w.Header().Set("Content-Type", "application/json")

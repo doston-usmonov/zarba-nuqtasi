@@ -348,17 +348,22 @@ func TestAccountsAndRatedMatch(t *testing.T) {
 		t.Fatalf("takror ulanish: %v", m)
 	}
 
-	g := func(ph string, r, sT, sCT int) map[string]any {
-		return map[string]any{"r": r, "ph": ph, "sT": sT, "sCT": sCT, "e": "m1"}
+	// qisqa format (fm=8): 8 raunddan keyin tomonlar almashadi, 9 g'alaba kerak
+	g := func(ph string, r, sA, sB int) map[string]any {
+		return map[string]any{"r": r, "ph": ph, "sA": sA, "sB": sB, "fm": 8, "e": "m1"}
 	}
-	pres := func(w *wsTest, nm, tm string, in int, gs map[string]any, de any) {
-		w.send(map[string]any{"t": "p", "d": map[string]any{"v": 1, "hc": 1, "nm": nm, "tm": tm, "in": in, "g": gs, "de": de}})
+	pres := func(w *wsTest, nm, sq, tm string, in int, gs map[string]any, de any) {
+		w.send(map[string]any{"t": "p", "d": map[string]any{"v": 1, "hc": 1, "nm": nm, "sq": sq, "tm": tm, "in": in, "g": gs, "de": de}})
 	}
 	// uchala mijoz ham bir xil g yuboradi — kim xost bo'lishidan qat'i nazar
 	all := func(gs map[string]any, in int, deB any) {
-		pres(wa, "Yolg'onchi", "T", in, gs, nil)
-		pres(wb, "Bek", "CT", in, gs, deB)
-		pres(wg, "Mehmon1", "CT", in, gs, nil)
+		tA, tB := "T", "CT"
+		if in > 8 { // ikkinchi yarim
+			tA, tB = "CT", "T"
+		}
+		pres(wa, "Yolg'onchi", "A", tA, in, gs, nil)
+		pres(wb, "Bek", "B", tB, in, gs, deB)
+		pres(wg, "Mehmon1", "B", tB, in, gs, nil)
 		time.Sleep(30 * time.Millisecond)
 	}
 	all(g("warmup", 0, 0, 0), 0, nil)
@@ -383,10 +388,10 @@ func TestAccountsAndRatedMatch(t *testing.T) {
 	all(g("live", 1, 0, 0), 1, map[string]any{"n": 1, "by": wa.id, "w": "rifle", "hs": 1})
 	all(g("live", 1, 0, 0), 1, map[string]any{"n": 1, "by": wa.id, "w": "rifle", "hs": 1}) // takror — bir marta hisoblanadi
 	// mehmon o'zini "Ali'ni o'ldirdim" deb e'lon qiladi — hisobga olinmaydi (faqat qurbonning xabari ishonchli)
-	for r := 2; r <= 9; r++ {
-		all(g("live", r, r-1, 0), r, map[string]any{"n": 1, "by": wa.id, "w": "rifle", "hs": 1})
+	for r := 2; r <= 10; r++ {
+		all(g("live", r, r-1, min(r-1, 1)), r, map[string]any{"n": 1, "by": wa.id, "w": "rifle", "hs": 1})
 	}
-	all(g("over", 9, 8, 1), 9, map[string]any{"n": 1, "by": wa.id, "w": "rifle", "hs": 1})
+	all(g("over", 10, 9, 1), 10, map[string]any{"n": 1, "by": wa.id, "w": "rifle", "hs": 1})
 
 	ra := wa.readUntil(t, func(m map[string]any) bool { return m["t"] == "rt" })
 	rb := wb.readUntil(t, func(m map[string]any) bool { return m["t"] == "rt" })
@@ -427,4 +432,19 @@ func dialWS2(t *testing.T, tc *testClient, room string) *wsTest {
 	br := bufio.NewReader(conn)
 	http.ReadResponse(br, nil)
 	return &wsTest{c: conn, br: br}
+}
+
+func TestValidFinal(t *testing.T) {
+	ok := [][3]int{{12, 13, 0}, {12, 13, 11}, {12, 9, 13}, {12, 16, 12}, {12, 14, 16}, {12, 19, 17}, {12, 15, 19}, {8, 9, 7}, {8, 12, 10}}
+	bad := [][3]int{{12, 13, 12}, {12, 12, 10}, {12, 15, 12}, {12, 16, 15}, {12, 17, 13}, {8, 13, 0}, {10, 11, 0}, {12, 0, 0}, {8, 9, 8}}
+	for _, c := range ok {
+		if !validFinal(c[0], c[1], c[2]) {
+			t.Errorf("haqiqiy natija rad etildi: fm=%d %d:%d", c[0], c[1], c[2])
+		}
+	}
+	for _, c := range bad {
+		if validFinal(c[0], c[1], c[2]) {
+			t.Errorf("noto'g'ri natija qabul qilindi: fm=%d %d:%d", c[0], c[1], c[2])
+		}
+	}
 }

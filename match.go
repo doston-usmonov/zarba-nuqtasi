@@ -2,8 +2,10 @@ package main
 
 // O'yinni server tomonidan kuzatish. Server o'yinchilar yuborgan holatlardan
 // (presence) faqat kerakli maydonlarni o'qiydi:
-//   tm  — jamoa (T / CT), hc — to'liq o'yin mijozi, in — qaysi raundda tirilgan,
-//   g   — xostning o'yin holati (raund, faza, hisob, o'yin identifikatori e),
+//   tm  — hozirgi tomon (T / CT), sq — jamoa (A / B; yarim vaqtda tomonlar almashadi,
+//         jamoa esa o'zgarmaydi), hc — to'liq o'yin mijozi, in — qaysi raundda tirilgan,
+//   g   — xostning o'yin holati (raund, faza, jamoalar hisobi sA/sB, format fm,
+//         o'yin identifikatori e),
 //   de  — o'lim hodisasi (kim o'ldirdi, boshgami).
 // Xost — xuddi mijozlardagidek: hc=1 va jamoasi bor mijozlar ichida eng kichik id.
 // O'ldirish faqat o'lgan o'yinchining o'z xabari bilan hisoblanadi: o'zini
@@ -17,11 +19,26 @@ import (
 )
 
 type gState struct {
-	R   int    `json:"r"`
-	Ph  string `json:"ph"`
-	ST  int    `json:"sT"`
-	SCT int    `json:"sCT"`
-	E   string `json:"e"`
+	R  int    `json:"r"`
+	Ph string `json:"ph"`
+	SA int    `json:"sA"`
+	SB int    `json:"sB"`
+	Fm int    `json:"fm"` // yarim o'yindagi raundlar: 8 (qisqa) yoki 12 (to'liq, MR12)
+	E  string `json:"e"`
+}
+
+const otHalf = 3 // overtime: har yarimi 3 raund, 4 g'alaba kerak
+
+// validFinal — hisob haqiqiy o'yin oxiriga mos keladimi (MR12/MR8 + overtime).
+func validFinal(fm, a, b int) bool {
+	if fm != 8 && fm != 12 {
+		return false
+	}
+	w, l := max(a, b), min(a, b)
+	if w == fm+1 && l <= fm-1 {
+		return true // asosiy vaqtda yutildi
+	}
+	return w >= fm+otHalf+1 && (w-fm-otHalf-1)%otHalf == 0 && l >= w-otHalf-1 && l <= w-2
 }
 
 type deathEv struct {
@@ -32,6 +49,7 @@ type deathEv struct {
 
 type presInfo struct {
 	Tm string
+	Sq string
 	Nm string
 	Hc int
 	In int
@@ -42,6 +60,7 @@ type presInfo struct {
 func parseInfo(m map[string]json.RawMessage) presInfo {
 	var p presInfo
 	json.Unmarshal(m["tm"], &p.Tm)
+	json.Unmarshal(m["sq"], &p.Sq)
 	json.Unmarshal(m["nm"], &p.Nm)
 	json.Unmarshal(m["hc"], &p.Hc)
 	json.Unmarshal(m["in"], &p.In)
@@ -60,13 +79,16 @@ func parseInfo(m map[string]json.RawMessage) presInfo {
 	if p.Tm != "T" && p.Tm != "CT" {
 		p.Tm = ""
 	}
+	if p.Sq != "A" && p.Sq != "B" {
+		p.Sq = ""
+	}
 	return p
 }
 
 type tplayer struct {
 	uid          int64
 	name         string
-	rounds       map[string]int // jamoa → o'ynagan raundlari
+	rounds       map[string]int // jamoa (A/B) → o'ynagan raundlari
 	last         int
 	kills, death int
 	hs           int
@@ -98,7 +120,7 @@ type matchResult struct {
 func (r *room) hostIDLocked() string {
 	host := ""
 	for id, c := range r.clients {
-		if c.info.Hc == 1 && c.info.Tm != "" && (host == "" || id < host) {
+		if c.info.Hc == 1 && c.info.Sq != "" && (host == "" || id < host) {
 			host = id
 		}
 	}
@@ -164,18 +186,18 @@ func (r *room) trackLocked(c *client, info presInfo, now time.Time) *matchResult
 		c.lastDeN = max(c.lastDeN, de.N)
 	}
 	c.deSeen = true
-	if !t.active || info.Tm == "" {
+	if !t.active || info.Sq == "" {
 		return res
 	}
 	if info.In > 0 && info.In == t.round {
 		if p := t.player(c); p.last != info.In {
 			p.last = info.In
-			p.rounds[info.Tm]++
+			p.rounds[info.Sq]++
 		}
 	}
 	if died {
 		t.player(c).death++
-		if k := r.clients[info.De.By]; k != nil && k != c && k.info.Tm != "" && k.info.Tm != info.Tm {
+		if k := r.clients[info.De.By]; k != nil && k != c && k.info.Sq != "" && k.info.Sq != info.Sq {
 			kp := t.player(k)
 			kp.kills++
 			if info.De.HS == 1 {
@@ -187,26 +209,31 @@ func (r *room) trackLocked(c *client, info presInfo, now time.Time) *matchResult
 }
 
 func (t *tracker) finish(room string, g *gState, now time.Time) *matchResult {
-	if max(g.ST, g.SCT) < 8 || g.ST == g.SCT {
+	if !validFinal(g.Fm, g.SA, g.SB) {
 		return nil
 	}
-	if now.Sub(t.started) < time.Duration(g.ST+g.SCT)*5*time.Second {
+	if now.Sub(t.started) < time.Duration(g.SA+g.SB)*5*time.Second {
 		return nil // raundlar bunchalik tez tugamaydi
 	}
-	res := &matchResult{Room: room, Started: t.started, Ended: now, ScoreT: g.ST, ScoreCT: g.SCT, Winner: "CT"}
-	if g.ST > g.SCT {
+	// bazada jamoa boshlagan tomoni bilan saqlanadi: A — hujumdan, B — himoyadan boshlagan
+	res := &matchResult{Room: room, Started: t.started, Ended: now, ScoreT: g.SA, ScoreCT: g.SB, Winner: "CT"}
+	if g.SA > g.SB {
 		res.Winner = "T"
 	}
 	sides := map[string]int{}
 	for _, p := range t.players {
-		team, best := "", 0
-		for tm, n := range p.rounds {
-			if n > best || (n == best && tm < team) {
-				team, best = tm, n
+		sq, best := "", 0
+		for s, n := range p.rounds {
+			if n > best || (n == best && s < sq) {
+				sq, best = s, n
 			}
 		}
 		if best == 0 {
 			continue
+		}
+		team := "T"
+		if sq == "B" {
+			team = "CT"
 		}
 		res.Players = append(res.Players, resultPlayer{UserID: p.uid, Name: p.name, Team: team, Kills: p.kills, Deaths: p.death, HS: p.hs})
 		sides[team]++

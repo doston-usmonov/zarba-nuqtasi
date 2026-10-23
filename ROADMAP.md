@@ -12,7 +12,8 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 
 ## 2. O'yin qoidalari CS'ga yaqinroq
 - ✅ Granatalar: portlovchi, tutun, ko'r qiluvchi, yondiruvchi (xarid menyusida, 4-slot, onlayn sinxron)
-- [ ] Yarim vaqtda tomonlarni almashtirish, CS2 kabi MR12 (13 g'alabagacha) va overtime
+- ✅ Yarim vaqtda tomonlarni almashtirish, MR12 (13 g'alabagacha) yoki qisqa o'yin (9 g'alabagacha), overtime (MR3)
+- ✅ Botlarga qarshi ikkinchi yarimda himoyada o'ynash: botlar bombani olib, nuqtani egallab, o'rnatadi
 - ✅ Zararsizlantirish to'plami (himoyachilar uchun: 7 o'rniga 4 soniya)
 - [ ] Qurolni tashlash va ko'tarish, o'lgan o'yinchining quroli yerda qolishi
 - [ ] Jamoadoshga pul/qurol berish

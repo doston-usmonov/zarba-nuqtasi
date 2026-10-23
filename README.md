@@ -148,6 +148,8 @@ WASD — harakat, sichqoncha — nishonga olish va otish, C yoki Ctrl — cho'kk
 
 Granatalar 4-slotda: 4 tugmasi granatani oladi, yana bosilsa keyingi turiga o'tadi. Chap tugma — uzoqqa, o'ng tugma — yaqinga otish; granata tugma qo'yib yuborilganda uchadi. Turlari: portlovchi ($300), ko'r qiluvchi ($200, ikkitagacha), tutun ($300, 18 soniya ko'rinishni to'sadi), yondiruvchi ($400, 7 soniya yonadi, tutun uni o'chiradi). Bir o'yinchida ko'pi bilan 4 ta granata bo'ladi. Himoyachilar zararsizlantirish to'plamini ($400) olsa, bomba 7 emas, 4 soniyada zararsizlanadi.
 
+O'yin CS kabi ikki yarimdan iborat. Sozlamalarda uzunlikni tanlaysiz: to'liq (MR12, 13 g'alabagacha, 12 raunddan keyin tomonlar almashadi) yoki qisqa (9 g'alabagacha, 8 raunddan keyin almashadi). Hisob teng bo'lsa (12:12 yoki 8:8), qo'shimcha vaqt boshlanadi: 6 raund, 4 g'alaba kerak, har biriga $12 500 beriladi, 3 raunddan keyin tomonlar almashadi. Botlarga qarshi ikkinchi yarimda siz himoyada bo'lasiz: botlar bombani olib, A yoki B nuqtani egallaydi va o'rnatadi, siz esa E bilan zararsizlantirasiz. Onlayn xonada formatni xost (birinchi kirgan o'yinchi) sozlamasi belgilaydi.
+
 Onlayn o'yinda granata otilganda faqat uning boshlang'ich holati yuboriladi, uchishini har bir brauzer bir xil qadam bilan o'zi hisoblaydi, shuning uchun tutun hammada bir joyga tushadi. Har bir o'yinchi o'ziga tekkan zarar va ko'r bo'lishni o'zi qo'llaydi. Jamoadoshning granatasi zarar bermaydi, o'zingizniki esa beradi.
 
 O'yin boshlanganda brauzer to'liq ekranga o'tadi va o'yin tugmalarini qulflaydi. Shu tufayli Ctrl+W yorliqni yopmaydi va Ctrl bilan cho'kkalash xavfsiz. Faqat o'yin tugmalari qulflanadi: Alt+Tab va Win ishlayveradi, Esc bosilsa to'liq ekrandan chiqiladi.

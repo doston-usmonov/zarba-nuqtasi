@@ -149,6 +149,9 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .panel h3{margin:0;font-family:var(--f-display);font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);font-weight:600}
 .set{display:grid;grid-template-columns:120px 1fr 48px;gap:10px;align-items:center;font-size:15px}
 .set input[type=range]{width:100%;accent-color:var(--atk)}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.seg button{flex:1;min-width:0;background:transparent;color:var(--ink);border:1px solid var(--line);padding:6px 8px;border-radius:5px;font-size:13px;font-weight:600;white-space:nowrap}
+.seg button[aria-pressed="true"]{border-color:var(--atk);background:rgba(242,181,68,.12)}
 .set output{font-family:var(--f-display);text-align:right;color:var(--dim)}
 .swatches{display:flex;gap:8px}
 .swatches button{width:26px;height:26px;border-radius:50%;border:2px solid transparent}
@@ -471,6 +474,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <label class="set" for="sFov">Ko'rish burchagi <input type="range" id="sFov" min="70" max="110" step="1"><output id="oFov"></output></label>
         <label class="set" for="sVol">Ovoz <input type="range" id="sVol" min="0" max="1" step="0.05"><output id="oVol"></output></label>
         <div class="set"><span>Nishon rangi</span><div class="swatches" id="swatches"></div><span></span></div>
+        <div class="set"><span>O'yin uzunligi</span><div class="seg" data-set="fmt"><button type="button" data-v="short">Qisqa · 9</button><button type="button" data-v="long">To'liq · 13</button></div><span></span></div>
       </div>
     </div>
   </div>
@@ -547,7 +551,7 @@ const KB = (desk, touch) => isTouch ? touch : desk;
 
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
-const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal' }, loadSet());
+const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long' }, loadSet());
 function saveSet(){ try { localStorage.setItem('zn-set', JSON.stringify(SET)); } catch(e){} }
 const DIFFS = {
   easy:   { react:.85, acc:.18, hs:.07, turn:4.0, defuse:10 },
@@ -1273,7 +1277,7 @@ function eyeH(){ return 1.62 - player.crouch*.48; }
 const BOT_NAMES = ['Sardor','Jasur','Diyor','Bekzod','Otabek'];
 function buildBot(pal){ return buildSoldier(pal || PAL_CT); }
 const HB = [ { part:'head', min:[-.13,1.48,-.13], max:[.13,1.8,.15] }, { part:'chest', min:[-.25,1.12,-.16], max:[.25,1.49,.16] }, { part:'stomach', min:[-.22,.88,-.13], max:[.22,1.12,.13] }, { part:'legs', min:[-.22,0,-.12], max:[.22,.88,.12] } ];
-const bots = BOT_NAMES.map((n,i) => { const m = buildBot(); scene.add(m.g); return { i, name:'Bot '+n, pos:new V3(), yaw:Math.PI, alive:true, hp:100, armor:0, helmet:false, weapon:'pistol', mag:20, m,
+const bots = BOT_NAMES.map((n,i) => { const m = buildBot(); scene.add(m.g); return { i, name:'Bot '+n, mCT:m, side:'CT', hasBomb:false, planting:0, pos:new V3(), yaw:Math.PI, alive:true, hp:100, armor:0, helmet:false, weapon:'pistol', mag:20, m,
   mode:'hold', path:null, pi:0, pathGoal:new V3(), replan:0, hold:null, seeing:false, vis:null, react:0, seenFor:0, fireCd:0, burst:0, pause:0, reloadT:0,
   lastKnown:null, lastSeen:-99, alertPos:null, alertT:-99, investigate:false, spotT:-99, kills:0, deaths:0, defuse:0, walk:0, deadT:0, visT:i*.03, stepT:0, flashT:0, moving:false, stuck:0, strafe:0, kneel:0, blindT:0 }; });
 
@@ -1293,7 +1297,7 @@ function rayHitBot(o, d, b, maxT){
 }
 
 /* ================= GAME STATE ================= */
-const S = { phase:'menu', paused:false, round:0, scT:0, scCT:0, timer:0, liveT:0, time:0, loss:0, specIdx:0, deathT:0, buyOpen:false, toWin:8, endWinner:null, roundPlanted:false };
+const S = { phase:'menu', paused:false, round:0, sA:0, sB:0, H:12, timer:0, liveT:0, time:0, loss:0, specIdx:0, deathT:0, buyOpen:false, endWinner:null, roundPlanted:false, tSite:'A', execT:30 };
 const bomb = { planted:false, pos:new V3(), timer:40, beepT:0, mesh:null, led:null, defuser:null, site:null };
 (function buildBomb(){ const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.BoxGeometry(.38,.13,.26), MS(0x5b5a3b)); b.position.y = .065; b.castShadow = true; g.add(b);
   const led = new THREE.Mesh(new THREE.SphereGeometry(.025,8,6), new THREE.MeshBasicMaterial({ color:0xff2a1a })); led.position.set(.12,.14,-.06); g.add(led);
@@ -1332,7 +1336,8 @@ function feed(killer, kTeam, weapon, victim, vTeam, hs, mine){
   H.feed.prepend(d); while (H.feed.children.length > 5) H.feed.lastChild.remove(); setTimeout(() => d.remove(), 7000);
 }
 function fmt(s){ s = Math.max(0, Math.ceil(s)); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
-function updatePips(){ if (MODE === 'online') return netPips(); H.pips.innerHTML = '<i class="me' + (player.alive ? '' : ' dead') + '"></i>' + bots.map(b => '<i' + (b.alive ? '' : ' class="dead"') + '></i>').join(''); }
+function pipsHTML(all){ const pip = x => `<i class="${x.team === 'T' ? 't' : ''}${x.alive ? '' : ' dead'}"></i>`; return all.filter(x => x.team === 'T').map(pip).join('') + '<b class="sep"></b>' + all.filter(x => x.team === 'CT').map(pip).join(''); }
+function updatePips(){ if (MODE === 'online') return netPips(); const bs = botsSide(); H.pips.innerHTML = pipsHTML([{ team:player.team, alive:player.alive }, ...bots.map(b => ({ team:bs, alive:b.alive }))]); }
 function updateSlots(){
   const rows = []; const add = (k, name, cur) => rows.push(`<div class="${cur ? 'cur' : ''}"><span>${name}</span><span class="k">${k}</span></div>`);
   if (player.inv[1]) add(1, W[player.inv[1].id].name, player.slot === 1);
@@ -1355,7 +1360,7 @@ function updateHUD(){
   const key = [player.slot, player.inv[1] && player.inv[1].id, player.inv[2].id, player.bomb, player.nadeSel, player.nades.he, player.nades.flash, player.nades.smoke, player.nades.molly].join('|');
   if (key !== lastHudKey){ updateSlots(); lastHudKey = key; }
   H.buyHint.style.visibility = canBuy() ? 'visible' : 'hidden';
-  if (MODE === 'online') netHUD(); else $('teamTag').hidden = true;
+  if (MODE === 'online') netHUD(); else { $('teamTag').hidden = true; H.scT.textContent = sideScore('T'); H.scCT.textContent = sideScore('CT'); }
 }
 
 /* radar */
@@ -1386,59 +1391,120 @@ function drawRadar(){
 function liveTime(){ return MODE === 'online' ? NET.liveT : S.liveT; }
 function canBuy(){ if (!player.alive || S.phase === 'menu' || S.phase === 'over' || !player.team) return false; const inZone = cellT(wc(player.pos.x), wc(player.pos.z)) === (player.team === 'CT' ? CTSP : TSP); return inZone && (S.phase === 'warmup' || S.phase === 'freeze' || (S.phase === 'live' && liveTime() < 20)); }
 
+/* match format: halves, side swap and overtime (the same rules online and against bots) */
+const FMT = { short:8, long:12 }, OT_HALF = 3;
+const fmtH = () => FMT[SET.fmt] || FMT.long;
+function halfOf(r, H){ r = Math.max(1, r); return r <= 2*H ? Math.floor((r-1)/H) : 2 + Math.floor((r - 2*H - 1)/OT_HALF); }
+// squad A starts as attackers; sides flip every half, and the first overtime half keeps the sides of the half before it
+function sideOfSquad(sq, r, H){ let t = 'T'; const hi = halfOf(r, H); for (let h=1;h<=hi;h++) if (h === 1 || h % 2 === 1) t = t === 'T' ? 'CT' : 'T'; return sq === 'B' ? (t === 'T' ? 'CT' : 'T') : t; }
+function halfStart(r, H){ return r > 1 && halfOf(r, H) !== halfOf(r - 1, H); }
+function isOT(r, H){ return r > 2*H; }
+function roundInHalf(r, H){ return r <= 2*H ? (r - 1) % H + 1 : (r - 2*H - 1) % OT_HALF + 1; }
+function matchWinner(a, b, r, H){ if (a === b) return null;
+  const need = r <= 2*H ? H + 1 : H + Math.floor((r - 2*H - 1)/(2*OT_HALF))*OT_HALF + OT_HALF + 1;
+  return Math.max(a, b) >= need ? (a > b ? 'A' : 'B') : null; }
+function fmtLabel(H){ return H === 8 ? "9 g'alabagacha" : "13 g'alabagacha (MR12)"; }
+function swapNotice(r, H, score){
+  const nh = halfOf(r + 1, H), keep = nh >= 2 && nh % 2 === 0;   // each overtime starts on the sides of the half before it
+  showMsg(r === H ? 'Yarim vaqt' : keep ? "Qo'shimcha vaqt" : 'Tomonlar almashadi', 'Hisob ' + score + ' · ' + (keep ? "6 raund, 4 g'alaba kerak, tomonlar o'zgarmaydi" : 'keyingi raunddan tomonlar almashadi'), teamMsg(player.team), 3200); }
+
+// bots mode: the player's squad is A, the five bots are squad B
+function botsSide(){ return player.team === 'T' ? 'CT' : 'T'; }
+function sideScore(side){ return side === player.team ? S.sA : S.sB; }
+function setBotsPal(side){
+  for (const b of bots){ const key = side === 'T' ? 'mT' : 'mCT';
+    if (!b[key]) b[key] = buildBot(side === 'T' ? PAL_T : PAL_CT);
+    if (b.m !== b[key]){ scene.remove(b.m.g); b.m = b[key]; scene.add(b.m.g); }
+    b.side = side; }
+}
+const T_PLAN = {
+  A:{ stages:[[5,24],[14,16],[5,22]], spots:[[9,8],[5,9],[10,12],[7,11]], looks:[[14,5],[10,14],[5,14]] },
+  B:{ stages:[[37,24],[29,22],[38,22]], spots:[[36,10],[32,8],[38,6],[33,11]], looks:[[29,5],[37,14],[36,14]] },
+};
+
 function startRound(){
-  S.round++; S.phase = 'freeze'; S.timer = S.round === 1 ? 7 : 5; S.liveT = 0; S.roundPlanted = false; S.deathT = 0;
-  bomb.planted = false; bomb.mesh.visible = false; bomb.defuser = null; bomb.timer = 40;
+  S.round++; const HH = S.H, newHalf = halfStart(S.round, HH), rih = isOT(S.round, HH) ? 3 : roundInHalf(S.round, HH);
+  player.team = sideOfSquad('A', S.round, HH);
+  S.phase = 'freeze'; S.timer = S.round === 1 ? 7 : newHalf ? 9 : 5; S.liveT = 0; S.roundPlanted = false; S.deathT = 0;
+  bomb.planted = false; bomb.mesh.visible = false; bomb.defuser = null; bomb.timer = 40; bomb.dropped = false; bomb.carrier = null; bomb.picker = null;
+  if (newHalf){ player.alive = false; S.loss = 0; player.money = isOT(S.round, HH) ? 12500 : 800; }
   if (!player.alive) resetInv();
   clearNades();
-  player.alive = true; player.hp = 100; player.pos.copy(T_SPAWN); player.pos.x += (rand()-.5)*4; player.vel.set(0,0,0); player.yaw = (rand()-.5)*.3; player.pitch = 0; player.bomb = true; player.planting = 0; player.scope = 0; player.reloadT = 0; player.recoil = 0; player.punchY = player.punchX = 0;
+  spawnAt(player.team);
+  player.alive = true; player.hp = 100; player.bomb = player.team === 'T'; player.planting = 0; player.scope = 0; player.reloadT = 0; player.recoil = 0; player.punchY = player.punchX = 0;
   if (player.slot === 4 && !nadeTotal()) player.slot = 2;
   if (!player.inv[player.slot] && player.slot !== 5 && player.slot !== 4) player.slot = 2; if (player.slot === 5) player.slot = player.inv[1] ? 1 : 2;
   // refill ammo of kept weapons
   [1,2].forEach(k => { const it = player.inv[k]; if (it){ it.mag = W[it.id].mag; it.res = W[it.id].res; } });
   drawWeapon();
+  const side = botsSide(); setBotsPal(side);
   const holds = { A:shuffle(HOLDS.A.slice()), B:shuffle(HOLDS.B.slice()), M:shuffle(HOLDS.M.slice()) };
   const roles = shuffle(['A','A','B','B','M']);
-  const spawns = shuffle(CT_SPAWNS.slice());
+  const spawns = shuffle(CT_SPAWNS.slice()), tsp = shuffle(SPAWNS.T.slice());
+  const site = rand() < .5 ? 'A' : 'B', plan = T_PLAN[site], carrier = (rand()*bots.length)|0;
+  S.tSite = site; S.execT = 20 + rand()*22;
   bots.forEach((b, i) => {
-    b.alive = true; b.hp = 100; b.armor = S.round > 1 ? 100 : (rand() < .3 ? 100 : 0); b.helmet = S.round > 2 || (S.round === 2 && rand() < .4);
-    b.weapon = botWeaponFor(S.round, i); b.mag = W[b.weapon].mag; b.reloadT = 0;
-    const [sx, sz] = spawns[i]; b.pos.set(cw(sx) + (rand()-.5), 0, cw(sz) + (rand()-.5)); b.yaw = Math.PI;
-    let role = roles[i]; if (b.weapon === 'sniper') role = rand() < .5 ? 'M' : 'A';
-    const h = holds[role].shift() || HOLDS[role][0]; b.hold = { pos:new V3(cw(h[0][0]), 0, cw(h[0][1])), look:new V3(cw(h[1][0]), 0, cw(h[1][1])) };
+    b.alive = true; b.hp = 100; b.armor = rih > 1 ? 100 : (rand() < .3 ? 100 : 0); b.helmet = rih > 2 || (rih === 2 && rand() < .4);
+    b.weapon = botWeaponFor(rih, i); b.mag = W[b.weapon].mag; b.reloadT = 0;
     b.mode = 'hold'; b.path = null; b.seeing = false; b.vis = null; b.lastKnown = null; b.lastSeen = -99; b.alertPos = null; b.alertT = -99; b.investigate = false; b.spotT = -99; b.defuse = 0; b.deadT = 0; b.deadT0 = -99; b.kneel = 0; b.stuck = 0; b.blindT = 0;
+    b.hasBomb = false; b.planting = 0; b.atStage = false; b.postPos = null;
+    if (side === 'CT'){
+      const [sx, sz] = spawns[i]; b.pos.set(cw(sx) + (rand()-.5), 0, cw(sz) + (rand()-.5)); b.yaw = Math.PI;
+      let role = roles[i]; if (b.weapon === 'sniper') role = rand() < .5 ? 'M' : 'A';
+      const h = holds[role].shift() || HOLDS[role][0]; b.hold = { pos:new V3(cw(h[0][0]), 0, cw(h[0][1])), look:new V3(cw(h[1][0]), 0, cw(h[1][1])) };
+    } else {
+      const [sx, sz] = tsp[i % tsp.length]; b.pos.set(cw(sx) + (rand()-.5)*.6, 0, cw(sz) + (rand()-.5)*.6); b.yaw = 0;
+      b.hasBomb = i === carrier; if (b.hasBomb) bomb.carrier = b;
+      const st = b.hasBomb ? plan.stages[0] : plan.stages[i % plan.stages.length]; b.stage = new V3(cw(st[0]) + (rand()-.5)*1.2, 0, cw(st[1]) + (rand()-.5)*1.2);
+      const sp = plan.spots[(i + carrier) % plan.spots.length]; b.spot = new V3(cw(sp[0]) + (rand()-.5)*.8, 0, cw(sp[1]) + (rand()-.5)*.8);
+      const lk = plan.looks[i % plan.looks.length]; b.postLook = new V3(cw(lk[0]), 0, cw(lk[1]));
+      b.mode = 'stage';
+    }
     b.m.g.visible = true; b.m.g.rotation.set(0,0,0); b.m.g.position.copy(b.pos); poseSoldier(b.m, 0, false, 0); setSoldierWeapon(b.m, b.weapon);
   });
-  $('dead').hidden = true; H.scope.hidden = true; H.cross.style.display = '';
+  $('dead').hidden = true; H.scope.hidden = true; H.cross.style.display = ''; H.progBar.style.background = '';
   updatePips(); updateHUD();
-  showMsg(S.round === 1 ? 'Birinchi raund' : S.round + '-raund', S.round === 1 ? "Pistolet raundi. " + KB('B tugmasi', '$ Xarid tugmasi') + " bilan xarid qiling, keyin bombani A yoki B ga olib boring." : 'Hisob ' + S.scT + ' : ' + S.scCT + ". Xarid qiling va rejani tanlang.", 'atk', 3600);
+  const T = player.team === 'T', pistol = S.round === 1 || (newHalf && !isOT(S.round, HH)), swapped = newHalf && sideOfSquad('A', S.round - 1, HH) !== player.team;
+  const title = S.round === 1 ? 'Birinchi raund' : newHalf ? (isOT(S.round, HH) ? "Qo'shimcha vaqt" : 'Ikkinchi yarim') : S.round + '-raund';
+  const sub = (pistol ? 'Pistolet raundi. ' : 'Hisob ' + S.sA + ' : ' + S.sB + '. ') + (swapped ? 'Tomonlar almashdi: endi siz ' + (T ? 'hujumdasiz. ' : 'himoyadasiz. ') : newHalf ? 'Siz yana ' + (T ? 'hujumdasiz. ' : 'himoyadasiz. ') : '') +
+    (S.round === 1 ? KB('B tugmasi', '$ Xarid tugmasi') + ' bilan xarid qiling, keyin ' : 'Xarid qiling, keyin ') + (T ? 'bombani A yoki B ga olib boring.' : 'A va B nuqtalarni himoya qiling.');
+  showMsg(title, sub, teamMsg(player.team), newHalf ? 5200 : 3600);
 }
 
 function endRound(winner, reason, how){
   if (S.phase !== 'live') return;
   S.phase = 'post'; S.timer = 6; S.endWinner = winner;
-  if (winner === 'T'){ S.scT++; addMoney(how === 'bomb' ? 3500 : 3250, "raund g'alabasi"); S.loss = 0; }
-  else { S.scCT++; addMoney(1400 + 500*Math.min(S.loss, 4) + (S.roundPlanted ? 800 : 0), "mag'lubiyat"); S.loss++; }
-  H.scT.textContent = S.scT; H.scCT.textContent = S.scCT;
+  const won = winner === player.team;
+  if (won){ S.sA++; addMoney(how === 'bomb' || how === 'defuse' ? 3500 : 3250, "raund g'alabasi"); S.loss = 0; }
+  else { S.sB++; addMoney(1400 + 500*Math.min(S.loss, 4) + (player.team === 'T' && S.roundPlanted ? 800 : 0), "mag'lubiyat"); S.loss++; }
   showMsg(winner === 'T' ? "Hujumchilar g'alaba qozondi" : "Himoyachilar g'alaba qozondi", reason, winner === 'T' ? 'atk' : 'def', 5200);
-  sfxChord(winner === 'T');
+  const r = S.round;
+  if (!matchWinner(S.sA, S.sB, r, S.H) && halfOf(r + 1, S.H) !== halfOf(r, S.H)) setTimeout(() => { if (S.phase === 'post' && S.round === r) swapNotice(r, S.H, S.sA + ' : ' + S.sB); }, 3000);
+  sfxChord(won);
   if (S.buyOpen) closeBuy(true);
-  H.prog.hidden = true; player.planting = 0;
+  H.prog.hidden = true; player.planting = 0; updateHUD();
 }
 
 function checkRoundEnd(){
   if (S.phase !== 'live') return;
-  if (bots.every(b => !b.alive)) return endRound('T', bomb.planted ? "Bomba o'rnatildi va himoyachilar yo'q qilindi" : "Barcha himoyachilar yo'q qilindi", 'kill');
-  if (!player.alive && !bomb.planted) return endRound('CT', "Hujumchilar yo'q qilindi", 'kill');
+  const botsAlive = bots.some(b => b.alive);
+  if (player.team === 'T'){
+    if (!botsAlive) return endRound('T', bomb.planted ? "Bomba o'rnatildi va himoyachilar yo'q qilindi" : "Barcha himoyachilar yo'q qilindi", 'kill');
+    if (!player.alive && !bomb.planted) return endRound('CT', "Hujumchilar yo'q qilindi", 'kill');
+  } else {
+    if (!player.alive && botsAlive) return endRound('T', "Himoyachilar yo'q qilindi", 'kill');
+    if (!botsAlive && !bomb.planted) return endRound('CT', "Barcha hujumchilar yo'q qilindi", 'kill');
+    // all attackers down after the plant: the round goes on until the bomb is defused or explodes
+  }
 }
 
 function startMatch(){
   MODE = 'bots'; player.team = 'T'; H.progBar.style.background = ''; bots.forEach(b => b.m.g.visible = true);
   DIFF = DIFFS[SET.diff] || DIFFS.normal;
-  Object.assign(S, { round:0, scT:0, scCT:0, loss:0, paused:false });
+  Object.assign(S, { round:0, sA:0, sB:0, H:fmtH(), loss:0, paused:false });
   Object.assign(player, { money:800, kills:0, deaths:0, hs:0, dmg:0, alive:false }); resetInv();
   bots.forEach(b => { b.kills = 0; b.deaths = 0; });
-  H.scT.textContent = 0; H.scCT.textContent = 0; H.feed.innerHTML = '';
+  H.feed.innerHTML = '';
   decals.forEach(d => d.visible = false);
   ['menu','over','pause'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
   startRound();
@@ -1529,7 +1595,8 @@ function knifeAttack(heavy){
 }
 
 function botKilled(b, w, hs){
-  b.alive = false; b.deadT = 0; b.deadT0 = S.time; b.deaths++; player.kills++; if (hs) player.hs++;
+  if (b.hasBomb) dropBomb(b);
+  b.alive = false; if (bomb.picker === b) assignPicker(); b.deadT = 0; b.deadT0 = S.time; b.deaths++; player.kills++; if (hs) player.hs++;
   addMoney(w.kill, '');
   feed('Siz', 'a', w.name, b.name, 'd', hs, true);
   if (bomb.defuser === b) bomb.defuser = null;
@@ -1655,7 +1722,7 @@ function updateBot(b, dt){
     b.visT = .1; const v = botSees(b);
     if (v){
       if (!b.seeing){ b.seeing = true; b.seenFor = 0; const off = Math.abs(wrapA(Math.atan2(player.pos.x-b.pos.x, player.pos.z-b.pos.z) - b.yaw)); b.react = DIFF.react*(.8 + rand()*.5) + v.dist/140 + (off > .6 ? .18 : 0) + (b.kneel > .5 ? .25 : 0); }
-      b.vis = v; b.lastKnown = player.pos.clone(); b.lastSeen = S.time; b.spotT = S.time + 2;
+      b.vis = v; b.lastKnown = player.pos.clone(); b.lastSeen = S.time; b.spotT = S.time + 2; b.planting = 0;
       if (b.defuse > 0){ b.defuse = 0; if (bomb.defuser === b) bomb.defuser = null; }
     } else if (b.seeing){ b.seeing = false; b.vis = null; }
   }
@@ -1673,6 +1740,8 @@ function updateBot(b, dt){
       moveEntity(b.pos, sx*2.6*dt, sz*2.6*dt, .34, true); b.moving = true; b.speed = 2.6;
     }
     if (b.react <= 0 && off < .12 && b.fireCd <= 0 && b.pause <= 0 && b.reloadT <= 0) botFire(b);
+  } else if (b.side === 'T'){
+    kneelTarget = tBotThink(b, dt);
   } else {
     if (bomb.planted && b.mode !== 'defuse') b.mode = 'retake';
     if (b.mode === 'defuse'){
@@ -1717,6 +1786,70 @@ function updateBot(b, dt){
   m.g.position.copy(b.pos); m.g.rotation.set(0, b.yaw, 0);
   b.walk += b.moving ? dt*b.speed*2.3 : 0; poseSoldier(m, b.walk, b.moving, b.kneel);
   if (b.flashT > 0){ b.flashT -= dt; m.flash.visible = true; } else m.flash.visible = false;
+}
+
+/* ---------- attacking bots: stage, take a site, plant, guard the bomb ---------- */
+function tBotThink(b, dt){
+  if (bomb.planted){
+    if (bomb.defuser === 'player'){ goTo(b, bomb.pos, 4.4, dt); return 0; }
+    if (!b.postPos) b.postPos = postSpot(b);
+    if (Math.hypot(b.postPos.x-b.pos.x, b.postPos.z-b.pos.z) > .7) goTo(b, b.postPos, 3.6, dt);
+    else { const L = b.alertPos && S.time - b.alertT < 5 ? b.alertPos : b.postLook; turnTo(b, Math.atan2(L.x-b.pos.x, L.z-b.pos.z) + Math.sin(S.time*.5 + b.i*2)*.25, 3*dt); }
+    return 0;
+  }
+  if (bomb.dropped && bomb.picker === b){ if (goTo(b, bomb.dropPos, 4.3, dt) || Math.hypot(bomb.dropPos.x-b.pos.x, bomb.dropPos.z-b.pos.z) < .9) pickBomb(b); return 0; }
+  if (!b.hasBomb && b.lastKnown && S.time - b.lastSeen < 6){
+    if (goTo(b, b.lastKnown, 3.6, dt) || Math.hypot(b.lastKnown.x-b.pos.x, b.lastKnown.z-b.pos.z) < 1.2) b.lastKnown = null;
+    return 0;
+  }
+  const allStaged = bots.every(o => !o.alive || o.atStage || o.mode !== 'stage');
+  const go = S.liveT > S.execT || (allStaged && S.liveT > S.execT*.55) || S.timer < 45;
+  if (b.mode === 'stage'){
+    if (Math.hypot(b.stage.x-b.pos.x, b.stage.z-b.pos.z) > .8) goTo(b, b.stage, 4.1, dt);
+    else { b.atStage = true; const L = b.alertPos && S.time - b.alertT < 4 ? b.alertPos : b.spot; turnTo(b, Math.atan2(L.x-b.pos.x, L.z-b.pos.z), 3*dt); }
+    if (go){ b.mode = 'exec'; b.path = null; }
+    return 0;
+  }
+  const d = Math.hypot(b.spot.x-b.pos.x, b.spot.z-b.pos.z);
+  if (b.hasBomb && siteAt(b.pos) && (d < 3 || S.timer < 20)){
+    if (b.planting === 0) noise(b.pos, 8);
+    const before = b.planting; b.planting += dt;
+    if (Math.floor(before*3) !== Math.floor(b.planting*3) && b.pos.distanceTo(player.pos) < 14) toneHit(spatial(b.pos), 1200 + rand()*600, .1, .06, 'square');
+    if (b.planting >= 3.2) botPlant(b);
+    return 1;
+  }
+  b.planting = 0;
+  if (d > .7) goTo(b, b.spot, 4.3, dt);
+  else { const L = b.alertPos && S.time - b.alertT < 4 ? b.alertPos : b.postLook; turnTo(b, Math.atan2(L.x-b.pos.x, L.z-b.pos.z), 3*dt); }
+  return 0;
+}
+function postSpot(b){
+  for (let k=0;k<14;k++){ const a = rand()*Math.PI*2, r = 3 + rand()*5, x = bomb.pos.x + Math.sin(a)*r, z = bomb.pos.z + Math.cos(a)*r;
+    if (botSolid(wc(x), wc(z)) || blockedAt(x, z, 0, .4, true)) continue;
+    if (!los(_tmp.set(bomb.pos.x, 1, bomb.pos.z), _tmp2.set(x, 1, z))) continue;
+    return new V3(x, 0, z); }
+  return bomb.pos.clone().add(new V3((rand()-.5)*2, 0, (rand()-.5)*2));
+}
+function dropBomb(b){
+  b.hasBomb = false; b.planting = 0; bomb.carrier = null; bomb.dropped = true; bomb.dropPos = b.pos.clone(); bomb.dropPos.y = 0;
+  bomb.mesh.position.copy(bomb.dropPos); bomb.mesh.rotation.y = b.yaw; bomb.mesh.visible = true; bomb.led.material.opacity = 0;
+  assignPicker(b);
+}
+function assignPicker(except){
+  let best = null, bd = 1e9;
+  for (const o of bots){ if (!o.alive || o === except) continue; const d = o.pos.distanceTo(bomb.dropPos || o.pos); if (d < bd){ bd = d; best = o; } }
+  bomb.picker = bomb.dropped ? best : null; if (best && bomb.dropped) best.path = null;
+}
+function pickBomb(b){
+  bomb.dropped = false; bomb.picker = null; bomb.mesh.visible = false; b.hasBomb = true; bomb.carrier = b; b.mode = 'exec'; b.path = null;
+  if (!siteAt(b.spot)){ const plan = T_PLAN[S.tSite], sp = plan.spots[0]; b.spot = new V3(cw(sp[0]), 0, cw(sp[1])); }
+}
+function botPlant(b){
+  b.planting = 0; b.hasBomb = false; bomb.carrier = null;
+  bomb.planted = true; bomb.timer = 40; bomb.beepT = 0; bomb.site = siteAt(b.pos) || S.tSite; bomb.defuser = null;
+  bomb.pos.set(b.pos.x, b.pos.y, b.pos.z); bomb.mesh.position.copy(bomb.pos); bomb.mesh.rotation.y = b.yaw; bomb.mesh.visible = true; S.roundPlanted = true;
+  showMsg("Bomba o'rnatildi", bomb.site + ' nuqtasi · ' + KB('E ni', 'BOMBA tugmasini') + ' bosib turib zararsizlantiring (' + defuseTime() + ' soniya)', 'def', 3600);
+  bots.forEach(o => { o.postPos = null; o.path = null; });
 }
 
 /* ================= BOMB ================= */
@@ -2057,6 +2190,11 @@ $('menuBtn').addEventListener('click', toMenu);
 const diffBtns = [...document.querySelectorAll('#diffBtns button')];
 function syncDiff(){ diffBtns.forEach(b => b.setAttribute('aria-pressed', b.dataset.d === SET.diff ? 'true' : 'false')); }
 diffBtns.forEach(b => b.addEventListener('click', () => { SET.diff = b.dataset.d; saveSet(); syncDiff(); })); syncDiff();
+// segmented settings: <div class="seg" data-set="key"><button data-v="value">
+function syncSegs(){ document.querySelectorAll('.seg[data-set]').forEach(g => g.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(SET[g.dataset.set]) === b.dataset.v ? 'true' : 'false'))); }
+document.querySelectorAll('.seg[data-set]').forEach(g => g.addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; SET[g.dataset.set] = b.dataset.v; saveSet(); syncSegs(); if (SEG_HOOK[g.dataset.set]) SEG_HOOK[g.dataset.set](); }));
+const SEG_HOOK = {};
+syncSegs();
 
 // settings (one panel moved between the menu and the pause sheet)
 (function(){
@@ -2112,9 +2250,10 @@ function showBoard(on){
   const el = $('board'); if (!on || !inGame()){ el.hidden = true; return; }
   if (MODE === 'online'){ el.innerHTML = netBoardHTML(); el.hidden = false; return; }
   const row = (cls, name, k, d, extra, dead) => `<tr class="${dead ? 'dead' : ''}"><td><span class="tag" style="background:${cls}"></span>${name}</td><td class="r">${k}</td><td class="r">${d}</td><td class="r">${extra}</td></tr>`;
-  el.innerHTML = `<h3>Raund ${S.round} · ${S.scT} : ${S.scCT} · ${S.toWin} g'alabagacha</h3><table><tr><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">PUL / JON</th></tr>` +
-    row('var(--atk)', 'Siz', player.kills, player.deaths, '$' + player.money, !player.alive) +
-    bots.map(b => row('var(--def)', b.name, b.kills, b.deaths, b.alive ? W[b.weapon].name : '—', !b.alive)).join('') + '</table>';
+  const mine = player.team === 'T' ? 'var(--atk)' : 'var(--def)', theirs = player.team === 'T' ? 'var(--def)' : 'var(--atk)';
+  el.innerHTML = `<h3>Raund ${S.round} · ${S.sA} : ${S.sB} · ${fmtLabel(S.H)}${S.round > 2*S.H ? " · qo'shimcha vaqt" : ''}</h3><table><tr><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">PUL / JON</th></tr>` +
+    row(mine, 'Siz', player.kills, player.deaths, '$' + player.money, !player.alive) +
+    bots.map(b => row(theirs, b.name + (b.hasBomb && player.team === 'CT' && !b.alive ? '' : ''), b.kills, b.deaths, b.alive ? W[b.weapon].name : '—', !b.alive)).join('') + '</table>';
   el.hidden = false;
 }
 
@@ -2160,7 +2299,7 @@ function wsJoin(name){
     open();
   });
 }
-const NET = { room:null, me:null, name:'', code:'umumiy', host:false, g:null, gSrc:null, hitSeq:0, hits:[], shot:null, shotN:0, death:null, deathN:0, nade:null, nadeN:0, plant:null, plantN:0, def:null, defN:0,
+const NET = { room:null, me:null, name:'', code:'umumiy', sq:null, host:false, g:null, gSrc:null, hitSeq:0, hits:[], shot:null, shotN:0, death:null, deathN:0, nade:null, nadeN:0, plant:null, plantN:0, def:null, defN:0,
   seen:{}, remotes:new Map(), inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, tickLast:0, joinT:0, cdShown:-1, beepT:0 };
 if (!IN_ARTIFACT) $('onlineNote').textContent = "Do'stlaringizga shu sahifa havolasini yuboring va bir xil xona kodini kiriting. Jamoalar avtomatik teng bo'linadi.";
 const DEFAULT_NOTE = $('onlineNote').textContent;
@@ -2193,7 +2332,7 @@ function hitMark(kill){ H.hit.className = ''; void H.hit.offsetWidth; H.hit.styl
 function updateRemote(r, pr, dt){
   if (pr !== r.lastPres){
     r.lastPres = pr;
-    const team = pr.tm === 'CT' ? 'CT' : 'T', name = cleanName(pr.nm);
+    const team = pr.tm === 'CT' ? 'CT' : 'T', name = cleanName(pr.nm); r.sq = pr.sq === 'B' ? 'B' : 'A';
     const a = pr.acc;
     r.acc = a && typeof a === 'object' && typeof a.u === 'string' ? { r:num(a.r)|0, rk:String(a.rk || '').slice(0, 24), rc:safeColor(a.rc), cal:!!a.cal } : null;
     if (team !== r.team || !r.m){ r.team = team; r.name = name; dressRemote(r); }
@@ -2268,25 +2407,27 @@ function netHit(r, w, part, dist, pos, flat){
 
 const PHS = ['warmup','freeze','live','post','over'];
 function sanitizeG(g){ const b = g.b && typeof g.b === 'object' ? { x:num(g.b.x), z:num(g.b.z), s:g.b.s === 'B' ? 'B' : 'A', t:num(g.b.t) } : 0;
-  return { r:Math.max(0, num(g.r)|0), ph:PHS.includes(g.ph) ? g.ph : 'warmup', t:num(g.t), sT:num(g.sT)|0, sCT:num(g.sCT)|0, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
-function gOut(g){ return g ? { r:g.r, ph:g.ph, t:r2(g.t), sT:g.sT, sCT:g.sCT, b: g.b ? { x:g.b.x, z:g.b.z, s:g.b.s, t:r2(g.b.t) } : 0, w:g.w, y:g.y, bm:g.bm, e:g.e, cd:r2(g.cd) } : null; }
+  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
+function gOut(g){ return g ? { r:g.r, ph:g.ph, t:r2(g.t), sA:g.sA, sB:g.sB, fm:g.fm, b: g.b ? { x:g.b.x, z:g.b.z, s:g.b.s, t:r2(g.b.t) } : 0, w:g.w, y:g.y, bm:g.bm, e:g.e, cd:r2(g.cd) } : null; }
 function buildPres(){
   const it = curItem();
-  return { v:1, hc:1, nm:NET.name, tm:player.team, x:r2(player.pos.x), y:r2(player.pos.y), z:r2(player.pos.z), yw:r2(player.yaw), pt:r2(player.pitch), cr:r2(player.crouch),
+  return { v:1, hc:1, nm:NET.name, sq:NET.sq, tm:player.team, x:r2(player.pos.x), y:r2(player.pos.y), z:r2(player.pos.z), yw:r2(player.yaw), pt:r2(player.pitch), cr:r2(player.crouch),
     al:player.alive ? 1 : 0, hp:Math.max(0, Math.round(player.hp)), w:it ? it.id : 'knife', mv:(player.alive && player.ground && Math.hypot(player.vel.x, player.vel.z) > 3.1) ? 1 : 0,
     k:player.kills, d:player.deaths, in:NET.inRound, sh:NET.shot, hi:NET.hits.length ? NET.hits : null, de:NET.death, gn:NET.nade, pl:NET.plant, df:NET.def, g: NET.host ? gOut(NET.g) : null };
 }
 
-function hostEnd(g, w, y){ g.ph = 'post'; g.t = 6; g.w = w; g.y = y; if (w === 'T') g.sT++; else g.sCT++; }
+function gSideScore(g, side){ if (!g || !g.r) return 0; return sideOfSquad('A', g.r, g.fm) === side ? g.sA : g.sB; }
+function hostEnd(g, w, y){ g.ph = 'post'; g.t = 6; g.w = w; g.y = y; if (sideOfSquad('A', g.r, g.fm) === w) g.sA++; else g.sB++; }
 function hostStep(dt, valid){
-  let g = NET.g; if (!g) g = NET.g = { r:0, ph:'warmup', t:0, sT:0, sCT:0, b:0, w:'', y:'', bm:-1, e:'', cd:6 };
+  let g = NET.g; if (!g) g = NET.g = { r:0, ph:'warmup', t:0, sA:0, sB:0, fm:fmtH(), b:0, w:'', y:'', bm:-1, e:'', cd:6 };
   const all = valid.map(p => p.presence); all.push(buildPres());
-  const nT = all.filter(p => p.tm === 'T').length, nCT = all.filter(p => p.tm === 'CT').length;
+  const nT = all.filter(p => p.sq === 'A').length, nCT = all.filter(p => p.sq === 'B').length;   // squads, so the half-time swap never looks like an empty side
   const part = tm => all.filter(p => p.tm === tm && p.in === g.r), alive = tm => part(tm).filter(p => p.al === 1).length;
   if (g.ph !== 'warmup' && g.ph !== 'over' && (!nT || !nCT)){ g.ph = 'warmup'; g.r = 0; g.cd = 6; g.t = 0; g.b = 0; return; }
   switch (g.ph){
     case 'warmup':
-      if (nT && nCT){ g.cd -= dt; g.t = Math.max(0, g.cd); if (g.cd <= 0){ g.r = 1; g.ph = 'freeze'; g.t = 6; g.sT = g.sCT = 0; g.b = 0; g.bm = -1; g.e = Math.random().toString(36).slice(2, 8); } }
+      g.fm = fmtH();
+      if (nT && nCT){ g.cd -= dt; g.t = Math.max(0, g.cd); if (g.cd <= 0){ g.r = 1; g.ph = 'freeze'; g.t = 6; g.sA = g.sB = 0; g.b = 0; g.bm = -1; g.e = Math.random().toString(36).slice(2, 8); } }
       else { g.cd = 6; g.t = 0; }
       break;
     case 'freeze': g.t -= dt; if (g.t <= 0){ g.ph = 'live'; g.t = 115; } break;
@@ -2299,7 +2440,7 @@ function hostStep(dt, valid){
       else if (part('T').length && !alive('T') && !g.b) hostEnd(g, 'CT', 'kill');
       else if (!g.b && g.t <= 0) hostEnd(g, 'CT', 'time');
       break;
-    case 'post': g.t -= dt; if (g.t <= 0){ if (g.sT >= 8 || g.sCT >= 8){ g.ph = 'over'; g.t = 10; } else { g.r++; g.ph = 'freeze'; g.t = 5; g.b = 0; } } break;
+    case 'post': g.t -= dt; if (g.t <= 0){ if (matchWinner(g.sA, g.sB, g.r, g.fm)){ g.ph = 'over'; g.t = 10; } else { g.r++; g.ph = 'freeze'; g.t = halfStart(g.r, g.fm) ? 10 : 5; g.b = 0; } } break;
     case 'over': g.t -= dt; if (g.t <= 0){ g.ph = 'warmup'; g.r = 0; g.cd = 6; g.t = 0; g.b = 0; } break;
   }
 }
@@ -2307,23 +2448,27 @@ function hostStep(dt, valid){
 function respawnWarm(){ spawnAt(player.team); player.alive = true; player.hp = 100; player.money = 16000; refill(); NET.inRound = 0; NET.deadT = 0; S.deathT = 0; player.planting = 0; $('dead').hidden = true; H.cross.style.display = ''; drawWeapon(); }
 function enterWarmup(){ respawnWarm(); showMsg('Isinish', "O'yin har ikki jamoada kamida bittadan o'yinchi bo'lganda boshlanadi. " + KB('M', 'Jamoa tugmasi') + " — jamoani almashtirish.", teamMsg(player.team), 4200); }
 function spawnRound(g){
-  const survived = player.alive && NET.inRound > 0;
+  const newHalf = halfStart(g.r, g.fm), survived = player.alive && NET.inRound > 0 && !newHalf;
+  player.team = sideOfSquad(NET.sq, g.r, g.fm);
   if (g.r === 1){ player.money = 800; player.kills = player.deaths = player.hs = 0; player.dmg = 0; NET.loss = 0; resetInv(); }
+  else if (newHalf){ player.money = isOT(g.r, g.fm) ? 12500 : 800; NET.loss = 0; resetInv(); }
   else if (!survived) resetInv();
   refill(); spawnAt(player.team);
   player.alive = true; player.hp = 100; player.planting = 0; player.scope = 0; player.recoil = 0; player.punchX = player.punchY = 0;
   NET.inRound = g.r; NET.plant = null; NET.def = null; NET.planted = false; NET.liveT = 0; NET.defuseT = 0; S.deathT = 0;
   bomb.planted = false; bomb.mesh.visible = false; H.prog.hidden = true; clearNades();
   $('dead').hidden = true; H.cross.style.display = ''; drawWeapon(); updateHUD();
-  showMsg(g.r + '-raund', 'Siz ' + TEAM_NAME[player.team] + ' jamoasidasiz. ' + (player.team === 'T' ? "B — xarid, keyin bombani A yoki B ga olib boring." : "B — xarid, keyin A va B nuqtalarni himoya qiling."), teamMsg(player.team), 3400);
+  showMsg(newHalf ? (isOT(g.r, g.fm) ? "Qo'shimcha vaqt" : 'Ikkinchi yarim') : g.r + '-raund', (newHalf && sideOfSquad(NET.sq, g.r - 1, g.fm) !== player.team ? 'Tomonlar almashdi: endi siz ' + TEAM_NAME[player.team] + ' tomondasiz. ' : 'Siz ' + TEAM_NAME[player.team] + ' jamoasidasiz. ') + (player.team === 'T' ? "B — xarid, keyin bombani A yoki B ga olib boring." : "B — xarid, keyin A va B nuqtalarni himoya qiling."), teamMsg(player.team), newHalf ? 5200 : 3400);
 }
-function lateJoin(){ spawnAt(player.team); player.alive = false; NET.inRound = 0; S.deathT = 3; player.deathPos.set(player.pos.x, 3, player.pos.z); player.killer = null;
+function lateJoin(g){ player.team = sideOfSquad(NET.sq, g.r, g.fm); spawnAt(player.team); player.alive = false; NET.inRound = 0; S.deathT = 3; player.deathPos.set(player.pos.x, 3, player.pos.z); player.killer = null;
   $('deadT').textContent = 'Keyingi raund kutilmoqda'; $('deadS').textContent = "Raund davom etmoqda. " + KB('Chap tugma', 'Ekranga bosing') + " — jamoadoshni kuzatish"; $('dead').hidden = false; H.cross.style.display = 'none'; }
 function award(g){
   const win = g.w === player.team, why = { kill:"raqib jamoa yo'q qilindi", bomb:'bomba portladi', defuse:'bomba zararsizlantirildi', time:'vaqt tugadi' }[g.y] || '';
   if (win){ addMoney(g.y === 'bomb' ? 3500 : 3250, "raund g'alabasi"); NET.loss = 0; }
   else { addMoney(1400 + 500*Math.min(NET.loss, 4) + (player.team === 'T' && NET.planted ? 800 : 0), "mag'lubiyat"); NET.loss++; }
-  showMsg(TEAM_NAME[g.w] + " jamoasi g'alaba qozondi", (why ? why.charAt(0).toUpperCase() + why.slice(1) + ' · ' : '') + g.sT + ' : ' + g.sCT, g.w === 'CT' ? 'def' : 'atk', 5000);
+  showMsg(TEAM_NAME[g.w] + " jamoasi g'alaba qozondi", (why ? why.charAt(0).toUpperCase() + why.slice(1) + ' · ' : '') + gSideScore(g, 'T') + ' : ' + gSideScore(g, 'CT'), g.w === 'CT' ? 'def' : 'atk', 5000);
+  const r = g.r, mineFirst = () => NET.sq === 'B' ? g.sB + ' : ' + g.sA : g.sA + ' : ' + g.sB;
+  if (!matchWinner(g.sA, g.sB, r, g.fm) && halfOf(r + 1, g.fm) !== halfOf(r, g.fm)) setTimeout(() => { if (NET.g && NET.g.ph === 'post' && NET.g.r === r) swapNotice(r, g.fm, mineFirst()); }, 3000);
   sfxChord(win); H.prog.hidden = true; player.planting = 0; NET.defuseT = 0; if (S.buyOpen) closeBuy(true);
 }
 function netBoom(){
@@ -2337,11 +2482,11 @@ function clientPhase(dt){
   const ph = g.ph; S.phase = ph === 'over' ? 'mover' : ph;
   const key = g.e + ':' + g.r;
   if (ph === 'warmup'){
-    if (NET.lastPh !== 'warmup'){ NET.roundKey = ''; enterWarmup(); }
+    if (NET.lastPh !== 'warmup'){ NET.roundKey = ''; player.team = NET.sq === 'B' ? 'CT' : 'T'; enterWarmup(); }
     if (!player.alive && NET.deadT > 3) respawnWarm();
-    if (g.t > 0){ const c = Math.ceil(g.t); if (c !== NET.cdShown){ NET.cdShown = c; showMsg("O'yin " + c + ' soniyada boshlanadi', "Jamoalar tayyor. 8 raund yutgan jamoa g'olib.", teamMsg(player.team), 1100); } } else NET.cdShown = -1;
+    if (g.t > 0){ const c = Math.ceil(g.t); if (c !== NET.cdShown){ NET.cdShown = c; showMsg("O'yin " + c + ' soniyada boshlanadi', 'Jamoalar tayyor. ' + fmtLabel(g.fm) + ', yarim vaqtda tomonlar almashadi.', teamMsg(player.team), 1100); } } else NET.cdShown = -1;
   } else if ((ph === 'freeze' || ph === 'live' || ph === 'post') && key !== NET.roundKey){
-    NET.roundKey = key; if (ph === 'freeze') spawnRound(g); else lateJoin();
+    NET.roundKey = key; if (ph === 'freeze') spawnRound(g); else lateJoin(g);
   }
   if (ph === 'live' && NET.lastPh === 'freeze') showMsg('Boshladik!', player.team === 'T' ? "Bombani A yoki B nuqtaga o'rnating" : 'A va B nuqtalarni himoya qiling', teamMsg(player.team), 1600);
   const planted = ph === 'live' && !!g.b;
@@ -2352,15 +2497,17 @@ function clientPhase(dt){
   if (!planted && ph !== 'post') bomb.mesh.visible = false;
   if (ph === 'post' && NET.awardKey !== key){ NET.awardKey = key; award(g); }
   if (ph === 'post' && g.y === 'defuse') bomb.mesh.visible = false;
-  if (ph === 'over' && NET.lastPh !== 'over'){ const win = g.sT > g.sCT ? 'T' : 'CT'; showMsg(TEAM_NAME[win] + " jamoasi o'yinni yutdi", 'Hisob ' + g.sT + ' : ' + g.sCT + '. Isinish 10 soniyadan keyin boshlanadi.', teamMsg(win), 9000); sfxChord(win === player.team); }
+  if (ph === 'over' && NET.lastPh !== 'over'){ const mine = (g.sA > g.sB) === (NET.sq !== 'B'), sc = NET.sq === 'B' ? g.sB + ' : ' + g.sA : g.sA + ' : ' + g.sB;
+    showMsg(mine ? "Jamoangiz o'yinni yutdi" : "Raqib jamoa o'yinni yutdi", 'Hisob ' + sc + (g.r > 2*g.fm ? " (qo'shimcha vaqtda)" : '') + '. Isinish 10 soniyadan keyin boshlanadi.', mine ? teamMsg(player.team) : '', 9000); sfxChord(mine); }
   NET.lastPh = ph;
 }
-function pickTeam(){ let t = 0, c = 0; NET.remotes.forEach(r => { if (r.team === 'T') t++; else if (r.team === 'CT') c++; });
-  player.team = t < c ? 'T' : c < t ? 'CT' : (rand() < .5 ? 'T' : 'CT'); hint('Siz ' + TEAM_NAME[player.team] + ' jamoasidasiz · ' + KB('M', 'Jamoa tugmasi') + ' — almashtirish', 3500); }
+function netSide(){ const g = NET.g; return g && g.r > 0 && g.ph !== 'warmup' ? sideOfSquad(NET.sq, g.r, g.fm) : (NET.sq === 'B' ? 'CT' : 'T'); }
+function pickTeam(){ let a = 0, b = 0; NET.remotes.forEach(r => { if (!r.team) return; if (r.sq === 'B') b++; else a++; });
+  NET.sq = a < b ? 'A' : b < a ? 'B' : (rand() < .5 ? 'A' : 'B'); player.team = netSide(); hint('Siz ' + TEAM_NAME[player.team] + ' jamoasidasiz · ' + KB('M', 'Jamoa tugmasi') + ' — almashtirish', 3500); }
 function switchTeam(){
   if (!player.team) return; const g = NET.g;
   if (g && (g.ph === 'live' || g.ph === 'post') && player.alive && NET.inRound === g.r){ hint("Raund davomida jamoani almashtirib bo'lmaydi"); return; }
-  player.team = player.team === 'T' ? 'CT' : 'T'; hint('Endi siz ' + TEAM_NAME[player.team] + ' jamoasidasiz', 2200);
+  NET.sq = NET.sq === 'A' ? 'B' : 'A'; player.team = netSide(); hint('Endi siz ' + TEAM_NAME[player.team] + ' jamoasidasiz', 2200);
   if (!g || g.ph === 'warmup') respawnWarm(); else if (g.ph === 'freeze') spawnAt(player.team);
 }
 function netStep(dt){
@@ -2435,26 +2582,25 @@ function clockText(){
 function netPips(){
   const all = [...NET.remotes.values()].filter(r => r.team).map(r => ({ team:r.team, alive:r.alive }));
   if (player.team) all.push({ team:player.team, alive:player.alive });
-  const pip = (x, cls) => `<i class="${cls}${x.alive ? '' : ' dead'}"></i>`;
-  H.pips.innerHTML = all.filter(x => x.team === 'T').map(x => pip(x, 't')).join('') + '<b class="sep"></b>' + all.filter(x => x.team === 'CT').map(x => pip(x, '')).join('');
+  H.pips.innerHTML = pipsHTML(all);
 }
 function netHUD(){
-  const g = NET.g; H.scT.textContent = g ? g.sT : 0; H.scCT.textContent = g ? g.sCT : 0; netPips();
+  const g = NET.g; H.scT.textContent = gSideScore(g, 'T'); H.scCT.textContent = gSideScore(g, 'CT'); netPips();
   const tt = $('teamTag'); tt.hidden = false;
   tt.textContent = (player.team ? 'Jamoa: ' + TEAM_NAME[player.team] : 'Jamoa tanlanmoqda…') + ' · Xona: ' + NET.code + ' · ' + (NET.remotes.size + 1) + " o'yinchi" + (NET.room && !NET.room.connected() ? ' · aloqa uzildi' : '');
   tt.style.color = player.team === 'CT' ? 'var(--def)' : 'var(--atk)';
 }
 function netBoardHTML(){
-  const g = NET.g || { r:0, sT:0, sCT:0 }, esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  const g = NET.g || { r:0, sA:0, sB:0, fm:12 }, esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
   const rows = [...NET.remotes.values()].filter(r => r.team).map(r => ({ name:r.name, team:r.team, k:r.k, d:r.d, alive:r.alive, me:false, acc:r.acc }));
   const meAcc = ACC.me ? { r:ACC.me.rating, rk:ACC.me.rank.calibrating ? 'Kalibrlash' : ACC.me.rank.name, rc:safeColor(ACC.me.rank.color) } : null;
   if (player.team) rows.push({ name:NET.name + ' (siz)', team:player.team, k:player.kills, d:player.deaths, alive:player.alive, me:true, acc:meAcc });
   const who = r => (r.acc ? `<span class="rk" style="--c:${r.acc.rc}" title="${esc(r.acc.rk)}"><i></i></span>` : '') + esc(r.name) + (r.acc ? `<small>${r.acc.r}</small>` : '<small>mehmon</small>');
   const sec = t => { const col = t === 'T' ? 'var(--atk)' : 'var(--def)', list = rows.filter(r => r.team === t).sort((a,b) => b.k - a.k);
-    return `<tr><th colspan="4" style="color:${col};padding-top:10px">${TEAM_NAME[t].toUpperCase()} · ${t === 'T' ? g.sT : g.sCT}</th></tr>` +
+    return `<tr><th colspan="4" style="color:${col};padding-top:10px">${TEAM_NAME[t].toUpperCase()} · ${gSideScore(g, t)}</th></tr>` +
       (list.length ? list.map(r => `<tr class="${r.alive ? '' : 'dead'}"><td><span class="tag" style="background:${col}"></span>${who(r)}</td><td class="r">${r.k}</td><td class="r">${r.d}</td><td class="r">${r.me ? '$' + player.money : (r.alive ? 'tirik' : '—')}</td></tr>`).join('')
         : `<tr><td colspan="4" style="color:var(--dim)">Hali hech kim yo'q</td></tr>`); };
-  return `<h3>Xona: ${esc(NET.code)} · ${g.r ? g.r + '-raund' : 'Isinish'}</h3><table><tr><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">PUL / HOLAT</th></tr>` + sec('T') + sec('CT') + '</table>';
+  return `<h3>Xona: ${esc(NET.code)} · ${g.r ? g.r + '-raund · ' + fmtLabel(g.fm) + (g.r > 2*g.fm ? " · qo'shimcha vaqt" : '') : 'Isinish'}</h3><table><tr><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">PUL / HOLAT</th></tr>` + sec('T') + sec('CT') + '</table>';
 }
 async function joinOnline(){
   const btn = $('onlineBtn'), note = $('onlineNote'); initAudio();
@@ -2478,7 +2624,7 @@ async function joinOnline(){
 function goOnline(named){
   MODE = 'online'; NET.room = named;
   Object.assign(NET, { me:null, host:false, g:null, gSrc:null, hits:[], shot:null, death:null, plant:null, def:null, seen:{}, inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, joinT:1.6, cdShown:-1, tickLast:performance.now() });
-  player.team = null; player.alive = false; player.hp = 100; player.kills = player.deaths = player.hs = 0; player.dmg = 0; resetInv(); player.money = 16000; player.killer = null;
+  player.team = null; NET.sq = null; player.alive = false; player.hp = 100; player.kills = player.deaths = player.hs = 0; player.dmg = 0; resetInv(); player.money = 16000; player.killer = null;
   spawnAt('T'); player.deathPos.set(player.pos.x, 3, player.pos.z);
   bots.forEach(b => { b.alive = false; b.m.g.visible = false; });
   bomb.planted = false; bomb.mesh.visible = false;
@@ -2592,7 +2738,7 @@ async function showProfile(name){
   const u = r.data.user, ms = r.data.matches || [];
   const hist = ms.length ? ms.map(m => {
     const own = m.team === 'T' ? m.sT : m.sCT, opp = m.team === 'T' ? m.sCT : m.sT, dd = m.after - m.before;
-    return `<div class="${m.won ? 'w' : 'l'}"><span class="res">${m.won ? "G'alaba" : "Mag'lubiyat"}</span><span>${own}:${opp} · ${m.k}/${m.d} · ${m.team === 'T' ? 'Hujum' : 'Himoya'}</span>` +
+    return `<div class="${m.won ? 'w' : 'l'}"><span class="res">${m.won ? "G'alaba" : "Mag'lubiyat"}</span><span>${own}:${opp} · ${m.k}/${m.d}</span>` +
       `<b class="${dd >= 0 ? 'up' : 'down'}">${dd >= 0 ? '+' : ''}${dd}</b><small>${fmtDate(m.ended)} · xona ${escH(m.room.replace(/^zn-/, ''))} · reyting ${m.after}</small></div>`;
   }).join('') : `<p class="note">Hali reytingli o'yin yo'q.</p>`;
   box.innerHTML = `<div class="me"><div class="who"><b>${escH(u.username)}</b>${rankBadge(u.rank)}</div><div class="pts"><b>${u.rating}</b><span>${u.pos ? '#' + u.pos + " o'rin" : 'reyting'}</span></div></div>` +
@@ -2694,7 +2840,7 @@ function touchFrame(){
   $('tUse').hidden = !site;
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { player, S, TOUCH, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAIN LOOP ================= */
 let swayX = 0, swayY = 0, hitFade = 0, vignT = 0, shakeT = 0, last = performance.now();
@@ -2713,7 +2859,7 @@ function step(dt){
   // timers
   if (S.phase === 'freeze'){ S.timer -= dt; if (S.timer <= 0){ S.phase = 'live'; S.timer = 115; showMsg('Boshladik!', '', 'atk', 1200); } }
   else if (S.phase === 'live'){ S.liveT += dt; if (!bomb.planted){ S.timer -= dt; if (S.timer <= 0) endRound('CT', 'Vaqt tugadi — bomba o\'rnatilmadi', 'time'); } }
-  else if (S.phase === 'post'){ S.timer -= dt; if (S.timer <= 0){ if (S.scT >= S.toWin || S.scCT >= S.toWin) return matchOver(); startRound(); } }
+  else if (S.phase === 'post'){ S.timer -= dt; if (S.timer <= 0){ if (matchWinner(S.sA, S.sB, S.round, S.H)) return matchOver(); startRound(); } }
   if (S.buyOpen && !canBuy()) closeBuy(true);
   if (S.buyOpen && S.round) $('buyTime').textContent = S.phase === 'freeze' ? 'Raund boshlanmoqda' : 'Xarid uchun ' + Math.max(0, Math.ceil(20 - liveTime())) + ' soniya';
 
@@ -2783,7 +2929,25 @@ function updateWeapon(dt){
   firePressed = false;
 }
 
+function updateDefuse(dt){
+  const near = bomb.planted && Math.hypot(player.pos.x - bomb.pos.x, player.pos.z - bomb.pos.z) < 1.7;
+  const want = player.alive && S.phase === 'live' && !S.paused && keys.KeyE && near && player.ground;
+  if (!want){
+    if (player.planting > 0){ player.planting = 0; H.prog.hidden = true; if (bomb.defuser === 'player') bomb.defuser = null; }
+    if (keys.KeyE && bomb.planted && !near && player.alive && (!player._defHint || S.time - player._defHint > 2.5)){ hint('Zararsizlantirish uchun bombaga yaqin turing'); player._defHint = S.time; }
+    return;
+  }
+  if (player.planting === 0){ sfxDefuse(bomb.pos); noise(bomb.pos, 60); bomb.defuser = 'player'; bots.forEach(b => { if (b.alive){ b.alertPos = bomb.pos.clone(); b.alertT = S.time; } }); }
+  player.planting += dt; player.vel.x = player.vel.z = 0;
+  const DT = defuseTime();
+  H.prog.hidden = false; H.progLbl.textContent = 'Bomba zararsizlantirilmoqda' + (player.kit ? " · to'plam bilan" : ''); H.progBar.style.background = 'var(--def)'; H.progBar.style.width = Math.min(100, player.planting/DT*100) + '%';
+  if (player.planting >= DT){
+    player.planting = 0; H.prog.hidden = true; bomb.planted = false; bomb.defuser = null; bomb.mesh.visible = false;
+    endRound('CT', 'Siz bombani zararsizlantirdingiz', 'defuse');
+  }
+}
 function updatePlant(dt){
+  if (player.team === 'CT') return updateDefuse(dt);
   const want = player.alive && player.bomb && S.phase === 'live' && (keys.KeyE || (player.slot === 5 && mouseL));
   if (!want){ if (player.planting > 0){ player.planting = 0; H.prog.hidden = true; } return; }
   const site = siteAt(player.pos);
@@ -2792,16 +2956,16 @@ function updatePlant(dt){
   if (player.planting === 0){ player.vel.x = player.vel.z = 0; if (player.slot !== 5){ player.lastSlot = player.slot; player.slot = 5; drawWeapon(); player.drawT = 0; } }
   const before = player.planting; player.planting += dt;
   if (Math.floor(before*3) !== Math.floor(player.planting*3)) sfxPlantKey();
-  H.prog.hidden = false; H.progLbl.textContent = "Bomba o'rnatilmoqda — " + site + ' nuqta'; H.progBar.style.width = Math.min(100, player.planting/3.2*100) + '%';
+  H.prog.hidden = false; H.progLbl.textContent = "Bomba o'rnatilmoqda — " + site + ' nuqta'; H.progBar.style.background = 'var(--atk)'; H.progBar.style.width = Math.min(100, player.planting/3.2*100) + '%';
   if (player.planting >= 3.2) plantBomb();
 }
 
 function matchOver(){
   S.phase = 'over'; $('hud').hidden = true; $('dead').hidden = true; if (document.pointerLockElement) document.exitPointerLock();
-  const win = S.scT > S.scCT;
+  const win = S.sA > S.sB;
   $('overEyebrow').textContent = "O'yin tugadi · " + ({ easy:'Oson', normal:"O'rta", hard:'Qiyin' }[SET.diff]) + ' botlar';
   $('overTitle').textContent = win ? "G'alaba" : "Mag'lubiyat"; $('overTitle').style.color = win ? 'var(--atk)' : 'var(--def)';
-  $('overLead').textContent = `Hisob ${S.scT} : ${S.scCT}. ` + (win ? 'Hujumchilar jamoasi o\'yinni yutdi.' : "Bu safar himoyachilar kuchliroq chiqdi. Yana bir bor urinib ko'ring.");
+  $('overLead').textContent = `Hisob ${S.sA} : ${S.sB}` + (S.round > 2*S.H ? " (qo'shimcha vaqtda)" : '') + '. ' + (win ? "Jamoangiz o'yinni yutdi." : "Bu safar botlar kuchliroq chiqdi. Yana bir bor urinib ko'ring.");
   $('stK').textContent = player.kills; $('stD').textContent = player.deaths; $('stHS').textContent = (player.kills ? Math.round(player.hs/player.kills*100) : 0) + '%'; $('stDmg').textContent = Math.round(player.dmg);
   $('over').hidden = false; sfxChord(win);
 }

@@ -143,7 +143,7 @@ Bitta IP manzildan bir vaqtda ko'pi bilan 8 ta ulanish qabul qilinadi. Bir o'yin
 Onlayn xonada o'yinchilar bir-biri bilan gaplashadi (faqat o'yinning o'z saytida; Claude ichidagi versiyada o'chiq). Sozlamalarda tanlanadi:
 
 - **Ovozli chat:** O'chiq, Jamoa (faqat jamoadoshlar eshitadi) yoki Hamma (raqiblar bilan ham, agar ular ham «Hamma»ni tanlagan bo'lsa).
-- **Mikrofon:** K tugmasini bosib gapirish (telefonda mikrofon tugmasi) yoki doim ochiq.
+- **Mikrofon:** tugmani bosib gapirish yoki doim ochiq. Gapirish tugmasi standart K, sozlamalarda istalgan tugmaga yoki sichqonchaning qo'shimcha tugmasiga (yon tugmalar 4/5, g'ildirak) o'zgartiriladi. Telefonda mikrofon tugmasi bor.
 - **Suhbat ovozi:** boshqalarning ovozi qanchalik baland eshitilishi.
 
 Gapirayotganlar radar ostida ko'rinadi. Ovoz brauzerlar o'rtasida to'g'ridan-to'g'ri (WebRTC) yuboriladi. Server faqat ulanish xabarlarini uzatadi va ovozni yozmaydi. Mikrofon faqat eshitishga ruxsati bor o'yinchilarga yuboriladi, shuning uchun raqib brauzerini o'zgartirib ham jamoa suhbatini eshita olmaydi.

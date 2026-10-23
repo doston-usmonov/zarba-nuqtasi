@@ -472,7 +472,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <dt>Granata bilan</dt><dd>Chap tugma — uzoqqa, o'ng tugma — yaqinga otish (qo'yib yuborganda uchadi)</dd>
           <dt><kbd>Tab</kbd></dt><dd>Hisob jadvali</dd>
           <dt><kbd>M</kbd></dt><dd>Jamoani almashtirish (onlayn)</dd>
-          <dt><kbd>K</kbd> bosib turing</dt><dd>Ovozli chatda gapirish (onlayn)</dd>
+          <dt><kbd class="pttKey">K</kbd> bosib turing</dt><dd>Ovozli chatda gapirish (onlayn, sozlamalarda o'zgartiriladi)</dd>
           <dt><kbd>Esc</kbd></dt><dd>Pauza</dd>
         </dl>
       </div>
@@ -484,8 +484,9 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <div class="set"><span>Nishon rangi</span><div class="swatches" id="swatches"></div><span></span></div>
         <div class="set"><span>Ovozli chat</span><div class="seg" data-set="voice"><button type="button" data-v="off">O'chiq</button><button type="button" data-v="team">Jamoa</button><button type="button" data-v="all">Hamma</button></div><span></span></div>
         <div class="set"><span>Mikrofon</span><div class="seg" data-set="mic"><button type="button" data-v="ptt">Bosib gapirish</button><button type="button" data-v="open">Doim ochiq</button></div><span></span></div>
+        <div class="set desk-only"><span>Gapirish tugmasi</span><div class="seg"><button type="button" id="pttBind" title="Bosing, keyin klaviaturadagi yoki sichqonchadagi tugmani bosing">K</button></div><span></span></div>
         <label class="set" for="sVoice">Suhbat ovozi <input type="range" id="sVoice" min="0" max="1" step="0.05"><output id="oVoice"></output></label>
-        <p class="note" id="voiceNote" style="margin:0;font-size:13px">Jamoa — faqat jamoadoshlaringiz eshitadi. Hamma — raqiblar ham, agar ular ham «Hamma»ni tanlagan bo'lsa. Gapirish: K tugmasini bosib turing.</p>
+        <p class="note" id="voiceNote" style="margin:0;font-size:13px">Jamoa — faqat jamoadoshlaringiz eshitadi. Hamma — raqiblar ham, agar ular ham «Hamma»ni tanlagan bo'lsa. <span class="desk-txt">Gapirish: <b class="pttKey">K</b> tugmasini bosib turing.</span></p>
         <div class="set"><span>O'yin uzunligi</span><div class="seg" data-set="fmt"><button type="button" data-v="short">Qisqa · 9</button><button type="button" data-v="long">To'liq · 13</button></div><span></span></div>
       </div>
     </div>
@@ -563,7 +564,7 @@ const KB = (desk, touch) => isTouch ? touch : desk;
 
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
-const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9 }, loadSet());
+const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK' }, loadSet());
 function saveSet(){ try { localStorage.setItem('zn-set', JSON.stringify(SET)); } catch(e){} }
 const DIFFS = {
   easy:   { react:.85, acc:.18, hs:.07, turn:4.0, defuse:10 },
@@ -2152,6 +2153,7 @@ document.addEventListener('keydown', e => {
   if (e.code === 'Escape' && KBLOCK && document.pointerLockElement){ document.exitPointerLock(); return; }
   if (S.paused) return;
   initAudio();
+  if (e.code === SET.ptt && !e.repeat) voicePTT(true);
   switch (e.code){
     case 'KeyB': if (S.buyOpen) closeBuy(); else if (canBuy()) openBuy(); else if (player.alive) hint("Xarid faqat o'z bazangizda va raund boshida mumkin"); break;
     case 'Escape': if (S.buyOpen) closeBuy(); else if (noLock) pauseGame(); break;
@@ -2161,10 +2163,9 @@ document.addEventListener('keydown', e => {
     case 'Space': if (!e.repeat) jumpQ = true; break;
     case 'Tab': showBoard(true); break;
     case 'KeyM': if (MODE === 'online') switchTeam(); break;
-    case 'KeyK': if (!e.repeat) voicePTT(true); break;
   }
 });
-document.addEventListener('keyup', e => { keys[e.code] = false; if (e.code === 'Tab') showBoard(false); if (e.code === 'KeyK') voicePTT(false); });
+document.addEventListener('keyup', e => { keys[e.code] = false; if (e.code === 'Tab') showBoard(false); if (e.code === SET.ptt) voicePTT(false); });
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouseL = mouseR = false; showBoard(false); voicePTT(false); });
 document.addEventListener('mousemove', e => {
   if (isTouch || !inGame() || S.paused || S.buyOpen) return;
@@ -2334,7 +2335,7 @@ async function voiceMic(){
     initAudio();
     if (ac){ try { const src = ac.createMediaStreamSource(st); VOICE.an = ac.createAnalyser(); VOICE.an.fftSize = 512; VOICE.buf = new Float32Array(VOICE.an.fftSize); src.connect(VOICE.an); } catch(e){ VOICE.an = null; } }
     VOICE.peers.forEach(v => voiceGate(v, true));
-    if (!VOICE.hinted){ VOICE.hinted = true; hint(SET.mic === 'open' ? 'Mikrofon yoqildi: sizni ' + (SET.voice === 'all' ? 'hamma' : 'jamoangiz') + ' eshitadi' : KB('Gapirish uchun K ni bosib turing', 'Gapirish uchun mikrofon tugmasini bosib turing'), 3500); }
+    if (!VOICE.hinted){ VOICE.hinted = true; hint(SET.mic === 'open' ? 'Mikrofon yoqildi: sizni ' + (SET.voice === 'all' ? 'hamma' : 'jamoangiz') + ' eshitadi' : KB('Gapirish uchun ' + pttLabel(SET.ptt) + ' ni bosib turing', 'Gapirish uchun mikrofon tugmasini bosib turing'), 3500); }
   } catch(e){ VOICE.mic = 'denied'; hint("Mikrofonga ruxsat berilmadi — boshqalarni eshitasiz, lekin gapira olmaysiz", 4000); }
 }
 function voiceStop(){
@@ -2420,7 +2421,35 @@ function voiceFrame(dt){
   for (const id of [...VOICE.peers.keys()]) if (!NET.remotes.has(id)) voiceClose(id, false);
 }
 if (!voiceAvailable()){ $('voiceNote').textContent = "Ovozli chat o'yinning o'z saytida ishlaydi; bu ko'rinishda o'chiq."; }
-else if (isTouch) $('voiceNote').textContent = $('voiceNote').textContent.replace('K tugmasini', 'mikrofon tugmasini');
+else if (isTouch) $('voiceNote').querySelector('.desk-txt').textContent = 'Gapirish: mikrofon tugmasini bosib turing.';
+
+/* push-to-talk binding: any key or an extra mouse button (middle, side buttons 4 and 5), like CS */
+const PTT_TAKEN = ['KeyW','KeyA','KeyS','KeyD','KeyE','KeyR','KeyQ','KeyB','KeyC','KeyM','Space','Tab','Escape','ShiftLeft','ShiftRight','ControlLeft','ControlRight','Digit1','Digit2','Digit3','Digit4','Digit5','ArrowUp','ArrowDown','F11'];
+function pttLabel(c){
+  const m = /^Mouse(\d)$/.exec(c || ''); if (m) return { 3:"G'ildirak tugmasi", 4:'Sichqoncha 4 (yon)', 5:'Sichqoncha 5 (yon)' }[m[1]] || 'Sichqoncha ' + m[1];
+  if (/^Key[A-Z]$/.test(c)) return c.slice(3); if (/^Digit\d$/.test(c)) return c.slice(5);
+  return ({ AltLeft:'Alt', AltRight:'Alt (o\'ng)', CapsLock:'Caps Lock', Backquote:'`', Backslash:'\\', Minus:'-', Equal:'=' })[c] || c || 'K';
+}
+function syncPtt(){ document.querySelectorAll('.pttKey').forEach(el => el.textContent = pttLabel(SET.ptt)); const b = $('pttBind'); if (!b.classList.contains('wait')) b.textContent = pttLabel(SET.ptt); }
+(function(){
+  const btn = $('pttBind'); let waiting = false;
+  const stop = msg => { waiting = false; btn.classList.remove('wait'); btn.setAttribute('aria-pressed', 'false'); window.removeEventListener('keydown', onKey, true); window.removeEventListener('mousedown', onMouse, true); syncPtt(); if (msg) hint(msg, 2400); };
+  const set = code => { if (PTT_TAKEN.includes(code)){ stop(pttLabel(code) + " o'yinda band — boshqa tugma tanlang"); return; } SET.ptt = code; saveSet(); stop('Gapirish tugmasi: ' + pttLabel(code)); };
+  const onKey = e => { e.preventDefault(); e.stopImmediatePropagation(); if (e.code === 'Escape') return stop(); set(e.code); };
+  const onMouse = e => { if (e.button === 0 || e.button === 2) return; e.preventDefault(); e.stopImmediatePropagation(); set('Mouse' + (e.button + 1)); };
+  btn.addEventListener('click', () => { if (waiting) return stop(); waiting = true; btn.classList.add('wait'); btn.setAttribute('aria-pressed', 'true'); btn.textContent = 'Tugmani bosing…';
+    setTimeout(() => { window.addEventListener('keydown', onKey, true); window.addEventListener('mousedown', onMouse, true); }, 0); });
+  syncPtt();
+})();
+// extra mouse buttons: talk while held; the side buttons never navigate the page back or forward during a match
+function pttMouse(e, down){
+  if (e.button === 0 || e.button === 2) return;
+  if (inGame() && (e.button === 3 || e.button === 4)) e.preventDefault();
+  if (SET.ptt === 'Mouse' + (e.button + 1) && inGame()){ e.preventDefault(); if (down) voicePTT(true); else voicePTT(false); }
+}
+document.addEventListener('mousedown', e => pttMouse(e, true));
+document.addEventListener('mouseup', e => pttMouse(e, false));
+document.addEventListener('auxclick', e => { if (inGame() && e.button !== 0) e.preventDefault(); });
 
 const NET = { room:null, me:null, name:'', code:'umumiy', sq:null, host:false, g:null, gSrc:null, hitSeq:0, hits:[], shot:null, shotN:0, death:null, deathN:0, nade:null, nadeN:0, plant:null, plantN:0, def:null, defN:0,
   seen:{}, remotes:new Map(), inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, tickLast:0, joinT:0, cdShown:-1, beepT:0 };

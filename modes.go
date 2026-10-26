@@ -5,8 +5,10 @@ package main
 //   comp — raqobatli: raundlar, bomba, iqtisod, yarim vaqt (referee.go).
 //   dm   — deathmatch: har kim har kimga qarshi, o'lgan zahoti (1,6 s) qayta tug'iladi,
 //          6 daqiqada eng ko'p o'ldirgan yutadi.
-//   gg   — qurol poygasi: ikki jamoa, qayta tug'ilish; har 2 o'ldirishda keyingi qurol,
-//          oxirgi bosqich — pichoq, pichoq bilan o'ldirgan birinchi o'yinchi yutadi.
+//   tdm  — jamoaviy deathmatch (ichkarida dm + g.Tm): ikki jamoa, faqat raqibni o'ldirish
+//          mumkin, 6 daqiqada ko'proq o'ldirgan jamoa yutadi.
+//   gg   — qurol poygasi: ikki jamoa, qayta tug'ilish; eng kuchli quroldan (snayper)
+//          boshlab har 2 o'ldirishda kuchsizrog'iga o'tiladi, oxirgi bosqich — pichoq, pichoq bilan o'ldirgan birinchi o'yinchi yutadi.
 //
 // Ikkala yangi rejimda ham hisobni server yuritadi: o'ldirish faqat server tasdiqlagan
 // tegishdan keyin sanaladi (g.sc), qurol poygasida o'q faqat o'yinchining hozirgi quroli
@@ -24,6 +26,7 @@ const (
 	modeComp = "comp"
 	modeDM   = "dm"
 	modeGG   = "gg"
+	modeTDM  = "tdm" // tashqi nomi: xona yaratish va admin; ichkarida Md=dm, Tm=true
 
 	dmTime       = 360.0 // soniya
 	ggTime       = 900.0
@@ -32,18 +35,34 @@ const (
 	ggPerLevel   = 2
 )
 
-// qurol poygasi zinapoyasi (web/index.html dagi GG_LADDER bilan bir xil)
-var ggLadder = []string{"rifle", "carbine", "smg", "sniper", "deagle", "pistol", "knife"}
+// qurol poygasi zinapoyasi: eng kuchlisidan kuchsiziga (web/index.html dagi GG_LADDER bilan bir xil)
+var ggLadder = []string{"sniper", "rifle", "carbine", "smg", "deagle", "pistol", "knife"}
 
 func validMode(m string) bool {
-	return m == modeComp || m == modeDM || m == modeGG || m == modeWM || m == modeRT
+	return m == modeComp || m == modeDM || m == modeTDM || m == modeGG || m == modeWM || m == modeRT
+}
+
+// setMode: tashqi rejim nomi (tdm ham) → Md va Tm.
+func (g *gameState) setMode(m string) {
+	g.Md, g.Tm = m, false
+	if m == modeTDM {
+		g.Md, g.Tm = modeDM, true
+	}
+}
+
+// modeID: rejimning tashqi nomi (ro'yxat va admin uchun).
+func (g *gameState) modeID() string {
+	if g.Md == modeDM && g.Tm {
+		return modeTDM
+	}
+	return g.Md
 }
 
 func ggLevel(kills int) int     { return min(len(ggLadder)-1, max(0, kills)/ggPerLevel) }
 func ggWeapon(kills int) string { return ggLadder[ggLevel(kills)] }
 func ggWinKills() int           { return (len(ggLadder)-1)*ggPerLevel + 1 }
 
-func (g *gameState) ffa() bool      { return g.Md == modeDM }
+func (g *gameState) ffa() bool      { return g.Md == modeDM && !g.Tm }
 func (g *gameState) respawns() bool { return g.Md == modeDM || g.Md == modeGG }
 
 // foes: a va b bir-biriga raqibmi (deathmatch'da — har kim).
@@ -59,7 +78,7 @@ func (r *room) spawnOKLocked(p vec3, side string) bool {
 	if r.gs.Md == modeRT && side == "T" && (r.gs.Ph == "freeze" || r.gs.Ph == "live") {
 		return r.retakeSpawnOK(p) && !r.gm().botSolid(wc(p.X), wc(p.Z))
 	}
-	if r.gs.ffa() && r.gs.Ph == "live" {
+	if r.gs.Md == modeDM && r.gs.Ph == "live" {
 		return !r.gm().botSolid(wc(p.X), wc(p.Z))
 	}
 	return side != "" && r.gm().inSpawn(p, side)
@@ -99,6 +118,13 @@ func (r *room) creditKillLocked(victim, killer *client, now time.Time) {
 	}
 	g.Sc[killer.id]++
 	k := g.Sc[killer.id]
+	if g.Tm { // jamoaviy deathmatch: jamoa hisobi
+		if killer.info.Sq == "B" {
+			g.SB++
+		} else {
+			g.SA++
+		}
+	}
 	if g.Md != modeGG {
 		return
 	}
@@ -128,6 +154,18 @@ func clientName(c *client) string {
 // finishModeLocked: o'yin tugadi (g'olib nil bo'lsa — eng ko'p o'ldirgan).
 func (r *room) finishModeLocked(w *client) {
 	g := r.gs
+	if g.Tm { // jamoaviy deathmatch: ko'proq o'ldirgan jamoa ("" — durang)
+		g.Ph, g.T, g.B = "over", 10, nil
+		r.finalStatsLocked()
+		g.Wn, g.Wnm = "", ""
+		if g.SA != g.SB {
+			g.Wn = "A"
+			if g.SB > g.SA {
+				g.Wn = "B"
+			}
+		}
+		return
+	}
 	if w == nil {
 		ids := make([]string, 0, len(g.Sc))
 		for id := range g.Sc {
@@ -157,7 +195,7 @@ func (r *room) finishModeLocked(w *client) {
 func (r *room) tickModeLocked(now time.Time, dt float64, nA, nB int) {
 	g := r.gs
 	ready := nA+nB >= 2
-	if g.Md == modeGG {
+	if g.Md == modeGG || g.Tm {
 		ready = nA > 0 && nB > 0
 	}
 	if g.Ph != "warmup" && g.Ph != "over" && !ready {
@@ -197,7 +235,7 @@ func (r *room) tickModeLocked(now time.Time, dt float64, nA, nB int) {
 
 // changeModeLocked: xona boshqa rejimga o'tadi — o'yin isinishdan boshlanadi.
 func (r *room) changeModeLocked(m string, now time.Time) {
-	r.gs.Md = m
+	r.gs.setMode(m)
 	if m == modeWM && (r.max == 0 || r.max > 4) {
 		r.max = 4 // Wingman: 2 ga 2
 	}

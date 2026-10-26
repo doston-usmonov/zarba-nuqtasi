@@ -144,7 +144,7 @@ func (r *room) gainsLocked(now time.Time) []matchGain {
 		won := false
 		switch g.Md {
 		case modeDM, modeGG:
-			won = g.Wn == c.id
+			won = g.Wn == c.id || (g.Tm && g.Wn == s.sq)
 		default:
 			won = (g.SA > g.SB) == (s.sq == "A")
 		}

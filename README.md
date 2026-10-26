@@ -18,7 +18,7 @@ zarba-server/
 ├── progress.go        XP, darajalar, kunlik vazifalar, qurol bo'yoqlari (/api/progress, /api/loadout)
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── social.go          do'stlar, xonaga chaqiriqlar, klanlar (/api/social, /api/friends, /api/clan, /api/clans)
-├── modes.go           o'yin rejimlari: deathmatch va qurol poygasi
+├── modes.go           o'yin rejimlari: deathmatch (hamma hammaga yoki jamoaviy), qurol poygasi, Wingman, Retake
 ├── gamemap.go         xaritalar panjarasi: ko'rinish, devorlar, bazalar, nuqtalar
 ├── mapsdata.go        xaritalar (web/index.html dagi MAPS dan tools/genmaps.py yasaydi)
 ├── server_test.go     testlar (go test ./...)
@@ -159,6 +159,12 @@ Bitta IP manzildan bir vaqtda ko'pi bilan 8 ta ulanish qabul qilinadi. Bir o'yin
 Bosh sahifada **ochiq o'yinlar ro'yxati** bor (har 5 soniyada yangilanadi, `GET /api/rooms`): kod, egasi, o'yinchilar va botlar soni, chegara, raund va hisob. «Kirish» tugmasi bilan qo'shilasiz.
 
 **O'yin yaratish:** kod, kimga (ommaviy yoki yopiq) va maksimal o'yinchilar soni (standart: ommaviy, cheksiz). Yopiq o'yin ro'yxatda ko'rinmaydi, unga faqat kodni bilganlar kiradi. Bunday kodli o'yin allaqachon bo'lsa, yaratib bo'lmaydi. Kod bilan kirganda o'yin hali bo'lmasa, standart sozlamalar bilan yaratiladi.
+
+**Rejimlar** (o'yin yaratishda tanlanadi, xona egasi o'yin davomida almashtira oladi):
+- *Raqobat*, *Wingman* (2 ga 2), *Retake* — raundlar va bomba.
+- *Deathmatch — hamma hammaga*: har kim har kimga qarshi, 6 daqiqada eng ko'p o'ldirgan yutadi.
+- *Deathmatch — jamoa jamoaga*: ikki jamoa, faqat raqib jamoani o'ldirish mumkin (jamoadoshga o'q, granata zarar bermaydi), ekranning tepasida ikkala jamoaning hisobi. 6 daqiqada ko'proq o'ldirgan jamoa yutadi. O'yin har ikki jamoada kamida bittadan o'yinchi (yoki bot) bo'lganda boshlanadi. Botlarga qarshi yakka o'yinda deathmatch doim «hamma hammaga».
+- *Qurol poygasi*: eng kuchli quroldan boshlanib, har 2 o'ldirishda kuchsizrog'iga o'tiladi: Qirg'iy-50 (snayper) → Burkut → Lochin-K → Shamol → Burgut .50 → P-18 → pichoq. Pichoq bilan birinchi o'ldirgan yutadi.
 
 **Xona egasi** — o'yinni yaratgan o'yinchi. U chiqib ketsa, egalik eng oldin kirgan keyingi o'yinchiga o'tadi. Ega o'yin ichida Esc (telefonda «II») menyusidagi «Xona» bo'limida:
 - bot qo'shadi: hujumga yoki himoyaga, oson / o'rta / qiyin (xonada ko'pi bilan 10 ta bot);

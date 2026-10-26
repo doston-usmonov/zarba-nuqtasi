@@ -32,7 +32,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Ochiq o'yinlar ro'yxati, ommaviy/yopiq xonalar, o'yinchilar chegarasi
 - ✅ Xona egasi: bot qo'shish/chiqarish, o'yinchini chiqarish
 - [ ] Reytingga qarab navbat: "O'yin topish" tugmasi
-- ✅ Deathmatch (har kim har kimga, qayta tug'ilish, 6 daqiqa) va Qurol poygasi (har 2 o'ldirishda yangi qurol, oxiri pichoq); hisobni server yuritadi
+- ✅ Deathmatch (har kim har kimga yoki jamoa jamoaga — xona yaratishda tanlanadi; qayta tug'ilish, 6 daqiqa) va Qurol poygasi (snayperdan boshlab har 2 o'ldirishda kuchsizroq qurol, oxiri pichoq); hisobni server yuritadi
 - ✅ Wingman (2 ga 2, faqat A nuqta, MR8) va Retake (bomba raund boshidan o'rnatilgan, qurollar beriladi)
 - [ ] Partiya: do'stlar bilan birga navbatga turish
 - [ ] O'yinni tashlab ketganlik uchun jazo (vaqtincha navbat taqiqi)

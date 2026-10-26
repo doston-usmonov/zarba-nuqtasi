@@ -66,9 +66,10 @@ type bombState struct {
 type gameState struct {
 	R  int        `json:"r"`
 	Ph string     `json:"ph"`
-	M  string     `json:"m"`  // xarita
-	Md string     `json:"md"` // rejim: comp | dm | gg | wm | rt (modes.go)
-	Rs string     `json:"rs"` // retake: shu raunddagi bomba nuqtasi
+	M  string     `json:"m"`            // xarita
+	Md string     `json:"md"`           // rejim: comp | dm | gg | wm | rt (modes.go)
+	Tm bool       `json:"tm,omitempty"` // deathmatch jamoaviy: faqat raqib jamoani o'ldirish mumkin
+	Rs string     `json:"rs"`           // retake: shu raunddagi bomba nuqtasi
 	T  float64    `json:"t"`
 	SA int        `json:"sA"`
 	SB int        `json:"sB"`
@@ -890,7 +891,7 @@ func (r *room) gm() *gameMap { return mapByID(r.gs.M) }
 
 // reset: yangi o'yin (xarita saqlanadi).
 func (g *gameState) reset() {
-	m, md := g.M, g.Md
+	m, md, tm := g.M, g.Md, g.Tm
 	*g = *newGameState()
-	g.M, g.Md = m, md
+	g.M, g.Md, g.Tm = m, md, tm
 }

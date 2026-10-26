@@ -435,7 +435,7 @@ func (h *hub) inviteToRoom(from *account, to int64) error {
 		return errors.New("Do'stingiz allaqachon shu xonada")
 	}
 	r.mu.Lock()
-	inv := roomInvite{From: from.name, Room: roomCode(r), Mode: r.gs.Md, Map: r.gs.M, At: time.Now()}
+	inv := roomInvite{From: from.name, Room: roomCode(r), Mode: r.gs.modeID(), Map: r.gs.M, At: time.Now()}
 	// do'st boshqa xonada o'ynayotgan bo'lsa — darhol o'yin ichida xabar beramiz
 	r.mu.Unlock()
 	list := soc.invites[to][:0]
@@ -483,7 +483,7 @@ func (a *api) socialGet(w http.ResponseWriter, r *http.Request) {
 			f.Online = state
 			if rm != nil {
 				rm.mu.Lock()
-				f.Room, f.RoomMode, f.RoomMap = roomCode(rm), rm.gs.Md, rm.gs.M
+				f.Room, f.RoomMode, f.RoomMap = roomCode(rm), rm.gs.modeID(), rm.gs.M
 				rm.mu.Unlock()
 			}
 		}

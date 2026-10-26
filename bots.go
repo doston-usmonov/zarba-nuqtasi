@@ -186,7 +186,7 @@ func (r *room) spawnBotLocked(c *client, now time.Time) {
 		pos.Z += (rand.Float64() - .5) * 1.2
 	}
 	modeLive := g.respawns() && g.Ph == "live"
-	if modeLive && g.ffa() {
+	if modeLive && g.Md == modeDM {
 		pos = r.dmSpawnLocked(c)
 	}
 	rih := 1

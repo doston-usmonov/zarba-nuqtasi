@@ -19,7 +19,7 @@ import (
 
 const kickBan = 10 * time.Minute
 
-var modeNames = map[string]string{modeComp: "Raqobat", modeDM: "Deathmatch", modeGG: "Qurol poygasi", modeWM: "Wingman", modeRT: "Retake"}
+var modeNames = map[string]string{modeComp: "Raqobat", modeDM: "Deathmatch", modeTDM: "Jamoaviy deathmatch", modeGG: "Qurol poygasi", modeWM: "Wingman", modeRT: "Retake"}
 
 type roomOpts struct {
 	create bool // "yaratish" tugmasi: bunday xona bor bo'lsa — xato
@@ -134,7 +134,7 @@ func (h *hub) adminLocked(r *room, c *client, d json.RawMessage, now time.Time) 
 		t.trySend(jsonMsg(map[string]string{"t": "err", "code": "kicked"}))
 		go func(t *client) { time.Sleep(200 * time.Millisecond); t.ws.close() }(t)
 	case "mode":
-		if !validMode(m.M) || m.M == r.gs.Md {
+		if !validMode(m.M) || m.M == r.gs.modeID() {
 			return
 		}
 		r.changeModeLocked(m.M, now)
@@ -208,7 +208,7 @@ func (h *hub) publicRooms() []roomListing {
 				owner = cleanGuestName(o.info.Nm)
 			}
 			if humans > 0 {
-				out = append(out, roomListing{Code: strings.TrimPrefix(r.name, "zn-"), Owner: owner, Humans: humans, Bots: bots, Max: r.max, Map: r.gs.M, Mode: r.gs.Md,
+				out = append(out, roomListing{Code: strings.TrimPrefix(r.name, "zn-"), Owner: owner, Humans: humans, Bots: bots, Max: r.max, Map: r.gs.M, Mode: r.gs.modeID(),
 					Phase: r.gs.Ph, Round: r.gs.R, SA: r.gs.SA, SB: r.gs.SB, Fm: r.gs.Fm})
 			}
 		}

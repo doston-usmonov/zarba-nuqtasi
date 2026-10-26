@@ -198,7 +198,7 @@ func TestModes(t *testing.T) {
 	}
 	r2.mu.Unlock()
 	f = refPres(r2, x, map[string]any{"v": 1, "hc": 1, "sq": "A", "tm": "T", "in": 1, "al": 1, "x": 43, "y": 0, "z": 30,
-		"hi": []map[string]any{{"i": 1, "t": y.id, "d": 30, "pn": .7, "p": "c", "w": "sniper"}}})
+		"hi": []map[string]any{{"i": 1, "t": y.id, "d": 30, "pn": .7, "p": "c", "w": "rifle"}}})
 	if string(f["hi"]) != "null" {
 		t.Fatal("qurol poygasida navbatdagi bo'lmagan qurol bilan o'q o'tdi")
 	}
@@ -334,5 +334,68 @@ func TestWingmanRetakeVote(t *testing.T) {
 		if (w.gs.B != nil) != tc.ok {
 			t.Fatalf("wingman %s nuqta: bomba=%v", tc.site, w.gs.B)
 		}
+	}
+}
+
+// TestTeamDeathmatch: jamoaviy deathmatch — faqat raqib jamoa, jamoa hisobi, g'olib jamoa.
+func TestTeamDeathmatch(t *testing.T) {
+	o := parseRoomOpts(map[string][]string{"mode": {"tdm"}})
+	r := &room{name: "zn-tdm", clients: map[string]*client{}, gs: newGameState(), stop: make(chan struct{}), manual: true}
+	r.gs.setMode(o.mode)
+	if r.gs.Md != modeDM || !r.gs.Tm || r.gs.ffa() || !r.gs.respawns() || r.gs.modeID() != modeTDM {
+		t.Fatalf("tdm rejimi: %+v", r.gs)
+	}
+	now := time.Now()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for range 2 {
+		r.addBotLocked("A", "hard", now)
+		r.addBotLocked("B", "hard", now)
+	}
+	var a1, a2, b1 *client
+	for _, c := range r.clients {
+		switch {
+		case c.info.Sq == "A" && a1 == nil:
+			a1 = c
+		case c.info.Sq == "A":
+			a2 = c
+		default:
+			b1 = c
+		}
+	}
+	if r.foes(a1, a2) || !r.foes(a1, b1) {
+		t.Fatal("jamoadosh raqib bo'lmasligi kerak")
+	}
+	dt := .05
+	for i := 0; i < 20*120; i++ {
+		now = now.Add(50 * time.Millisecond)
+		for _, c := range r.clients {
+			r.botStepLocked(c, now, dt)
+		}
+		r.tickLocked(now, dt)
+	}
+	sa, sb := 0, 0
+	for id, k := range r.gs.Sc {
+		if c := r.clients[id]; c != nil && c.info.Sq == "B" {
+			sb += k
+		} else {
+			sa += k
+		}
+	}
+	if r.gs.Ph != "live" || sa+sb < 3 || sa != r.gs.SA || sb != r.gs.SB {
+		t.Fatalf("jamoa hisobi: ph=%s sA=%d/%d sB=%d/%d", r.gs.Ph, r.gs.SA, sa, r.gs.SB, sb)
+	}
+	r.creditKillLocked(a2, a1, now) // jamoadoshni o'ldirish sanalmaydi
+	if r.gs.SA != sa {
+		t.Fatal("jamoadosh o'ldirildi deb sanaldi")
+	}
+	r.gs.SA, r.gs.SB, r.gs.T = 10, 7, .01
+	r.tickLocked(now, dt)
+	if r.gs.Ph != "over" || r.gs.Wn != "A" {
+		t.Fatalf("g'olib jamoa: %+v", r.gs)
+	}
+	r.gs.reset()
+	if !r.gs.Tm {
+		t.Fatal("reset jamoaviy rejimni yo'qotdi")
 	}
 }

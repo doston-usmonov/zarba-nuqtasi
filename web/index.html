@@ -560,7 +560,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <div class="srv-only createrow">
           <label class="field" for="newCode"><span>Kod</span><input id="newCode" maxlength="40" autocomplete="off"></label>
           <label class="field" for="newPub"><span>Kimga</span><select id="newPub"><option value="1">Ommaviy</option><option value="0">Yopiq (kod bilan)</option></select></label>
-          <label class="field" for="newMode"><span>Rejim</span><select id="newMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch</option><option value="gg">Qurol poygasi</option></select></label>
+          <label class="field" for="newMode"><span>Rejim</span><select id="newMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option></select></label>
           <label class="field" for="newMap"><span>Xarita</span><select id="newMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option></select></label>
           <label class="field" for="newMax"><span>Maks. o'yinchi</span><select id="newMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select></label>
         </div>
@@ -645,7 +645,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <div class="row"><button class="ghost sm" type="button" data-adm="botT">+ Bot hujumga</button><button class="ghost sm" type="button" data-adm="botCT">+ Bot himoyaga</button></div>
           <div class="set"><span>Bot darajasi</span><div class="seg" data-set="botLv"><button type="button" data-v="easy">Oson</button><button type="button" data-v="normal">O'rta</button><button type="button" data-v="hard">Qiyin</button></div><span></span></div>
           <div class="set"><span>Xona turi</span><div class="seg" id="admPub"><button type="button" data-v="1">Ommaviy</button><button type="button" data-v="0">Yopiq</button></div><span></span></div>
-          <label class="set" for="admMode">Rejim <select id="admMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch</option><option value="gg">Qurol poygasi</option></select><span></span></label>
+          <label class="set" for="admMode">Rejim <select id="admMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option></select><span></span></label>
           <label class="set" for="admMap">Xarita <select id="admMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option></select><span></span></label>
           <label class="set" for="admMax">Maks. o'yinchi <select id="admMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select><span></span></label>
         </div>
@@ -754,7 +754,7 @@ const KB = (desk, touch) => isTouch ? touch : desk;
 
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
-const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa', mode:'comp', kc:'on', vo:'on', trainW:'rifle' }, loadSet());
+const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa', mode:'comp', kc:'on', vo:'on', trainW:'rifle', dmTeam:false }, loadSet());
 function saveSet(){ try { localStorage.setItem('zn-set', JSON.stringify(SET)); } catch(e){} }
 const DIFFS = {
   easy:   { react:.85, acc:.18, hs:.07, turn:4.0, defuse:10 },
@@ -1754,14 +1754,20 @@ function rayHitBot(o, d, b, maxT){
    har 2 o'ldirishda keyingi qurol, oxiri pichoq). Server versiyasida hisobni server yuritadi (g.sc). */
 const MODES = { comp:{ name:'Raqobat', desc:"Raundlar, bomba va iqtisod. Jamoa bo'lib o'ynaladi." },
   wm:{ name:'Wingman', desc:"2 ga 2, faqat A nuqta, 9 g'alabagacha. Raundlar qisqa (1,5 daqiqa), iqtisod raqobatdagidek." },
-  rt:{ name:'Retake', desc:"Har raund boshida bomba allaqachon o'rnatilgan: hujum uni himoya qiladi, himoya bazadan kelib zararsizlantiradi. Qurollar beriladi." }, dm:{ name:'Deathmatch', desc:"Har kim har kimga qarshi, o'lgan zahoti qayta tug'ilasiz. 6 daqiqada eng ko'p o'ldirgan yutadi. Qurollar bepul." }, gg:{ name:'Qurol poygasi', desc:"Har 2 o'ldirishda keyingi qurol beriladi. Oxirgi bosqich — pichoq: u bilan birinchi o'ldirgan yutadi." } };
-const GG_LADDER = ['rifle','carbine','smg','sniper','deagle','pistol','knife'], GG_PER = 2, GG_WIN = (GG_LADDER.length - 1)*GG_PER + 1;
+  rt:{ name:'Retake', desc:"Har raund boshida bomba allaqachon o'rnatilgan: hujum uni himoya qiladi, himoya bazadan kelib zararsizlantiradi. Qurollar beriladi." }, dm:{ name:'Deathmatch', desc:"Har kim har kimga qarshi, o'lgan zahoti qayta tug'ilasiz. 6 daqiqada eng ko'p o'ldirgan yutadi. Qurollar bepul." }, gg:{ name:'Qurol poygasi', desc:"Eng kuchli quroldan (snayper) boshlanadi, har 2 o'ldirishda kuchsizrog'i beriladi. Oxirgi bosqich — pichoq: u bilan birinchi o'ldirgan yutadi." } };
+// gun game ladder: the strongest weapon first, then weaker ones, the knife last
+const GG_LADDER = ['sniper','rifle','carbine','smg','deagle','pistol','knife'], GG_PER = 2, GG_WIN = (GG_LADDER.length - 1)*GG_PER + 1;
 const DM_TIME = 360, GG_TIME = 900, RESPAWN_T = 2, SHIELD_T = 1.5;
 const ggLevel = k => Math.min(GG_LADDER.length - 1, Math.floor(Math.max(0, k)/GG_PER));
 function curMode(){ return MODE === 'online' ? ((NET.g && MODES[NET.g.md]) ? NET.g.md : 'comp') : (S.md || 'comp'); }
 const RM = md => md === 'dm' || md === 'gg';   // modes where you respawn (no rounds)
 function respawnMode(){ return RM(curMode()); }
-function isFFA(){ return curMode() === 'dm'; }
+// team deathmatch: a deathmatch room created with the "jamoaviy" option (server sends g.tm)
+const TDM_INFO = { name:'Jamoaviy deathmatch', desc:"Ikki jamoa: faqat raqib jamoani o'ldirish mumkin, o'lgan zahoti qayta tug'ilasiz. 6 daqiqada ko'proq o'ldirgan jamoa yutadi. Qurollar bepul." };
+function teamDM(){ return MODE === 'online' && !!NET.g && NET.g.md === 'dm' && NET.g.tm === true; }
+function modeInfo(md){ return md === 'tdm' || (md === 'dm' && teamDM()) ? TDM_INFO : (MODES[md] || MODES.comp); }
+function curModeID(){ return teamDM() ? 'tdm' : curMode(); }
+function isFFA(){ return curMode() === 'dm' && !teamDM(); }
 function foe(r){ return isFFA() || r.team !== player.team; }   // an online player: an enemy?
 function shielded(){ return respawnMode() && S.time - (player.spawnT || -9) < SHIELD_T; }
 
@@ -1860,7 +1866,7 @@ function drawRadar(){
 /* ================= ROUND FLOW ================= */
 function liveTime(){ return MODE === 'online' ? NET.liveT : S.liveT; }
 function canBuy(){ if (!player.alive || S.phase === 'menu' || S.phase === 'over' || !player.team || TRAIN(curMode())) return false;
-  if (respawnMode() && S.phase !== 'warmup') return isFFA() && S.phase === 'live';
+  if (respawnMode() && S.phase !== 'warmup') return curMode() === 'dm' && S.phase === 'live';
   if (curMode() === 'rt' && S.phase !== 'warmup') return false;   /* Retake: loadouts are handed out */   /* deathmatch: anywhere, any time; gun game: never */ const inZone = cellT(wc(player.pos.x), wc(player.pos.z)) === (player.team === 'CT' ? CTSP : TSP); return inZone && (S.phase === 'warmup' || S.phase === 'freeze' || (S.phase === 'live' && liveTime() < 20)); }
 
 /* match format: halves, side swap and overtime (the same rules online and against bots) */
@@ -2060,22 +2066,26 @@ function modeHUD(){
   if (TRAIN(md) && inGame()) return trainHUD(el);
   const on = RM(md) && inGame();
   if (!on && inGame()) $('money').style.visibility = md === 'rt' ? 'hidden' : '';
-  $('scTL').textContent = on ? 'SIZ' : 'HUJUM'; $('scCTL').textContent = on ? 'YETAKCHI' : 'HIMOYA';
+  const tdm = on && teamDM();
+  $('scTL').textContent = tdm ? 'JAMOANGIZ' : on ? 'SIZ' : 'HUJUM'; $('scCTL').textContent = tdm ? 'RAQIB' : on ? 'YETAKCHI' : 'HIMOYA';
   if (on) $('money').style.visibility = live ? 'hidden' : '';
   if (!on || !live){ el.hidden = true; return; }
   const rows = modeRows(), lead = rows.find(r => !r.me);
   H.scT.textContent = player.kills; H.scCT.textContent = lead ? lead.k : 0;
+  if (tdm){ const a = NET.g.sA|0, b = NET.g.sB|0, mineB = NET.sq === 'B'; H.scT.textContent = mineB ? b : a; H.scCT.textContent = mineB ? a : b; }
   let html;
   if (md === 'gg'){ const lv = ggLevel(player.kills), id = GG_LADDER[lv], left = GG_PER - player.kills % GG_PER;
     html = `<span class="lv">${GG_LADDER.map((_, i) => `<i class="${i < lv ? 'on' : i === lv ? 'cur' : ''}"></i>`).join('')}</span><b>${W[id].name}</b><small>${id === 'knife' ? "pichoq bilan o'ldiring — g'alaba!" : 'keyingisi: ' + W[GG_LADDER[lv + 1]].name + ' · yana ' + left + " o'ldirish"}</small>`; }
+  else if (tdm) html = `<b>${player.kills} o'ldirish</b><small>jamoa uchun · ${KB('B', 'Xarid tugmasi')} — qurol tanlash (bepul)</small>`;
   else { const place = rows.findIndex(r => r.me) + 1; html = `<b>${place}-o'rin</b><small>${KB('B', 'Xarid tugmasi')} — qurol tanlash (bepul)</small>`; }
   if (html !== el._h){ el._h = html; el.innerHTML = html; }
   el.hidden = false;
 }
 function modeBoardHTML(title){
   const md = curMode(), esc = escH, rows = modeRows();
-  return `<h3>${esc(title)}</h3><table><tr><th>#</th><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">${md === 'gg' ? 'QUROL' : 'HOLAT'}</th></tr>` +
-    rows.map((r, i) => { const col = md === 'dm' ? 'var(--ink)' : r.team === 'CT' ? 'var(--def)' : 'var(--atk)';
+  const tdm = teamDM() && NET.g ? ` · ${TEAM_NAME.T} ${NET.g.sA|0} : ${NET.g.sB|0} ${TEAM_NAME.CT}` : '';
+  return `<h3>${esc(title + tdm)}</h3><table><tr><th>#</th><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">${md === 'gg' ? 'QUROL' : 'HOLAT'}</th></tr>` +
+    rows.map((r, i) => { const col = isFFA() ? 'var(--ink)' : r.team === 'CT' ? 'var(--def)' : 'var(--atk)';
       return `<tr class="${r.alive ? '' : 'dead'}"><td>${i + 1}</td><td><span class="tag" style="background:${col}"></span>${esc(r.name)}${r.bot ? '<small>bot</small>' : ''}</td><td class="r">${r.k}</td><td class="r">${r.d}</td><td class="r">${md === 'gg' ? esc(W[GG_LADDER[ggLevel(r.k)]].name) : r.alive ? 'tirik' : '—'}</td></tr>`; }).join('') + '</table>';
 }
 
@@ -2371,7 +2381,7 @@ function resultHTML(title, sub, rows, mvp){
   return `<h3>${esc(title)}</h3><p class="sub">${esc(sub)}</p>` +
     (mvp ? `<div class="mvp"><span class="star">★</span><div><b>${esc(mvp.nm)}</b><small>O'yin MVP · ${mvp.k} o'ldirish · ${mvp.dmg} zarar${mvp.mvp ? ' · ' + mvp.mvp + ' marta raund MVP' : ''}</small></div></div>` : '') +
     `<table><tr><th>#</th><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">BOSHGA</th><th class="r">ZARAR</th>${!RM(md) ? '<th class="r">MVP</th>' : ''}</tr>` +
-    rows.map((r, i) => { const col = md === 'dm' ? 'var(--ink)' : r.side === 'CT' ? 'var(--def)' : 'var(--atk)';
+    rows.map((r, i) => { const col = isFFA() ? 'var(--ink)' : r.side === 'CT' ? 'var(--def)' : 'var(--atk)';
       return `<tr class="${r.me ? 'mine' : ''}"><td>${i + 1}</td><td><span class="tag" style="background:${col}"></span>${esc(r.nm)}${r.me ? ' <small>(siz)</small>' : ''}</td><td class="r">${r.k}</td><td class="r">${r.d}</td><td class="r">${r.k ? Math.round(r.hs/r.k*100) : 0}%</td><td class="r">${r.dmg}</td>${!RM(md) ? `<td class="r stars">${r.mvp ? '★' + (r.mvp > 1 ? r.mvp : '') : ''}</td>` : ''}</tr>`; }).join('') + '</table>';
 }
 function voteHTML(g){
@@ -3183,9 +3193,11 @@ $('createBtn').addEventListener('click', () => { joinOnline(true); });
 $('mapSel').value = SET.map; $('newMap').value = SET.map;
 $('mapSel').addEventListener('change', () => { SET.map = $('mapSel').value; saveSet(); setMap(SET.map); });
 $('newMap').addEventListener('change', () => { SET.map = $('newMap').value; saveSet(); $('mapSel').value = SET.map; setMap(SET.map); });
-$('admMode').addEventListener('change', () => { if (isOwner() && NET.room.admin && $('admMode').value !== curMode()){ NET.room.admin({ a:'mode', m:$('admMode').value }); hint("Rejim almashtirilmoqda — o'yin isinishdan qayta boshlanadi", 3000); } });
-$('newMode').value = MODES[SET.mode] ? SET.mode : 'comp';
-$('newMode').addEventListener('change', () => { SET.mode = $('newMode').value; saveSet(); syncSegs(); modeNote(); });
+$('admMode').addEventListener('change', () => { if (isOwner() && NET.room.admin && $('admMode').value !== curModeID()){ NET.room.admin({ a:'mode', m:$('admMode').value }); hint("Rejim almashtirilmoqda — o'yin isinishdan qayta boshlanadi", 3000); } });
+// the create form also offers team deathmatch ("tdm"); for playing against bots it is the usual deathmatch
+const newModeVal = () => SET.mode === 'dm' && SET.dmTeam ? 'tdm' : (MODES[SET.mode] ? SET.mode : 'comp');
+$('newMode').value = newModeVal();
+$('newMode').addEventListener('change', () => { const v = $('newMode').value; SET.dmTeam = v === 'tdm'; SET.mode = v === 'tdm' ? 'dm' : v; saveSet(); syncSegs(); modeNote(); });
 function modeNote(){ $('modeNote').textContent = MODES[SET.mode] ? MODES[SET.mode].desc : ''; }
 modeNote();
 $('admMap').addEventListener('change', () => { if (isOwner() && $('admMap').value !== (NET.g && NET.g.m)){ NET.room.admin({ a:'map', m:$('admMap').value }); hint("Xarita almashtirilmoqda — o'yin isinishdan qayta boshlanadi", 3000); } });
@@ -3201,7 +3213,7 @@ async function loadRooms(){
     el.innerHTML = list.map(r => {
       const code = String(r.code || ''), ph = { warmup:'isinish', freeze:r.round + '-raund', live:r.mode && r.mode !== 'comp' ? 'davom etmoqda' : r.round + '-raund', post:r.round + '-raund', over:"o'yin tugadi" }[r.phase] || '';
       const people = (r.humans|0) + " o'yinchi" + (r.bots ? ' + ' + (r.bots|0) + ' bot' : '') + ' / ' + (r.max ? r.max|0 : '∞');
-      return `<div class="rm"><b>${escH(code)}</b><small>${escH((MODES[r.mode] || MODES.comp).name)} · ${escH((MAPS[r.map] || MAPS.qumtepa).name)} · ${escH(r.owner || '')} · ${people} · ${ph}${r.round && (!r.mode || r.mode === 'comp') ? ' · ' + (r.sA|0) + ':' + (r.sB|0) : ''}</small><button class="ghost sm" type="button" data-room="${escH(code)}"${r.max && (r.humans + r.bots) >= r.max ? ' disabled' : ''}>Kirish</button></div>`;
+      return `<div class="rm"><b>${escH(code)}</b><small>${escH(modeInfo(r.mode).name)} · ${escH((MAPS[r.map] || MAPS.qumtepa).name)} · ${escH(r.owner || '')} · ${people} · ${ph}${r.round && (!r.mode || r.mode === 'comp') ? ' · ' + (r.sA|0) + ':' + (r.sB|0) : ''}</small><button class="ghost sm" type="button" data-room="${escH(code)}"${r.max && (r.humans + r.bots) >= r.max ? ' disabled' : ''}>Kirish</button></div>`;
     }).join('');
   } catch(e){ $('roomList').innerHTML = `<p class="note">Ro'yxatni yuklab bo'lmadi.</p>`; }
 }
@@ -3223,7 +3235,7 @@ function renderAdmin(){
   $('admInfo').textContent = 'Kod: ' + NET.code + ' · ' + (ri.pub ? 'ommaviy' : 'yopiq') + ' · ' + (ri.max ? 'ko\'pi bilan ' + ri.max : 'cheksiz') + ' · egasi: ' + (own ? 'siz' : ownerR ? ownerR.name : '—') + (own ? '' : '. Botlarni va o\'yinchilarni faqat xona egasi boshqaradi.');
   $('admCtl').hidden = !own;
   $('admPub').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === (ri.pub ? '1' : '0'))));
-  $('admMax').value = String(ri.max || 0); if (NET.g && NET.g.m) $('admMap').value = NET.g.m; if (NET.g && document.activeElement !== $('admMode')) $('admMode').value = curMode();
+  $('admMax').value = String(ri.max || 0); if (NET.g && NET.g.m) $('admMap').value = NET.g.m; if (NET.g && document.activeElement !== $('admMode')) $('admMode').value = curModeID();
   const rows = [...NET.remotes.values()].filter(r => r.team).sort((a, b) => (a.team > b.team ? 1 : -1) || (a.bot - b.bot));
   $('admList').innerHTML = `<tr><td class="${player.team === 'CT' ? 'ct' : 't'}">${escH(NET.name)} <small>siz${own ? ', egasi' : ''}</small></td><td class="r"></td></tr>` +
     rows.map(r => `<tr><td class="${r.team === 'CT' ? 'ct' : 't'}">${escH(r.name)}${r.bot ? ' <small>bot · ' + ({ easy:'oson', normal:"o'rta", hard:'qiyin' }[r.lv] || '') + '</small>' : r.peer === ri.owner ? ' <small>egasi</small>' : ''}</td><td class="r">${own ? `<button class="ghost sm" type="button" data-kick="${escH(r.peer)}">${kickSure(r.peer) ? 'Tasdiqlash' : 'Chiqarish'}</button>` : ''}</td></tr>`).join('');
@@ -3252,7 +3264,7 @@ diffBtns.forEach(b => b.addEventListener('click', () => { SET.diff = b.dataset.d
 // segmented settings: <div class="seg" data-set="key"><button data-v="value">
 function syncSegs(){ document.querySelectorAll('.seg[data-set]').forEach(g => g.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(SET[g.dataset.set]) === b.dataset.v ? 'true' : 'false'))); }
 document.querySelectorAll('.seg[data-set]').forEach(g => g.addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; SET[g.dataset.set] = b.dataset.v; saveSet(); syncSegs(); if (SEG_HOOK[g.dataset.set]) SEG_HOOK[g.dataset.set](); }));
-const SEG_HOOK = { voice(){ if (MODE === 'online' && voiceMode() && VOICE.mic === 'none') voiceMic(); }, mode(){ $('newMode').value = SET.mode; modeNote(); } };
+const SEG_HOOK = { voice(){ if (MODE === 'online' && voiceMode() && VOICE.mic === 'none') voiceMic(); }, mode(){ $('newMode').value = newModeVal(); modeNote(); } };
 syncSegs();
 
 // settings (one panel moved between the menu and the pause sheet)
@@ -3276,7 +3288,7 @@ function closeBuy(silent){ S.buyOpen = false; $('buy').hidden = true; if (!silen
 $('buyClose').addEventListener('click', () => closeBuy());
 function owns(id){ if (W[id] && W[id].kind === 'nade') return player.nades[id] >= W[id].max; if (id === 'kit') return player.kit;
   return (player.inv[1] && player.inv[1].id === id) || (player.inv[2] && player.inv[2].id === id) || (id === 'kevlar' && player.armor >= 100) || (id === 'helmet' && player.armor >= 100 && player.helmet); }
-function dmFree(){ return isFFA() && S.phase === 'live'; }
+function dmFree(){ return curMode() === 'dm' && S.phase === 'live'; }
 function priceOf(id){ if (dmFree()) return 0; if (id === 'helmet' && player.armor >= 100 && !player.helmet) return 350; return (W[id] || GEAR[id]).price; }
 function renderBuy(){
   const g = $('buyGrid'); g.innerHTML = '';
@@ -3705,7 +3717,7 @@ function netHit(r, w, part, dist, pos, flat){
 
 const PHS = ['warmup','freeze','live','post','over'];
 function sanitizeG(g){ const b = g.b && typeof g.b === 'object' ? { x:num(g.b.x), z:num(g.b.z), s:g.b.s === 'B' ? 'B' : 'A', t:num(g.b.t) } : 0;
-  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', rs:g.rs === 'B' ? 'B' : g.rs === 'A' ? 'A' : '', vt:sanitizeVt(g.vt), m:MAPS[g.m] ? g.m : 'qumtepa', md:MODES[g.md] ? g.md : 'comp', sc:sanitizeSc(g.sc), wn:String(g.wn || '').slice(0, 40), wnm:cleanName(g.wnm), mv:String(g.mv || '').slice(0, 40), mvn:g.mvn ? cleanName(g.mvn) : '', mvr:String(g.mvr || '').slice(0, 8), st:sanitizeSt(g.st), t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : num(g.fm) === 6 ? 6 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
+  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', rs:g.rs === 'B' ? 'B' : g.rs === 'A' ? 'A' : '', vt:sanitizeVt(g.vt), m:MAPS[g.m] ? g.m : 'qumtepa', md:MODES[g.md] ? g.md : 'comp', tm:g.tm === true, sc:sanitizeSc(g.sc), wn:String(g.wn || '').slice(0, 40), wnm:cleanName(g.wnm), mv:String(g.mv || '').slice(0, 40), mvn:g.mvn ? cleanName(g.mvn) : '', mvr:String(g.mvr || '').slice(0, 8), st:sanitizeSt(g.st), t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : num(g.fm) === 6 ? 6 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
 function sanitizeSt(st){ if (!Array.isArray(st)) return null; return st.slice(0, 32).filter(r => r && typeof r === 'object').map(r => ({ id:String(r.id || '').slice(0, 40), nm:cleanName(r.nm), sq:r.sq === 'B' ? 'B' : 'A', k:Math.max(0, num(r.k)|0), d:Math.max(0, num(r.d)|0), hs:Math.max(0, num(r.hs)|0), dmg:Math.max(0, num(r.dmg)|0), mvp:Math.max(0, num(r.mvp)|0) })); }
 function sanitizeVt(vt){ if (!vt || typeof vt !== 'object') return null; const o = {}; for (const k in MAPS) if (vt[k]) o[k] = Math.max(0, num(vt[k])|0); return o; }
 function sanitizeSc(sc){ if (!sc || typeof sc !== 'object') return null; const o = {}; let n = 0; for (const k in sc){ if (++n > 80) break; o[String(k).slice(0, 40)] = Math.max(0, num(sc[k])|0); } return o; }
@@ -3774,15 +3786,20 @@ function modePhase(g){
       NET.roundKey = key; player.team = NET.sq === 'B' ? 'CT' : 'T'; NET.inRound = g.r;
       player.kills = player.deaths = player.hs = 0; player.dmg = 0; player.ggLv = -1; resetInv(); clearNades(); clearDrops();
       bomb.planted = false; bomb.mesh.visible = false; modeLoadout(false); modeSpawn();
-      showMsg(MODES[g.md].name, MODES[g.md].desc, isFFA() ? 'atk' : teamMsg(player.team), 4200); vo('start');
+      showMsg(modeInfo(g.md).name, modeInfo(g.md).desc, isFFA() ? 'atk' : teamMsg(player.team), 4200); vo('start');
     } else if (!player.alive && NET.deadT >= RESPAWN_T) modeRespawn();
     // the server's own count of my kills (it only counts kills it has confirmed)
     if (g.sc && NET.me && g.sc[NET.me] !== undefined && g.sc[NET.me] > player.kills){ player.kills = g.sc[NET.me]; onModeKill(); }
   } else if (ph === 'over' && NET.lastPh !== 'over'){
     showNetResult(g);
     const mine = (g.wn && g.wn === NET.me) || (!g.wn && g.wnm === NET.name), rows = modeRows(), place = rows.findIndex(r => r.me) + 1;
+    if (teamDM()){ const won = g.wn === NET.sq, my = NET.sq === 'B' ? g.sB|0 : g.sA|0, th = NET.sq === 'B' ? g.sA|0 : g.sB|0;
+      showMsg(!g.wn ? 'Durang' : won ? 'Jamoangiz yutdi!' : 'Raqib jamoa yutdi', 'Hisob ' + my + ' : ' + th + '. Siz ' + player.kills + " ta o'ldirdingiz. Isinish 10 soniyadan keyin boshlanadi.", won ? 'atk' : '', 9000);
+      sfxChord(won); if (S.buyOpen) closeBuy(true);
+    } else {
     showMsg(mine ? "Siz yutdingiz!" : (g.wnm || "Kimdir") + ' yutdi', (g.md === 'gg' ? "Qurol poygasi tugadi. " : "Deathmatch tugadi. ") + 'Siz ' + place + "-o'rindasiz, " + player.kills + " o'ldirish. Isinish 10 soniyadan keyin boshlanadi.", mine ? 'atk' : '', 9000);
     sfxChord(mine); if (S.buyOpen) closeBuy(true);
+    }
   }
   NET.lastPh = ph; NET.lastMd = g.md;
 }
@@ -3792,16 +3809,16 @@ function showNetResult(g){
   const md = curMode(); let rows;
   if (g.st && g.st.length) rows = g.st.map(r => ({ ...r, me:r.id === NET.me, side: !RM(md) ? sideOfSquad(r.sq, Math.max(1, g.r), g.fm) : (r.sq === 'B' ? 'CT' : 'T') }));
   else rows = modeRows().map(r => ({ nm:r.name.replace(' (siz)', ''), k:r.k, d:r.d, hs:r.me ? player.hs : 0, dmg:r.me ? Math.round(player.dmg) : 0, mvp:r.me ? (player.mvp || 0) : 0, me:r.me, side:r.team }));
-  const mine = !RM(md) ? (g.sA > g.sB) === (NET.sq !== 'B') : (g.wn ? g.wn === NET.me : g.wnm === NET.name);
-  const title = !RM(md) ? (mine ? "G'alaba" : "Mag'lubiyat") : (mine ? "Siz yutdingiz!" : (g.wnm || 'Kimdir') + ' yutdi');
-  const sub = MODES[md].name + ' · ' + MAP.name + (!RM(md) ? ' · hisob ' + (NET.sq === 'B' ? g.sB + ' : ' + g.sA : g.sA + ' : ' + g.sB) : '') + ' · isinish 10 soniyadan keyin';
+  const tdm = teamDM(), mine = tdm ? g.wn === NET.sq : !RM(md) ? (g.sA > g.sB) === (NET.sq !== 'B') : (g.wn ? g.wn === NET.me : g.wnm === NET.name);
+  const title = tdm ? (!g.wn ? 'Durang' : mine ? 'Jamoangiz yutdi!' : 'Raqib jamoa yutdi') : !RM(md) ? (mine ? "G'alaba" : "Mag'lubiyat") : (mine ? "Siz yutdingiz!" : (g.wnm || 'Kimdir') + ' yutdi');
+  const sub = modeInfo(md).name + ' · ' + MAP.name + (!RM(md) || tdm ? ' · hisob ' + (NET.sq === 'B' ? g.sB + ' : ' + g.sA : g.sA + ' : ' + g.sB) : '') + ' · isinish 10 soniyadan keyin';
   $('result').innerHTML = resultHTML(title, sub, rows, !RM(md) ? matchMVP(rows) : null) + voteHTML(g); $('result').hidden = false; $('dead').hidden = true;
   setTimeout(() => { H.msg.className = ''; }, 0);   // the table says it all
   setTimeout(() => { if (!NET.g || NET.g.ph !== 'over') $('result').hidden = true; }, 10500);
 }
 function respawnWarm(){ killcamStop(); $('result').hidden = true; NET.myVote = ''; spawnAt(player.team); player.alive = true; player.hp = 100; player.money = 16000; refill(); NET.inRound = 0; NET.deadT = 0; S.deathT = 0; player.planting = 0; $('dead').hidden = true; H.cross.style.display = ''; drawWeapon(); }
 function enterWarmup(){ clearDrops(); respawnWarm(); const md = curMode();
-  showMsg('Isinish · ' + MODES[md].name, md === 'dm' ? "O'yin xonada kamida 2 kishi bo'lganda boshlanadi." : "O'yin har ikki jamoada kamida bittadan o'yinchi bo'lganda boshlanadi. " + KB('M', 'Jamoa tugmasi') + " — jamoani almashtirish.", teamMsg(player.team), 4200); }
+  showMsg('Isinish · ' + modeInfo(md).name, isFFA() ? "O'yin xonada kamida 2 kishi bo'lganda boshlanadi." : "O'yin har ikki jamoada kamida bittadan o'yinchi bo'lganda boshlanadi. " + KB('M', 'Jamoa tugmasi') + " — jamoani almashtirish.", teamMsg(player.team), 4200); }
 function spawnRound(g){
   voMatchPoint(g.sA, g.sB, g.r, g.fm);
   const newHalf = halfStart(g.r, g.fm), survived = player.alive && NET.inRound > 0 && !newHalf;
@@ -3980,7 +3997,7 @@ function netHUD(){
   tt.style.color = player.team === 'CT' ? 'var(--def)' : 'var(--atk)';
 }
 function netBoardHTML(){
-  if (respawnMode()) return modeBoardHTML('Xona: ' + NET.code + ' · ' + MODES[curMode()].name + (NET.g && NET.g.ph === 'live' ? ' · ' + fmt(NET.g.t) + ' qoldi' : ' · isinish'));
+  if (respawnMode()) return modeBoardHTML('Xona: ' + NET.code + ' · ' + modeInfo(curMode()).name + (NET.g && NET.g.ph === 'live' ? ' · ' + fmt(NET.g.t) + ' qoldi' : ' · isinish'));
   const g = NET.g || { r:0, sA:0, sB:0, fm:12 }, esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
   const rows = [...NET.remotes.values()].filter(r => r.team).map(r => ({ name:r.name, team:r.team, k:r.k, d:r.d, alive:r.alive, me:false, acc:r.acc, bot:r.bot }));
   const meAcc = ACC.me ? { r:ACC.me.rating, rk:ACC.me.rank.calibrating ? 'Kalibrlash' : ACC.me.rank.name, rc:safeColor(ACC.me.rank.color), lv:ACC.me.level || 0 } : null;
@@ -4191,7 +4208,7 @@ document.addEventListener('keydown', e => { if (e.code === 'Escape' && !$('lb').
 /* ---------- friends, party invites, clans ---------- */
 const SOC = { d:null, top:null, busy:false, live:[], dismissed:{}, partyWith:'', sure:'' };
 const clTagHTML = cl => cl ? `<span class="clTag">[${escH(cl)}]</span>` : '';
-const modeName = md => (MODES[md] || MODES.comp).name, mapName = m => (MAPS[m] || MAPS.qumtepa).name;
+const modeName = md => modeInfo(md).name, mapName = m => (MAPS[m] || MAPS.qumtepa).name;
 const socStr = (v, n) => String(v == null ? '' : v).slice(0, n || 32);
 async function socLoad(){
   if (!ACC.me || SOC.busy) return null;
@@ -4405,7 +4422,7 @@ function touchFrame(){
   $('tDrop').hidden = !player.alive || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot];
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){

@@ -61,6 +61,17 @@ type room struct {
 	st               map[string]*pstat
 	stE              string
 	planter, defuser string
+	// granatalar va iqtisod (nadesim.go, economy.go)
+	nades   []*liveNade
+	smokes  []*smokeCloud
+	fires   []*fireArea
+	nadeKey string
+	ground  map[string]groundGun
+	groundR int
+	groundE string
+	loss    map[string]int
+	lossE   string
+	purses  map[string]purse // chiqib ketganlarning puli (qayta ulanish uchun)
 }
 
 type hub struct {
@@ -194,6 +205,7 @@ func (h *hub) leave(c *client) {
 	r := c.room
 	h.mu.Lock()
 	r.mu.Lock()
+	r.savePurseLocked(c)
 	delete(r.clients, c.id)
 	_, humans := r.botCountLocked()
 	empty := humans == 0 // botlar o'zi xonani ushlab turmaydi

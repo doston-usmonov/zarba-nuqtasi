@@ -1596,7 +1596,9 @@ function showMsg(t, s, cls, ms){ H.msgT.textContent = t; H.msgS.textContent = s 
 let hintTimer = 0;
 function hint(t, ms){ H.hint.textContent = t; H.hint.hidden = false; clearTimeout(hintTimer); hintTimer = setTimeout(() => H.hint.hidden = true, ms || 2200); }
 let mdTimer = 0;
-function addMoney(v, why){ const before = player.money; player.money = clamp(player.money + v, 0, 16000); const real = player.money - before; if (!real) return; H.moneyDelta.textContent = (real > 0 ? '+$' : '-$') + Math.abs(real) + (why ? ' ' + why : ''); H.moneyDelta.classList.add('on'); clearTimeout(mdTimer); mdTimer = setTimeout(() => H.moneyDelta.classList.remove('on'), 2200); }
+function srvEco(){ return MODE === 'online' && NET.room && NET.room.ref && !respawnMode(); }
+function moneyFlash(real, why){ H.moneyDelta.textContent = (real > 0 ? '+$' : '-$') + Math.abs(real) + (why ? ' ' + why : ''); H.moneyDelta.classList.add('on'); clearTimeout(mdTimer); mdTimer = setTimeout(() => H.moneyDelta.classList.remove('on'), 2200); }
+function addMoney(v, why){ if (srvEco() && S.phase !== 'warmup') return;   /* the server pays: see netEco */ const before = player.money; player.money = clamp(player.money + v, 0, 16000); const real = player.money - before; if (!real) return; H.moneyDelta.textContent = (real > 0 ? '+$' : '-$') + Math.abs(real) + (why ? ' ' + why : ''); H.moneyDelta.classList.add('on'); clearTimeout(mdTimer); mdTimer = setTimeout(() => H.moneyDelta.classList.remove('on'), 2200); }
 function feed(killer, kTeam, weapon, victim, vTeam, hs, mine){
   const d = document.createElement('div'); if (mine) d.className = 'mine';
   const k = document.createElement('span'); k.className = kTeam; k.textContent = killer;
@@ -2476,7 +2478,7 @@ function explodeHE(n){
     let dmg = Math.max(dmgAt(_nb), dmgAt(camera.position));
     if (dmg > 1){ if (player.armor > 0){ const a = dmg*.43; player.armor = Math.max(0, player.armor - a*.5); dmg -= a; } nadeHurt(n, dmg, W.he); }
   }
-  if (MODE === 'online' && n.owner === null) NET.remotes.forEach(r => { if (!r.bot || !r.alive || r.team === player.team) return;
+  if (MODE === 'online' && n.owner === null && !NET.room.ref) NET.remotes.forEach(r => { if (!r.bot || !r.alive || r.team === player.team) return;
     _nb.copy(r.pos); _nb.y += 1.1; const dmg = dmgAt(_nb); if (dmg >= 1) netNadeHit(r, dmg, 'he'); });
   if (MODE !== 'online' && n.owner === null) for (const b of bots){ if (!b.alive) continue;
     _nb.copy(b.pos); _nb.y += 1.1 - b.kneel*.4; let dmg = dmgAt(_nb); if (dmg < 1) continue;
@@ -2560,12 +2562,12 @@ function ignite(n){
   sfxIgnite(p); noise(p, 18, true);
 }
 function endFire(f){ scene.remove(f.g); if (f.light) f.light.intensity = 0; puff(_tmp.copy(f.p).setY(f.h0 + .6), 0x4a4440, 2.2, 1.4, 2); }
-function inFire(f, pos){ return Math.hypot(pos.x - f.p.x, pos.z - f.p.z) < FIRE_R && pos.y < f.h0 + 1 && pos.y > f.h0 - .6 && f.parts.some(q => Math.hypot(pos.x - q.x, pos.z - q.z) < 1.1); }
+function inFire(f, pos){ return Math.hypot(pos.x - f.p.x, pos.z - f.p.z) < FIRE_R*.9 && pos.y < f.h0 + 1 && pos.y > f.h0 - .6 && Math.abs(surfaceY(pos.x, pos.z) - f.h0) < .01 && los(_tmp.set(f.p.x, f.h0 + .3, f.p.z), _tmp2.set(pos.x, f.h0 + .3, pos.z)); }
 function fireTick(f){
   const dmg = 9;   // 36 per second
   if (player.alive && canHurtMe(f) && inFire(f, player.pos)){ player.hp -= dmg*(player.armor > 0 ? .9 : 1); hurtFX(f.p, 'legs'); if (player.hp <= 0) playerDie(f.owner, W.molly, false); }
   if (MODE !== 'online' && f.owner === null) for (const b of bots){ if (b.alive && inFire(f, b.pos)) nadeHitBot(b, dmg, W.molly, f.p); }
-  if (MODE === 'online' && f.owner === null) NET.remotes.forEach(r => { if (r.bot && r.alive && r.team !== player.team && inFire(f, r.pos)) netNadeHit(r, dmg, 'molly'); });
+  if (MODE === 'online' && f.owner === null && !NET.room.ref) NET.remotes.forEach(r => { if (r.bot && r.alive && r.team !== player.team && inFire(f, r.pos)) netNadeHit(r, dmg, 'molly'); });
 }
 // bots step out of the flames
 function fireRepel(pos, dt){ for (const f of fires){ if (!inFire(f, pos)) continue; const dx = pos.x - f.p.x, dz = pos.z - f.p.z, d = Math.hypot(dx, dz) || 1; moveEntity(pos, dx/d*4*dt, dz/d*4*dt, .34, true); } }
@@ -2641,7 +2643,7 @@ function pickUp(d){
   if (cur) throwGun(w.slot, .5);   // swap: what you held lands at your feet
   removeDrop(d.id);
   player.inv[w.slot] = { id:d.w, mag:d.mag, res:d.res }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); sfxClick();
-  if (MODE === 'online'){ NET.picks.push({ n:++NET.pickN, id:d.id }); if (NET.picks.length > 6) NET.picks.shift(); }
+  if (MODE === 'online'){ NET.pickW[d.id] = d.w; NET.picks.push({ n:++NET.pickN, id:d.id }); if (NET.picks.length > 6) NET.picks.shift(); }
   return true;
 }
 // throw the gun in a slot (G, buying a replacement, swapping, dying)
@@ -2866,6 +2868,7 @@ function renderBuy(){
 }
 function buy(id){
   if (!canBuy()) { closeBuy(); return; }
+  const prevArmor = player.armor, prevHelmet = player.helmet;
   const price = priceOf(id); if (player.money < price || owns(id)) return;
   if (W[id] && W[id].kind === 'nade'){ if (nadeTotal() >= NADE_MAX) return; player.nades[id]++; if (!player.nadeSel || !player.nades[player.nadeSel]) player.nadeSel = id; }
   else if (id === 'kit'){ if (player.team !== 'CT') return; player.kit = true; }
@@ -2873,6 +2876,7 @@ function buy(id){
   else if (id === 'kevlar'){ player.armor = 100; }
   else if (id === 'helmet'){ player.armor = 100; player.helmet = true; }
   player.money -= price; sfxClick(); renderBuy(); updateHUD();
+  if (MODE === 'online'){ NET.buys.push({ n:++NET.buyN, id }); if (NET.buys.length > 8) NET.buys.shift(); NET.buyLog[NET.buyN] = { id, armor:prevArmor, helmet:prevHelmet }; }
 }
 
 // scoreboard
@@ -2935,6 +2939,7 @@ function wsJoin(name, opts){
         else if (m.t === 'pong'){ const rtt = performance.now() - num(m.c); if (rtt >= 0 && rtt < 10000) NET.ping = NET.ping ? NET.ping*.7 + rtt*.3 : rtt; }
         else if (m.t === 'room'){ netRoomInfo(m); }
         else if (m.t === 'note'){ hint(String(m.msg || '').slice(0, 120), 3000); }
+        else if (m.t === 'eco'){ netEco(m); }
         else if (m.t === 'chat'){ chatShow(cleanName(m.nm), m.side === 'CT' ? 'CT' : 'T', !!m.dead, m.tm === 1, String(m.m || '').slice(0, 120), false); }
         else if (m.t === 'err' && !settled){ settled = true; closed = true; reject({ code:m.code || 'refused' }); }
         else if (m.t === 'err' && m.code === 'kicked'){ closed = true; netKicked(); } };
@@ -3132,7 +3137,7 @@ document.addEventListener('mousedown', e => pttMouse(e, true));
 document.addEventListener('mouseup', e => pttMouse(e, false));
 document.addEventListener('auxclick', e => { if (inGame() && e.button !== 0) e.preventDefault(); });
 
-const NET = { room:null, me:null, name:'', code:'umumiy', sq:null, chats:[], chatN:0, drops:[], dropN:0, picks:[], pickN:0, host:false, g:null, gSrc:null, hitSeq:0, hits:[], shot:null, shotN:0, death:null, deathN:0, nade:null, nadeN:0, plant:null, plantN:0, def:null, defN:0,
+const NET = { room:null, me:null, name:'', code:'umumiy', sq:null, chats:[], chatN:0, buys:[], buyN:0, buyLog:{}, pickW:{}, drops:[], dropN:0, picks:[], pickN:0, host:false, g:null, gSrc:null, hitSeq:0, hits:[], shot:null, shotN:0, death:null, deathN:0, nade:null, nadeN:0, plant:null, plantN:0, def:null, defN:0,
   seen:{}, remotes:new Map(), inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, tickLast:0, joinT:0, cdShown:-1, beepT:0 };
 if (!IN_ARTIFACT) $('onlineNote').textContent = "Ochiq o'yinga qo'shiling yoki o'zingiz yarating. Yopiq o'yinga do'stlaringiz kod bilan kiradi. Jamoalar avtomatik teng bo'linadi, xona egasi bot qo'sha oladi (Esc menyusida).";
 const DEFAULT_NOTE = $('onlineNote').textContent;
@@ -3228,6 +3233,21 @@ function hurtFX(src, part){
   vignT = .5;
 }
 // the server's own health count says we are dead (for example a hit we missed): obey it
+// the server's purse, a refused purchase, or a gun somebody else picked up first
+function netEco(m){
+  if (MODE !== 'online') return;
+  if (m.deny !== undefined){ const b = NET.buyLog[num(m.deny)], id = b ? b.id : String(m.id || '');
+    if (W[id] && W[id].kind === 'nade'){ player.nades[id] = Math.max(0, player.nades[id] - 1); if (player.nadeSel === id && !player.nades[id]) player.nadeSel = nextNade(id); if (player.slot === 4 && !nadeTotal()){ player.slot = bestSlot(); drawWeapon(); } }
+    else if (W[id] && W[id].slot){ const sl = W[id].slot; if (player.inv[sl] && player.inv[sl].id === id){ player.inv[sl] = null; if (player.slot === sl){ player.slot = bestSlot(); drawWeapon(); } } }
+    else if (b && (id === 'kevlar' || id === 'helmet')){ player.armor = b.armor; player.helmet = b.helmet; }
+    else if (id === 'kit') player.kit = false;
+    hint('Xarid rad etildi: ' + ((W[id] || GEAR[id] || {}).name || id), 2400); if (S.buyOpen) renderBuy(); }
+  if (m.take !== undefined){ const w = NET.pickW[String(m.take)];
+    for (const sl of [1, 2]) if (w && player.inv[sl] && player.inv[sl].id === w){ player.inv[sl] = null; if (player.slot === sl){ player.slot = bestSlot(); drawWeapon(); } break; }
+    hint("Bu qurolni boshqa o'yinchi oldinroq oldi", 2200); }
+  if (m.m !== undefined){ const v = clamp(num(m.m)|0, 0, 16000), d = v - player.money; player.money = v; if (d > 0) moneyFlash(d, ''); if (S.buyOpen) renderBuy(); }
+  updateHUD();
+}
 function netServerKill(m){ if (!player.alive || MODE !== 'online') return; const k = NET.remotes.get(String(m.by || '')); playerDie(k || null, W[m.w] || W.pistol, !!m.hs); }
 function netApplyHit(r, h){
   if (!player.alive || !foe(r) || shielded()) return;
@@ -3257,7 +3277,7 @@ function buildPres(){
   const it = curItem();
   return { v:1, hc:1, nm:NET.name, sq:NET.sq, tm:player.team, x:r2(player.pos.x), y:r2(player.pos.y), z:r2(player.pos.z), yw:r2(player.yaw), pt:r2(player.pitch), cr:r2(player.crouch),
     al:player.alive ? 1 : 0, hp:Math.max(0, Math.round(player.hp)), w:it ? it.id : 'knife', mv:(player.alive && player.ground && Math.hypot(player.vel.x, player.vel.z) > 3.1) ? 1 : 0,
-    k:player.kills, d:player.deaths, in:NET.inRound, sh:NET.shot, hi:NET.hits.length ? NET.hits : null, ar:Math.round(player.armor), hm:player.helmet ? 1 : 0, kt:player.kit ? 1 : 0, pf:fmtH(), ch:NET.chats.length && !(NET.room && NET.room.chat) ? NET.chats : null, de:NET.death, gn:NET.nade, dr:NET.drops.length ? NET.drops : null, pk:NET.picks.length ? NET.picks : null, pl:NET.plant, df:NET.def, vo:voiceMode(), vt:VOICE.talking ? 1 : 0, g: NET.host ? gOut(NET.g) : null };
+    k:player.kills, d:player.deaths, in:NET.inRound, sh:NET.shot, hi:NET.hits.length ? NET.hits : null, ar:Math.round(player.armor), hm:player.helmet ? 1 : 0, kt:player.kit ? 1 : 0, pf:fmtH(), ch:NET.chats.length && !(NET.room && NET.room.chat) ? NET.chats : null, bu:NET.buys.length && NET.room && NET.room.ref ? NET.buys : null, de:NET.death, gn:NET.nade, dr:NET.drops.length ? NET.drops : null, pk:NET.picks.length ? NET.picks : null, pl:NET.plant, df:NET.def, vo:voiceMode(), vt:VOICE.talking ? 1 : 0, g: NET.host ? gOut(NET.g) : null };
 }
 
 function gSideScore(g, side){ if (!g || !g.r) return 0; return sideOfSquad('A', g.r, g.fm) === side ? g.sA : g.sB; }
@@ -3547,7 +3567,7 @@ async function joinOnline(create, codeOverride){
 }
 function goOnline(named){
   MODE = 'online'; NET.room = named; recClear();
-  Object.assign(NET, { lastMd:'comp', drops:[], picks:[], me:null, host:false, g:null, gSrc:null, hits:[], shot:null, death:null, plant:null, def:null, seen:{}, inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, joinT:1.6, cdShown:-1, tickLast:performance.now() });
+  Object.assign(NET, { lastMd:'comp', buys:[], buyLog:{}, pickW:{}, drops:[], picks:[], me:null, host:false, g:null, gSrc:null, hits:[], shot:null, death:null, plant:null, def:null, seen:{}, inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, joinT:1.6, cdShown:-1, tickLast:performance.now() });
   player.team = null; NET.sq = null; player.alive = false; player.hp = 100; player.kills = player.deaths = player.hs = 0; player.dmg = 0; resetInv(); player.money = 16000; player.killer = null;
   spawnAt('T'); player.deathPos.set(player.pos.x, 3, player.pos.z);
   bots.forEach(b => { b.alive = false; b.m.g.visible = false; });
@@ -3772,7 +3792,7 @@ function touchFrame(){
   $('tDrop').hidden = !player.alive || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot];
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){

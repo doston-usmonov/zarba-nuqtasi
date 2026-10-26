@@ -21,6 +21,7 @@ func TestStatsMVP(t *testing.T) {
 	r.mu.Lock()
 	a.ps.pos, b.ps.pos = vec3{43, 0, 30}, vec3{43, 0, 34}
 	a.ps.posOK, b.ps.posOK = true, true
+	a.ps.inv.prim, b.ps.inv.prim = "rifle", "rifle"
 	a.ps.push(sample{t: time.Now(), p: a.ps.pos})
 	b.ps.push(sample{t: time.Now(), p: b.ps.pos})
 	r.mu.Unlock()

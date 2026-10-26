@@ -248,7 +248,7 @@ func (r *room) botDieLocked(v, killer *client, w string, hs bool, now time.Time)
 	}
 	b.de = &deathClaim{N: b.deN, By: by, W: w, HS: map[bool]int{true: 1}[hs]}
 	r.tr.death(r, v, killer, hs)
-	r.noteDeathLocked(v, killer, hs)
+	r.noteDeathLocked(v, killer, hs, w)
 	if killer != nil {
 		r.creditKillLocked(v, killer, now)
 	}

@@ -378,6 +378,7 @@ func TestAccountsAndRatedMatch(t *testing.T) {
 		rm.mu.Lock()
 		p := rm.clients[w.id].ps
 		p.pos, p.posOK, p.moveAt = at, true, time.Now()
+		p.inv.prim = "rifle" // avtomat sotib olingan
 		p.push(sample{t: time.Now(), p: at})
 		rm.mu.Unlock()
 	}
@@ -626,8 +627,9 @@ func TestReferee(t *testing.T) {
 	if ms := drain(a); len(ms) == 0 || ms[len(ms)-1]["t"] != "fix" {
 		t.Fatalf("fix yuborilmadi: %v", ms)
 	}
-	// ikkalasini o'rtaga qo'yamiz (oddiy yurib kelgandek)
+	// ikkalasini o'rtaga qo'yamiz (oddiy yurib kelgandek), qo'llarida avtomat bor (sotib olishdi)
 	for _, c := range []*client{a, b} {
+		c.ps.inv.prim = "rifle"
 		c.ps.pos, c.ps.moveAt = vec3{43, 0, map[string]float64{"a": 40, "b": 30}[c.id]}, time.Now()
 		c.ps.push(sample{t: time.Now(), p: c.ps.pos})
 	}
@@ -644,6 +646,7 @@ func TestReferee(t *testing.T) {
 		t.Fatalf("haqiqiy tegish: %s hp=%v", f["hi"], b.ps.hp)
 	}
 	// B o'lishni "unutadi" — server avval buyuradi, keyin boshqalarga o'lik ko'rsatadi
+	drain(b) // pul haqidagi xabarlar
 	r.mu.Lock()
 	r.tickLocked(time.Now().Add(800*time.Millisecond), .1)
 	r.mu.Unlock()

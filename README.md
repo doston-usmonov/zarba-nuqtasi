@@ -13,6 +13,8 @@ zarba-server/
 ├── legacy.go          oldingi fayl bazasidan bir martalik import
 ├── api.go             /api: ro'yxatdan o'tish, kirish, reyting jadvali, profil
 ├── ws.go              WebSocket (RFC 6455) — serverga kerakli qismi
+├── economy.go         pul, xaridlar va qo'ldagi qurollar (raqobat rejimi)
+├── nadesim.go         granatalar va bomba portlashi serverda
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── modes.go           o'yin rejimlari: deathmatch va qurol poygasi
 ├── gamemap.go         xaritalar panjarasi: ko'rinish, devorlar, bazalar, nuqtalar
@@ -106,7 +108,7 @@ Natijani server o'zi hisoblaydi:
 - Natija format qoidasiga mos bo'lishi kerak (9 yoki 13 g'alaba, overtime). Ikkala jamoada ham o'yinchi bo'lishi shart va raundlar haddan tashqari tez tugamasligi kerak.
 - Bitta hisob bilan bitta xonaga ikki marta kirib bo'lmaydi.
 
-Zarbaning tekkani hali ham o'yinchi brauzerida hisoblanadi. Uni serverga o'tkazish ROADMAP'dagi keyingi bosqichlardan biri.
+O'q qayerga tekkanini otgan o'yinchining brauzeri aniqlaydi, server esa har bir tegishni tekshiradi (zarar, otish tezligi, devor, qurol rostdan qo'lida bormi). Granata va bomba zararini, pul va xaridlarni server o'zi hisoblaydi.
 
 ### Ma'lumotlar bazasi (PostgreSQL 17)
 

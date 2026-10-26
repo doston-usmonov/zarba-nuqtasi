@@ -54,7 +54,7 @@ func (r *room) statLocked(c *client) *pstat {
 }
 
 // noteDeathLocked: server tasdiqlagan o'lim (killer nil bo'lishi mumkin).
-func (r *room) noteDeathLocked(victim, killer *client, hs bool) {
+func (r *room) noteDeathLocked(victim, killer *client, hs bool, w string) {
 	if !r.statsOn() {
 		return
 	}
@@ -62,6 +62,7 @@ func (r *room) noteDeathLocked(victim, killer *client, hs bool) {
 	if killer == nil || !r.foes(killer, victim) {
 		return
 	}
+	r.addMoneyLocked(killer, killReward(w))
 	s := r.statLocked(killer)
 	s.k++
 	if hs {

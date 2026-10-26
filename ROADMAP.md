@@ -25,8 +25,8 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Harakat tezligi va pozitsiyani serverda tekshirish
 - ✅ Raund mantig'i (vaqt, bomba, g'olib, yarim vaqt, overtime) serverda, bomba o'rnatish/zararsizlantirish tekshiriladi
 - ✅ Reytingga faqat server tasdiqlagan o'ldirishlar yoziladi
-- [ ] Granata va bomba portlashi zararini serverda hisoblash
-- [ ] Iqtisodni (pul, xaridlar) serverda yuritish
+- ✅ Granata va bomba portlashi zararini serverda hisoblash (granata yo'li brauzer bilan aynan bir xil hisoblanadi)
+- ✅ Iqtisod serverda: pul, xaridlar, qo'ldagi qurollar; yerdagi qurolni faqat bir kishi oladi; qayta ulanganda pul saqlanadi
 
 ## 4. Matchmaking
 - ✅ Ochiq o'yinlar ro'yxati, ommaviy/yopiq xonalar, o'yinchilar chegarasi

@@ -18,7 +18,8 @@ package main
 //     ham bomba yonida yetarli vaqt turilgandagina qabul qilinadi;
 //   - o'ldirish reytingga faqat server tasdiqlagan tegishdan keyin yoziladi.
 //
-// Granata va bomba portlashi zararini hali har bir o'yinchi o'zi hisoblaydi (keyingi qadam).
+// Granata va bomba portlashi zararini ham server hisoblaydi (nadesim.go), pul, xaridlar va
+// qo'ldagi qurollar ham serverda (economy.go).
 
 import (
 	"crypto/rand"
@@ -185,6 +186,14 @@ type pstate struct {
 	deadAt     time.Time // oxirgi o'lim (qayta tug'ilish vaqti uchun)
 	spawnAt    time.Time // oxirgi tirilish (tug'ilgandagi himoya)
 	lvAt       time.Time // qurol poygasida oxirgi qurol almashgan vaqt
+	// iqtisod (economy.go)
+	money            int
+	ecoE             string // qaysi o'yinda pul berilgan
+	inv              inventory
+	buyN             int
+	dropN, pickN     int
+	okDrops, okPicks map[int]bool
+	nadeOK           bool
 	// server jonini nolga tushirgan, lekin mijoz hali o'lmagan
 	dueAt      time.Time
 	dueBy      string
@@ -197,7 +206,7 @@ type pstate struct {
 }
 
 func newPState() *pstate {
-	return &pstate{okHits: map[int]bool{}, dealt: map[string]time.Time{}, life: -2, hp: 100}
+	return &pstate{okHits: map[int]bool{}, dealt: map[string]time.Time{}, life: -2, hp: 100, inv: newInventory(), okDrops: map[int]bool{}, okPicks: map[int]bool{}}
 }
 
 func (p *pstate) push(s sample) { p.hist[p.hn%len(p.hist)] = s; p.hn++ }
@@ -271,6 +280,7 @@ func (r *room) refereeLocked(c *client, f map[string]json.RawMessage, info presI
 
 	// tirilish: isinishda yoki yangi raund boshida
 	newLife := false
+	survived := p.alive && g.R > 1 && p.life == g.R-1 // oldingi raunddan tirik qolgan (qurollari qoladi)
 	if claimAlive && info.Sq != "" {
 		switch {
 		case g.Ph == "warmup" && (!p.alive || p.life != -1):
@@ -283,6 +293,9 @@ func (r *room) refereeLocked(c *client, f map[string]json.RawMessage, info presI
 	}
 	if newLife {
 		p.alive, p.hp, p.posOK, p.forced, p.killSent, p.dueAt, p.spawnAt = true, 100, false, false, false, time.Time{}, now
+		if !g.respawns() && g.Ph != "warmup" {
+			r.ecoNewLifeLocked(c, survived, now)
+		}
 	}
 	if info.Tm != p.tm {
 		p.tm, p.posOK = info.Tm, false // jamoa almashdi: boshqa bazaga o'tadi
@@ -301,7 +314,9 @@ func (r *room) refereeLocked(c *client, f map[string]json.RawMessage, info presI
 	hm, _ := num(f["hm"])
 	kt, _ := num(f["kt"])
 	ar = math.Max(0, math.Min(100, ar))
-	if newLife || inBuyTime(g, now) {
+	if r.ecoOn() {
+		r.clampGearLocked(p, ar, hm == 1, kt == 1) // raqobatda zirh faqat sotib olinadi
+	} else if newLife || inBuyTime(g, now) {
 		p.armor, p.helmet, p.kit = ar, hm == 1, kt == 1
 	} else {
 		p.armor = math.Min(p.armor, ar)
@@ -353,16 +368,9 @@ func (r *room) refereeLocked(c *client, f map[string]json.RawMessage, info presI
 		}
 	}
 
-	// granata otildi (o'ldirishni tasdiqlash uchun)
-	if raw := f["gn"]; len(raw) > 0 && raw[0] == '{' {
-		var gn struct {
-			N int `json:"n"`
-		}
-		if json.Unmarshal(raw, &gn) == nil && gn.N > p.nadeN {
-			p.nadeN, p.nadeAt = gn.N, now
-		}
-	}
-
+	r.checkDropsLocked(c, f, now)     // tashlangan va olingan qurollar
+	r.checkBuysLocked(c, f, now)      // xaridlar
+	r.checkNadeThrowLocked(c, f, now) // granata: server o'zi hisoblaydi
 	r.checkHitsLocked(c, f, now)
 	r.checkDeathLocked(c, f, now)
 	r.checkPlantLocked(c, f, now)
@@ -452,19 +460,14 @@ func (r *room) validHitLocked(c *client, h hitClaim, now time.Time) string {
 			}
 		}
 	}
-	if ok && spec.nade && v.bot != nil {
-		// granata zararini botlarga otgan o'yinchining brauzeri hisoblaydi (odam o'zinikini o'zi)
-		limit, win := 100.0, 4*time.Second
-		if h.W == "molly" {
-			limit, win = 10, 10*time.Second
-		}
-		if h.W == "flash" || h.W == "smoke" || h.D < 0 || h.D > limit || p.nadeAt.IsZero() || now.Sub(p.nadeAt) > win {
-			return "granata zarari noto'g'ri"
-		}
-		return ""
+	if ok && spec.nade {
+		return "~granata zararini server o'zi hisoblaydi"
 	}
-	if !ok || spec.nade || !okp {
+	if !ok || !okp {
 		return "noma'lum qurol"
+	}
+	if r.ecoOn() && !p.inv.has(h.W, now) {
+		return "sizda yo'q qurol: " + h.W
 	}
 	limit := spec.dmg * mult
 	if spec.melee {
@@ -579,7 +582,7 @@ func (r *room) checkDeathLocked(c *client, f map[string]json.RawMessage, now tim
 		f["de"] = jsonMsg(d)
 	}
 	r.tr.death(r, c, killer, d.HS == 1)
-	r.noteDeathLocked(c, killer, d.HS == 1)
+	r.noteDeathLocked(c, killer, d.HS == 1, d.W)
 	if killer != nil {
 		r.creditKillLocked(c, killer, now)
 	}
@@ -617,6 +620,7 @@ func (r *room) checkPlantLocked(c *client, f map[string]json.RawMessage, now tim
 				if site != "" && site == pl.S && at.flat(p.pos) < 2.5 && r.stoodLocked(p, now, 2.6, func(s sample) bool { return r.gm().siteAt(s.p.X, s.p.Z) == site && s.p.flat(at) < 2.5 }) {
 					g.B = &bombState{X: pl.X, Z: pl.Z, S: site, T: 40}
 					r.planter = c.id
+					r.addMoneyLocked(c, 300)
 				} else {
 					c.warnLocked("noto'g'ri bomba o'rnatish", now)
 				}
@@ -676,10 +680,16 @@ func (r *room) endRoundLocked(side, why string) {
 		g.SB++
 	}
 	r.roundMVPLocked(side, why)
+	r.roundAwardsLocked(side, why, g.B != nil)
 }
 
 func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 	g := r.gs
+	if key := g.E + ":" + itoa(g.R); key != r.nadeKey { // yangi raund: granatalar va olovlar yo'qoladi
+		r.clearNadesLocked()
+		r.nadeKey = key
+	}
+	r.nadesTickLocked(now)
 	nA, nB := 0, 0
 	var first *client
 	for _, c := range r.clients {
@@ -723,6 +733,7 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 			if g.Cd <= 0 {
 				g.R, g.Ph, g.T, g.SA, g.SB, g.B, g.Bm, g.E = 1, "freeze", 6, 0, 0, nil, -1, randEpoch()
 				g.Mv, g.Mvn, g.Mvr, g.St, r.planter, r.defuser = "", "", "", nil, "", ""
+				r.purses = nil
 			}
 		} else {
 			g.Cd, g.T = 6, 0
@@ -743,6 +754,7 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 		switch {
 		case g.B != nil && g.B.T <= 0:
 			g.Bm = g.R
+			r.bombBlastLocked(g.B, now)
 			r.endRoundLocked("T", "bomb")
 		case pCT > 0 && aCT == 0:
 			r.endRoundLocked("T", "kill")
@@ -793,7 +805,7 @@ func (r *room) forceDeathsLocked(now time.Time) {
 			p.alive, p.forced, p.dueAt, p.deadAt = false, true, time.Time{}, now
 			killer := r.clients[p.dueBy]
 			r.tr.death(r, c, killer, p.dueHS)
-			r.noteDeathLocked(c, killer, p.dueHS)
+			r.noteDeathLocked(c, killer, p.dueHS, p.dueW)
 			if killer != nil {
 				r.creditKillLocked(c, killer, now)
 			}

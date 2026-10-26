@@ -87,6 +87,7 @@ type hub struct {
 	voice      voiceCfg                    // ovozli chat uchun STUN/TURN
 	debug      bool                        // ZARBA_DEBUG=1: e2e testlar raund holatini o'zgartira oladi (prod'da o'chiq)
 	loadouts   map[int64]map[string]string // hisob → qurol bo'yoqlari (progress.go)
+	soc        *social                     // kim qaysi xonada, xonaga chaqiriqlar (social.go)
 }
 
 func newHub(maxPlayers int, st *Store) *hub {
@@ -112,10 +113,14 @@ func (h *hub) stats() (rooms, players int) {
 
 func jsonMsg(v any) []byte { b, _ := json.Marshal(v); return b }
 
-func accPublic(u User) json.RawMessage {
+func accPublic(u User, clan string) json.RawMessage {
 	rk := rankOf(u.Rating, u.Matches)
 	lv, _, _ := levelOf(u.XP)
-	return jsonMsg(map[string]any{"u": u.Username, "r": u.Rating, "rk": rk.Name, "rc": rk.Color, "cal": rk.Calibrating, "lv": lv})
+	m := map[string]any{"u": u.Username, "r": u.Rating, "rk": rk.Name, "rc": rk.Color, "cal": rk.Calibrating, "lv": lv}
+	if clan != "" {
+		m["cl"] = clan
+	}
+	return jsonMsg(m)
 }
 
 // serve runs one player's connection until it closes.
@@ -127,9 +132,10 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		u, ok := h.store.User(ctx, acct.id)
 		lo, _ = h.store.Loadout(ctx, acct.id)
+		tag := h.store.ClanTag(ctx, acct.id)
 		cancel()
 		if ok {
-			accJSON = accPublic(u)
+			accJSON = accPublic(u, tag)
 		}
 		if lo != nil {
 			h.mu.Lock()
@@ -205,6 +211,9 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 	}
 	c.send <- jsonMsg(map[string]any{"t": "s", "peers": snap})
 	r.clients[c.id] = c
+	if acct != nil {
+		h.joinedLocked(acct.id, r)
+	}
 	if r.owner == "" {
 		r.owner = c.id
 	}
@@ -226,6 +235,9 @@ func (h *hub) leave(c *client) {
 	r.mu.Lock()
 	r.savePurseLocked(c)
 	delete(r.clients, c.id)
+	if c.acct != nil {
+		h.leftLocked(c.acct.id, r)
+	}
 	_, humans := r.botCountLocked()
 	empty := humans == 0 // botlar o'zi xonani ushlab turmaydi
 	r.broadcast(jsonMsg(map[string]string{"t": "l", "id": c.id}), "")
@@ -401,7 +413,7 @@ func (h *hub) finishMatch(r *room, res *matchResult) {
 	fresh := map[int64]json.RawMessage{}
 	for id := range changes {
 		if u, ok := h.store.User(ctx, id); ok {
-			fresh[id] = accPublic(u)
+			fresh[id] = accPublic(u, h.store.ClanTag(ctx, id))
 		}
 	}
 	r.mu.Lock() // bazaga murojaatlar qulfdan tashqarida

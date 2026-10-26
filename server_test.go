@@ -172,6 +172,7 @@ func newTestServer(t *testing.T) (*httptest.Server, *Store, *hub) {
 	st := testStore(t, "")
 	a := newAPI(st, nil)
 	h := newHub(16, st)
+	a.hub = h
 	mux := http.NewServeMux()
 	a.routes(mux)
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {

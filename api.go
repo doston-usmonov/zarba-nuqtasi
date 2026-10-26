@@ -23,6 +23,7 @@ type api struct {
 	reg     *limiter // ko'plab soxta hisob ochishga qarshi
 	// onLoadout: o'yinchi qurol bo'yog'ini tanladi (xonadagi presence'ga darhol ta'sir qiladi)
 	onLoadout func(uid int64, lo map[string]string)
+	hub       *hub // do'stlarning onlayn holati va xonaga chaqiriqlar (social.go); testlarda nil bo'lishi mumkin
 }
 
 func newAPI(st *Store, allowed []string) *api {
@@ -52,6 +53,10 @@ func (a *api) routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/players/{name}", h(a.player))
 	mux.HandleFunc("GET /api/progress", h(a.progress))
 	mux.HandleFunc("POST /api/loadout", h(a.setFinish))
+	mux.HandleFunc("GET /api/social", h(a.socialGet))
+	mux.HandleFunc("POST /api/friends", h(a.friendPost))
+	mux.HandleFunc("POST /api/clan", h(a.clanPost))
+	mux.HandleFunc("GET /api/clans", h(a.clansGet))
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeErr(w, http.StatusNotFound, "Topilmadi") })
 }
 

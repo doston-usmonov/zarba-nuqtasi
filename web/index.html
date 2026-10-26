@@ -280,7 +280,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .xpbar .bar,.mis .bar{height:7px;border-radius:4px;background:rgba(243,239,230,.1);overflow:hidden} .xpbar .bar i,.mis .bar i{display:block;height:100%;background:var(--atk);border-radius:4px}
 #pgOv{background:#14120e;align-items:start}
 .progGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:18px;align-items:start}
-@media (max-width:820px){ .progGrid{grid-template-columns:1fr} }
+@media (max-width:820px){ .progGrid{grid-template-columns:minmax(0,1fr)} }
 .mis{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:8px}
 .mis .t{display:flex;justify-content:space-between;gap:10px;font-size:14px} .mis .t small{color:var(--atk);font-family:var(--f-display);white-space:nowrap}
 .mis.done{border-color:rgba(124,214,124,.5)} .mis.done .bar i{background:var(--good)} .mis .p{font-size:12px;color:var(--dim)}
@@ -295,6 +295,27 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .fin:disabled{opacity:.45;cursor:not-allowed} .fin:disabled img{filter:grayscale(.8)}
 .lvTag{display:inline-block;font-family:var(--f-display);font-size:11px;padding:0 5px;border-radius:3px;background:rgba(242,181,68,.16);color:var(--atk);margin-left:6px;vertical-align:1px}
 #accPanel .fields{grid-template-columns:1fr}
+#socOv{background:#14120e;align-items:start;grid-template-columns:minmax(0,1fr)}
+#socOv .panel{min-width:0}
+.cta.sm{padding:7px 12px;font-size:13px}
+.socList{display:flex;flex-direction:column;gap:8px}
+.socList:empty{display:none}
+.fr{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;min-width:0}
+.fr.hi{border-color:var(--atk);background:rgba(242,181,68,.08)}
+.fr .dot{width:9px;height:9px;border-radius:50%;background:rgba(243,239,230,.22);flex:none}
+.fr .dot.menu{background:var(--good)} .fr .dot.game{background:var(--atk)}
+.fr .nm{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.fr .nm b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.fr .nm small{color:var(--dim);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fr .act{display:flex;gap:6px;flex:none}
+.socForm{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap} .socForm .field{flex:1 1 140px} .socForm>button{align-self:flex-end;min-height:42px;margin:0}
+.socForm select{background:rgba(243,239,230,.06);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:9px 10px;font-size:15px;flex:1 1 140px;min-width:0}
+.clTag{font-family:var(--f-display);color:var(--def);margin-right:4px;font-weight:700}
+.socBadge{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--atk);color:#14120e;font-size:11px;line-height:18px;margin-left:6px;font-weight:700}
+#invBar{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;
+  background:rgba(16,14,11,.96);border:1px solid var(--atk);border-radius:10px;padding:10px 14px;width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;font-size:14px}
+#invBar[hidden]{display:none}
+#invBar small{color:var(--dim)}
 .tbl td.wrap{white-space:normal;color:var(--dim);padding:14px}
 .lbWrap{width:min(1040px,100%);display:flex;flex-direction:column;gap:16px}
 .lbGrid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:18px;align-items:start}
@@ -501,7 +522,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <div class="me"><div class="who"><b id="meName"></b><span id="meRank"></span></div><div class="pts"><b id="meRating">1000</b><span>reyting</span></div></div>
           <div class="xpbar" id="meXP"></div>
           <div class="mini" id="meStats"></div>
-          <div class="row"><button class="cta" type="button" data-prog="1">Vazifalar va bo'yoqlar</button><button class="ghost" type="button" data-lb="1">Reyting</button><button class="ghost" type="button" id="logoutBtn">Chiqish</button></div>
+          <div class="row"><button class="cta" type="button" data-prog="1">Vazifalar va bo'yoqlar</button><button class="ghost" type="button" data-soc="1">Do'stlar va klan<span class="socBadge" id="socBadge" hidden></span></button><button class="ghost" type="button" data-lb="1">Reyting</button><button class="ghost" type="button" id="logoutBtn">Chiqish</button></div>
         </div>
       </div>
       <div class="panel">
@@ -606,6 +627,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
       <h2>O'yin to'xtatildi</h2>
       <p class="note">Davom etish uchun tugmani bosing — sichqoncha yana o'yinga ulanadi.</p>
       <div class="row"><button class="cta" id="resumeBtn" type="button">Davom etish</button><button class="ghost" id="quitBtn" type="button">Bosh menyu</button></div>
+      <div class="panel" id="pauseFriends" hidden><h3>Do'stlarni chaqirish</h3><div class="socList" id="pfList"></div></div>
       <div class="panel" id="adminPanel" hidden>
         <h3>Xona</h3>
         <p class="note" id="admInfo"></p>
@@ -651,6 +673,30 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
     </div>
   </div>
 </section>
+
+<section id="socOv" class="overlay" hidden aria-label="Do'stlar va klan">
+  <div class="lbWrap">
+    <div class="buyHead">
+      <div><span class="eyebrow">Do'stingiz xonasiga qo'shiling yoki uni o'z xonangizga chaqiring</span><h2>Do'stlar va klan</h2></div>
+      <button class="ghost" type="button" id="socClose">Yopish</button>
+    </div>
+    <div class="progGrid">
+      <div class="panel prof"><h3>Do'stlar</h3>
+        <form class="socForm" id="frForm" novalidate><label class="field" for="frName"><span>Login bo'yicha qo'shish</span><input id="frName" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Masalan: Sardor_07"></label><button class="cta sm" type="submit">So'rov yuborish</button></form>
+        <p class="note warn" id="frErr" role="alert" hidden></p>
+        <div class="socList" id="frReq"></div>
+        <div class="socList" id="frList"></div>
+      </div>
+      <div class="panel prof"><h3>Klan</h3>
+        <div class="socList" id="clBox"></div>
+        <p class="note warn" id="clErr" role="alert" hidden></p>
+        <h3>Klanlar reytingi</h3>
+        <div class="tbl"><table><thead><tr><th class="r">#</th><th>Klan</th><th class="r">A'zo</th><th class="r">O'rt. reyting</th><th class="r">G'alaba</th></tr></thead><tbody id="clTop"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+</section>
+<div id="invBar" role="status" hidden></div>
 
 <section id="over" class="overlay" hidden>
   <div class="sheet narrow">
@@ -2923,7 +2969,7 @@ canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('wheel', e => { if (!inGame() || S.paused || S.buyOpen) return; e.preventDefault(); const order = [1,2,3,4,5].filter(s => s === 5 ? player.bomb : s === 4 ? nadeTotal() > 0 : !!player.inv[s]); let i = order.indexOf(player.slot); i = (i + (e.deltaY > 0 ? 1 : -1) + order.length) % order.length; switchSlot(order[i]); }, { passive:false });
 
 /* ================= MENUS ================= */
-function pauseGame(){ S.paused = true; mouseL = mouseR = false; $('pause').hidden = false; $('pauseSettings').appendChild($('settingsPanelInner')); renderAdmin(); }
+function pauseGame(){ S.paused = true; mouseL = mouseR = false; $('pause').hidden = false; $('pauseSettings').appendChild($('settingsPanelInner')); renderAdmin(); pauseFriends(); if (ACC.me && MODE === 'online') socLoad(); }
 function resumeGame(){ S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); requestLock(); canvas.focus({ preventScroll:true }); }
 $('resumeBtn').addEventListener('click', () => { goFullscreen(); resumeGame(); });
 $('quitBtn').addEventListener('click', () => { S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); toMenu(); });
@@ -3122,6 +3168,7 @@ function wsJoin(name, opts){
         else if (m.t === 'note'){ hint(String(m.msg || '').slice(0, 120), 3000); }
         else if (m.t === 'eco'){ netEco(m); }
         else if (m.t === 'xp'){ netXP(m); }
+        else if (m.t === 'inv'){ socLiveInvite(m); }
         else if (m.t === 'chat'){ chatShow(cleanName(m.nm), m.side === 'CT' ? 'CT' : 'T', !!m.dead, m.tm === 1, String(m.m || '').slice(0, 120), false); }
         else if (m.t === 'err' && !settled){ settled = true; closed = true; reject({ code:m.code || 'refused' }); }
         else if (m.t === 'err' && m.code === 'kicked'){ closed = true; netKicked(); } };
@@ -3349,7 +3396,7 @@ function nameTag(text, team){
 }
 function makeRemote(p){ const pr = p.presence; return { peer:p.peer, team:null, name:'', m:null, tag:null, pos:new V3(num(pr.x), num(pr.y), num(pr.z)), tpos:new V3(), yaw:0, tyaw:0, kneel:0, cr:0, alive:false, hp:100, w:'pistol', mv:false, k:0, d:0, lastPres:null,
   shotN: pr.sh ? num(pr.sh.n) : 0, deathN: pr.de ? num(pr.de.n) : 0, nadeN: pr.gn ? num(pr.gn.n) : 0, dropN:0, pickN:0, chatN: Array.isArray(pr.ch) ? Math.max(0, ...pr.ch.map(e => num(e && e.n))) : 0, stepT:0, deadT:1, spotT:-99, walk:0, flashT:0, moving:false }; }
-function dressRemote(r){ if (r.m) scene.remove(r.m.g); r.m = buildBot(r.team === 'CT' ? PAL_CT : PAL_T); r.tag = nameTag(r.name, r.team); r.m.g.add(r.tag); scene.add(r.m.g); }
+function dressRemote(r){ if (r.m) scene.remove(r.m.g); r.m = buildBot(r.team === 'CT' ? PAL_CT : PAL_T); r.tag = nameTag(r.label || r.name, r.team); r.m.g.add(r.tag); scene.add(r.m.g); }
 function removeRemote(r){ if (r.m) scene.remove(r.m.g); }
 function hitMark(kill){ H.hit.className = ''; void H.hit.offsetWidth; H.hit.style.opacity = 1; H.hit.className = kill ? 'kill' : ''; hitFade = .18; }
 
@@ -3358,9 +3405,10 @@ function updateRemote(r, pr, dt){
     r.lastPres = pr;
     const team = pr.tm === 'CT' ? 'CT' : 'T', name = cleanName(pr.nm); r.sq = pr.sq === 'B' ? 'B' : 'A'; r.bot = pr.bot === 1; r.lv = String(pr.lv || ''); r.vo = pr.vo === 2 ? 2 : pr.vo === 1 ? 1 : 0; r.vt = pr.vt === 1;
     const a = pr.acc;
-    r.acc = a && typeof a === 'object' && typeof a.u === 'string' ? { r:num(a.r)|0, rk:String(a.rk || '').slice(0, 24), rc:safeColor(a.rc), cal:!!a.cal, lv:Math.max(0, Math.min(99, num(a.lv)|0)) } : null;
-    if (team !== r.team || !r.m){ r.team = team; r.name = name; dressRemote(r); }
-    else if (name !== r.name){ r.name = name; r.m.g.remove(r.tag); r.tag = nameTag(name, team); r.m.g.add(r.tag); }
+    r.acc = a && typeof a === 'object' && typeof a.u === 'string' ? { u:a.u.slice(0, 16), r:num(a.r)|0, rk:String(a.rk || '').slice(0, 24), rc:safeColor(a.rc), cal:!!a.cal, lv:Math.max(0, Math.min(99, num(a.lv)|0)), cl:/^[A-Za-z0-9]{2,5}$/.test(a.cl || '') ? a.cl : '' } : null;
+    const label = (r.acc && r.acc.cl ? '[' + r.acc.cl + '] ' : '') + name;
+    if (team !== r.team || !r.m){ r.team = team; r.name = name; r.label = label; dressRemote(r); }
+    else if (label !== r.label){ r.name = name; r.label = label; r.m.g.remove(r.tag); r.tag = nameTag(label, team); r.m.g.add(r.tag); }
     r.tpos.set(clamp(num(pr.x), 0, MAPW), clamp(num(pr.y), 0, 3), clamp(num(pr.z), 0, MAPH)); r.tyaw = wrapA(num(pr.yw) + Math.PI); r.cr = clamp(num(pr.cr), 0, 1);
     const was = r.alive; r.alive = pr.al === 1;
     if (r.alive && !was){ r.pos.copy(r.tpos); r.yaw = r.tyaw; r.deadT = 1; }
@@ -3621,7 +3669,9 @@ function clientPhase(dt){
 }
 function netSide(){ const g = NET.g; return g && g.r > 0 && g.ph !== 'warmup' ? sideOfSquad(NET.sq, g.r, g.fm) : (NET.sq === 'B' ? 'CT' : 'T'); }
 function pickTeam(){ let a = 0, b = 0; NET.remotes.forEach(r => { if (!r.team) return; if (r.sq === 'B') b++; else a++; });
-  NET.sq = a < b ? 'A' : b < a ? 'B' : (rand() < .5 ? 'A' : 'B'); player.team = netSide(); hint('Siz ' + TEAM_NAME[player.team] + ' jamoasidasiz · ' + KB('M', 'Jamoa tugmasi') + ' — almashtirish', 3500); }
+  const pw = SOC.partyWith.toLowerCase(), pal = pw && !isFFA() ? [...NET.remotes.values()].find(r => r.team && r.acc && r.acc.u.toLowerCase() === pw) : null; SOC.partyWith = '';
+  NET.sq = pal ? pal.sq : a < b ? 'A' : b < a ? 'B' : (rand() < .5 ? 'A' : 'B'); player.team = netSide();
+  hint((pal ? pal.name + ' bilan bir jamoadasiz: ' : 'Siz ') + TEAM_NAME[player.team] + ' jamoasidasiz · ' + KB('M', 'Jamoa tugmasi') + ' — almashtirish', 3500); }
 function switchTeam(){
   if (!player.team) return; const g = NET.g;
   if (g && (g.ph === 'live' || g.ph === 'post') && player.alive && NET.inRound === g.r){ hint("Raund davomida jamoani almashtirib bo'lmaydi"); return; }
@@ -3729,7 +3779,7 @@ function netBoardHTML(){
   const rows = [...NET.remotes.values()].filter(r => r.team).map(r => ({ name:r.name, team:r.team, k:r.k, d:r.d, alive:r.alive, me:false, acc:r.acc, bot:r.bot }));
   const meAcc = ACC.me ? { r:ACC.me.rating, rk:ACC.me.rank.calibrating ? 'Kalibrlash' : ACC.me.rank.name, rc:safeColor(ACC.me.rank.color), lv:ACC.me.level || 0 } : null;
   if (player.team) rows.push({ name:NET.name + ' (siz)', team:player.team, k:player.kills, d:player.deaths, alive:player.alive, me:true, acc:meAcc });
-  const who = r => (r.acc ? `<span class="rk" style="--c:${r.acc.rc}" title="${esc(r.acc.rk)}"><i></i></span>` : '') + esc(r.name) + (r.acc && r.acc.lv ? `<span class="lvTag">${r.acc.lv}</span>` : '') + (r.acc ? `<small>${r.acc.r}</small>` : r.bot ? '<small>bot</small>' : '<small>mehmon</small>');
+  const who = r => (r.acc ? `<span class="rk" style="--c:${r.acc.rc}" title="${esc(r.acc.rk)}"><i></i></span>` : '') + (r.acc && r.acc.cl ? `<span class="clTag">[${esc(r.acc.cl)}]</span>` : '') + esc(r.name) + (r.acc && r.acc.lv ? `<span class="lvTag">${r.acc.lv}</span>` : '') + (r.acc ? `<small>${r.acc.r}</small>` : r.bot ? '<small>bot</small>' : '<small>mehmon</small>');
   const sec = t => { const col = t === 'T' ? 'var(--atk)' : 'var(--def)', list = rows.filter(r => r.team === t).sort((a,b) => b.k - a.k);
     return `<tr><th colspan="4" style="color:${col};padding-top:10px">${TEAM_NAME[t].toUpperCase()} · ${gSideScore(g, t)}</th></tr>` +
       (list.length ? list.map(r => `<tr class="${r.alive ? '' : 'dead'}"><td><span class="tag" style="background:${col}"></span>${who(r)}</td><td class="r">${r.k}</td><td class="r">${r.d}</td><td class="r">${r.me ? '$' + player.money : (r.alive ? 'tirik' : '—')}</td></tr>`).join('')
@@ -3800,7 +3850,7 @@ async function apiCall(path, body){
 async function accInit(){
   if (IN_ARTIFACT || !/^https?:$/.test(location.protocol)) return;   // hisoblar faqat o'yin serverida
   const r = await apiCall('/api/me');
-  if (r.status === 200 || r.status === 401){ ACC.on = true; ACC.me = r.status === 200 ? r.data.user : null; renderAcc(); if (ACC.me) loadProgress(); }
+  if (r.status === 200 || r.status === 401){ ACC.on = true; ACC.me = r.status === 200 ? r.data.user : null; renderAcc(); if (ACC.me){ loadProgress(); socLoad(); } }
 }
 function xpBarHTML(lv, cur, need, xp){ lv = lv || 1; const k = need ? clamp(cur/need, 0, 1) : 1;
   return `<div class="top"><span><b>${lv}</b>-daraja</span><span>${need ? (cur|0) + ' / ' + (need|0) + ' XP' : 'eng yuqori daraja · ' + (xp|0) + ' XP'}</span></div><div class="bar"><i style="width:${(k*100).toFixed(1)}%"></i></div>`; }
@@ -3873,10 +3923,10 @@ $('authForm').addEventListener('submit', async e => {
   $('authBtn').disabled = true; err.hidden = true;
   const r = await apiCall(ACC.mode === 'login' ? '/api/login' : '/api/register', { username:u, password:pw });
   $('authBtn').disabled = false;
-  if (r.ok && r.data && r.data.user){ ACC.me = r.data.user; $('authPass').value = ''; renderAcc(); loadProgress(); }
+  if (r.ok && r.data && r.data.user){ ACC.me = r.data.user; $('authPass').value = ''; renderAcc(); loadProgress(); socLoad(); }
   else fail((r.data && r.data.error) || 'Xatolik yuz berdi, qayta urinib ko\'ring');
 });
-$('logoutBtn').addEventListener('click', async () => { await apiCall('/api/logout', {}); ACC.me = null; ACC.lo = {}; ACC.prog = null; renderAcc(); setAuthMode('login'); });
+$('logoutBtn').addEventListener('click', async () => { await apiCall('/api/logout', {}); ACC.me = null; ACC.lo = {}; ACC.prog = null; SOC.d = null; SOC.live = []; socBadge(); socInvites(); renderAcc(); setAuthMode('login'); });
 async function accRefresh(){ const r = await apiCall('/api/me'); if (r.status === 200){ ACC.me = r.data.user; renderAcc(); } else if (r.status === 401){ ACC.me = null; renderAcc(); } }
 
 // rating change after an online match (sent by the game server)
@@ -3927,10 +3977,131 @@ async function showProfile(name){
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-lb]'); if (b){ openLB(); return; }
   if (e.target.closest('[data-prog]')){ openProg(); return; }
+  if (e.target.closest('[data-soc]')){ openSoc(); return; }
   const p = e.target.closest('#lbBody [data-p]'); if (p) showProfile(p.dataset.p);
 });
 $('lbClose').addEventListener('click', () => { $('lb').hidden = true; });
 document.addEventListener('keydown', e => { if (e.code === 'Escape' && !$('lb').hidden){ $('lb').hidden = true; } });
+/* ---------- friends, party invites, clans ---------- */
+const SOC = { d:null, top:null, busy:false, live:[], dismissed:{}, partyWith:'', sure:'' };
+const clTagHTML = cl => cl ? `<span class="clTag">[${escH(cl)}]</span>` : '';
+const modeName = md => (MODES[md] || MODES.comp).name, mapName = m => (MAPS[m] || MAPS.qumtepa).name;
+const socStr = (v, n) => String(v == null ? '' : v).slice(0, n || 32);
+async function socLoad(){
+  if (!ACC.me || SOC.busy) return null;
+  SOC.busy = true; const r = await apiCall('/api/social'); SOC.busy = false;
+  if (!r.ok || !r.data || !ACC.me) return null;
+  SOC.d = r.data; socBadge(); socInvites();
+  if (!$('socOv').hidden) socRender();
+  if (!$('pause').hidden) pauseFriends();
+  return r.data;
+}
+function socBadge(){ const d = SOC.d, n = d ? (d.incoming || []).length + (d.clanInvites || []).length + (d.invites || []).length : 0, b = $('socBadge'); b.hidden = !n; b.textContent = n; }
+function friendState(f){ return f.online === 'game' ? 'game' : f.online === 'menu' ? 'menu' : ''; }
+function friendWhere(f){ const st = friendState(f); return st === 'game' ? "O'ynayapti · " + mapName(f.roomMap) + ' · ' + modeName(f.roomMode) : st === 'menu' ? 'Menyuda' : 'Oflayn'; }
+function socRow(dot, name, sub, act, cls){ return `<div class="fr ${cls || ''}"><span class="dot ${dot}"></span><div class="nm"><b>${name}</b><small>${sub}</small></div><div class="act">${act}</div></div>`; }
+function socRender(){
+  const d = SOC.d; if (!d) return;
+  const inRoom = MODE === 'online' && NET.code;
+  let req = (d.invites || []).map(v => socRow('game', `${escH(v.from)} sizni chaqiryapti`, `${escH(mapName(v.map))} · ${escH(modeName(v.mode))} · xona ${escH(v.room)}`,
+    `<button class="cta sm" type="button" data-join="${escH(v.room)}" data-from="${escH(v.from)}">Qo'shilish</button>`, 'hi')).join('');
+  req += (d.incoming || []).map(n => socRow('', escH(n), "Do'stlik so'rovi", `<button class="cta sm" type="button" data-fr="accept" data-n="${escH(n)}">Qabul</button><button class="ghost sm" type="button" data-fr="decline" data-n="${escH(n)}">Rad</button>`, 'hi')).join('');
+  req += (d.outgoing || []).map(n => socRow('', escH(n), 'Javob kutilmoqda', `<button class="ghost sm" type="button" data-fr="decline" data-n="${escH(n)}">Bekor</button>`)).join('');
+  $('frReq').innerHTML = req;
+  $('frList').innerHTML = (d.friends || []).length ? d.friends.map(f => { const st = friendState(f);
+    const join = st === 'game' && f.room && f.room !== inRoom ? `<button class="cta sm" type="button" data-join="${escH(f.room)}" data-from="${escH(f.name)}">Qo'shilish</button>` : '';
+    return socRow(st, clTagHTML(f.clan) + escH(f.name) + (f.level ? `<span class="lvTag">${f.level|0}</span>` : ''), `${escH(friendWhere(f))} · ${f.rating|0} reyting`,
+      join + `<button class="ghost sm" type="button" data-fr="remove" data-n="${escH(f.name)}" title="Do'stlar ro'yxatidan o'chirish">✕</button>`); }).join('')
+    : `<p class="note">Hali do'stlar yo'q. Do'stingiz loginini yuqoriga yozing — u so'rovni qabul qilgach, kim onlaynligini shu yerda ko'rasiz.</p>`;
+  const c = d.clan, box = $('clBox');
+  if (c){
+    const free = (d.friends || []).filter(f => !f.clan);
+    box.innerHTML = `<div class="me"><div class="who"><b>${clTagHTML(c.tag)}${escH(c.name)}</b><span class="note">${c.members.length} a'zo${c.owner ? ' · siz klan egasisiz' : ''}</span></div></div>` +
+      c.members.map(m => socRow(friendState(m), escH(m.name) + (m.level ? `<span class="lvTag">${m.level|0}</span>` : ''), (m.owner ? 'Klan egasi · ' : '') + (m.rating|0) + ' reyting',
+        c.owner && !m.owner ? `<button class="ghost sm" type="button" data-cl="kick" data-n="${escH(m.name)}">Chiqarish</button>` : '')).join('') +
+      (free.length ? `<div class="socForm"><select id="clInvSel" aria-label="Taklif qilinadigan do'st">${free.map(f => `<option value="${escH(f.name)}">${escH(f.name)}</option>`).join('')}</select><button class="cta sm" type="button" data-cl="invite">Klanga taklif qilish</button></div>`
+        : `<p class="note">Klanga faqat do'stlaringizni taklif qila olasiz (klansizlarini).</p>`) +
+      `<div class="row"><button class="ghost sm" type="button" data-cl="leave">Klandan chiqish</button></div>`;
+  } else {
+    box.innerHTML = (d.clanInvites || []).map(v => socRow('', clTagHTML(v.tag) + escH(v.name), `${escH(v.from)} taklif qildi`,
+        `<button class="cta sm" type="button" data-cl="accept" data-id="${v.id|0}">Qo'shilish</button><button class="ghost sm" type="button" data-cl="decline" data-id="${v.id|0}">Rad</button>`, 'hi')).join('') +
+      `<p class="note">Klan oching: nomingiz oldida [TEG] ko'rinadi, a'zolar o'rtacha reytingi bo'yicha klanlar jadvalida joy olasiz.</p>
+      <form class="socForm" id="clForm" novalidate><label class="field" for="clName"><span>Klan nomi</span><input id="clName" maxlength="24" autocomplete="off" placeholder="3–24 belgi"></label><label class="field" for="clTagIn" style="flex:0 1 96px"><span>Teg</span><input id="clTagIn" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="2–5"></label><button class="cta sm" type="submit">Klan ochish</button></form>`;
+  }
+  const top = SOC.top, myTag = c ? c.tag : '';
+  $('clTop').innerHTML = !top ? '<tr><td colspan="5" class="wrap">Yuklanmoqda…</td></tr>' : top.length ? top.map(k => `<tr class="${k.tag === myTag ? 'mine' : ''}"><td class="r pos">${k.pos|0}</td><td>${clTagHTML(k.tag)}${escH(k.name)}</td><td class="r">${k.members|0}</td><td class="r pts">${k.rating|0}</td><td class="r">${k.wins|0}</td></tr>`).join('')
+    : `<tr><td colspan="5" class="wrap">Hali klanlar yo'q — birinchisini siz oching.</td></tr>`;
+}
+async function socLoadTop(){ const r = await apiCall('/api/clans'); SOC.top = r.ok && r.data ? r.data.clans || [] : []; if (!$('socOv').hidden) socRender(); }
+function openSoc(){ if (!ACC.me) return; $('socOv').hidden = false; $('frErr').hidden = $('clErr').hidden = true; SOC.top = null; socRender(); socLoad(); socLoadTop(); }
+function closeSoc(){ $('socOv').hidden = true; }
+$('socClose').addEventListener('click', closeSoc);
+document.addEventListener('keydown', e => { if (e.code === 'Escape' && !$('socOv').hidden) closeSoc(); });
+function socFail(id, r){ const el = $(id); el.textContent = (r.data && r.data.error) || "Bajarib bo'lmadi, qayta urinib ko'ring"; el.hidden = false; }
+async function socAct(path, body, errId){
+  $('frErr').hidden = $('clErr').hidden = true;
+  const r = await apiCall(path, body); if (!r.ok) socFail(errId, r);
+  await socLoad(); if (path === '/api/clan') socLoadTop();
+  return r.ok;
+}
+$('frForm').addEventListener('submit', async e => { e.preventDefault(); const n = $('frName').value.trim(); if (!n) return;
+  if (await socAct('/api/friends', { action:'add', name:n }, 'frErr')) $('frName').value = ''; });
+$('socOv').addEventListener('submit', e => { if (e.target.id !== 'clForm') return; e.preventDefault();
+  socAct('/api/clan', { action:'create', name:$('clName').value.trim(), tag:$('clTagIn').value.trim() }, 'clErr'); });
+// destructive buttons ask once more right on the button (no browser dialogs)
+function socSure(b){ const k = (b.dataset.fr || b.dataset.cl) + ':' + (b.dataset.n || ''); if (SOC.sure === k) { SOC.sure = ''; return true; } SOC.sure = k; b.textContent = 'Rostdanmi?'; setTimeout(() => { if (SOC.sure === k) SOC.sure = ''; }, 4000); return false; }
+$('socOv').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.join){ socJoin(b.dataset.join, b.dataset.from); return; }
+  if (b.dataset.fr){ if (b.dataset.fr === 'remove' && !socSure(b)) return; socAct('/api/friends', { action:b.dataset.fr, name:b.dataset.n }, 'frErr'); return; }
+  const a = b.dataset.cl; if (!a) return;
+  if ((a === 'leave' || a === 'kick') && !socSure(b)) return;
+  const body = { action:a };
+  if (a === 'invite') body.name = $('clInvSel').value; else if (a === 'kick') body.name = b.dataset.n; else if (b.dataset.id) body.id = +b.dataset.id;
+  socAct('/api/clan', body, 'clErr');
+});
+// join a friend's room (from the friend list, an invite or the invite bar)
+function socJoin(code, from){
+  code = cleanCode(code); if (!code) return;
+  SOC.dismissed[code] = Date.now(); SOC.live = SOC.live.filter(v => v.room !== code); socInvites(); closeSoc();
+  if (MODE === 'online'){ if (NET.code === code) return; toMenu(); }
+  SOC.partyWith = socStr(from, 16); $('roomCode').value = code; SET.room = code;
+  joinOnline(false, code);
+}
+// room invites: from /api/social (menu) or straight over the game connection (while playing)
+function socLiveInvite(m){
+  const v = { from:socStr(m.from, 16), room:cleanCode(socStr(m.room, 48)), mode:socStr(m.mode, 4), map:socStr(m.map, 16), at:Date.now() };
+  if (!v.from || !v.room) return;
+  SOC.live = SOC.live.filter(x => x.from !== v.from).concat(v); delete SOC.dismissed[v.room];
+  socInvites();
+  if (MODE === 'online' && !S.paused) hint(v.from + ' sizni o\'z xonasiga chaqiryapti — ' + KB('Esc', 'Pauza') + ' bosib, qabul qiling', 5000);
+  sfxChord(true);
+}
+function socInvites(){
+  const now = Date.now(); SOC.live = SOC.live.filter(v => now - v.at < 120000);
+  const all = [...((SOC.d && SOC.d.invites) || []), ...SOC.live].filter(v => !SOC.dismissed[v.room] && !(MODE === 'online' && NET.code === v.room));
+  const v = all[all.length - 1], bar = $('invBar');
+  if (!v || !ACC.me){ bar.hidden = true; return; }
+  bar.innerHTML = `<span><b>${escH(v.from)}</b> sizni o'yinga chaqiryapti <small>· ${escH(mapName(v.map))} · ${escH(modeName(v.mode))}</small></span><button class="cta sm" type="button" data-join="${escH(v.room)}" data-from="${escH(v.from)}">Qo'shilish</button><button class="ghost sm" type="button" data-dismiss="${escH(v.room)}" aria-label="Yopish">✕</button>`;
+  bar.hidden = false;
+}
+$('invBar').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.join) socJoin(b.dataset.join, b.dataset.from); else if (b.dataset.dismiss){ SOC.dismissed[b.dataset.dismiss] = Date.now(); socInvites(); } });
+// pause menu: call online friends into this room
+function pauseFriends(){
+  const box = $('pauseFriends'), d = SOC.d;
+  box.hidden = !(MODE === 'online' && ACC.me && d && !IN_ARTIFACT); if (box.hidden) return;
+  const on = (d.friends || []).filter(f => friendState(f));
+  $('pfList').innerHTML = on.length ? on.map(f => { const here = f.room && f.room === NET.code;
+    return socRow(friendState(f), clTagHTML(f.clan) + escH(f.name), here ? 'Shu xonada' : escH(friendWhere(f)), here ? '' : `<button class="cta sm" type="button" data-call="${escH(f.name)}">Chaqirish</button>`); }).join('')
+    : `<p class="note">Hozir onlayn do'stlar yo'q.</p>`;
+}
+$('pfList').addEventListener('click', async e => { const b = e.target.closest('[data-call]'); if (!b) return;
+  b.disabled = true; const r = await apiCall('/api/friends', { action:'invite', name:b.dataset.call });
+  b.textContent = r.ok ? 'Chaqirildi ✓' : ((r.data && r.data.error) || 'Xato').slice(0, 40); });
+// keep the menu fresh: friends coming online, new requests and invites
+setInterval(() => { if (ACC.me && !document.hidden && (S.phase === 'menu' || S.paused || !$('socOv').hidden)) socLoad(); else socInvites(); }, 10000);
+
 accInit();
 
 /* ================= TOUCH CONTROLS ================= */
@@ -4026,7 +4197,7 @@ function touchFrame(){
   $('tDrop').hidden = !player.alive || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot];
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, SOC, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){

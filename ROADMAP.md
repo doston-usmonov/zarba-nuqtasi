@@ -45,7 +45,10 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 ## 6. Ijtimoiy
 - ✅ Xona ichida matnli chat (Y — hamma, U — jamoa)
 - ✅ Ovozli chat (WebRTC): jamoa yoki hamma, K bosib gapirish yoki doim ochiq mikrofon, TURN (coturn)
-- [ ] Do'stlar ro'yxati, profil sahifasi, batafsil statistika (qurollar bo'yicha, xaritalar bo'yicha)
+- ✅ Do'stlar: login bo'yicha so'rov, kim onlayn (menyuda yoki qaysi xonada o'ynayapti), do'st xonasiga bitta tugma bilan qo'shilish
+- ✅ Partiya: pauza menyusidan onlayn do'stni o'z xonangga chaqirish, chaqiriq menyuda yoki o'yin ichida keladi, qabul qilgan do'st sen bilan bitta jamoaga tushadi
+- ✅ Klanlar: nom va 2–5 belgili teg ([TEG] o'yinda ism oldida), do'stlarni taklif qilish, egasi a'zoni chiqaradi, klanlar reytingi (a'zolarning o'rtacha reytingi)
+- [ ] Batafsil statistika (qurollar bo'yicha, xaritalar bo'yicha)
 - [ ] Telegram orqali kirish, parolni tiklash
 
 ## 7. Kosmetika va yutuqlar

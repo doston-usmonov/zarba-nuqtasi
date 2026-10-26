@@ -17,6 +17,7 @@ zarba-server/
 ├── nadesim.go         granatalar va bomba portlashi serverda
 ├── progress.go        XP, darajalar, kunlik vazifalar, qurol bo'yoqlari (/api/progress, /api/loadout)
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
+├── social.go          do'stlar, xonaga chaqiriqlar, klanlar (/api/social, /api/friends, /api/clan, /api/clans)
 ├── modes.go           o'yin rejimlari: deathmatch va qurol poygasi
 ├── gamemap.go         xaritalar panjarasi: ko'rinish, devorlar, bazalar, nuqtalar
 ├── mapsdata.go        xaritalar (web/index.html dagi MAPS dan tools/genmaps.py yasaydi)
@@ -114,7 +115,7 @@ O'q qayerga tekkanini otgan o'yinchining brauzeri aniqlaydi, server esa har bir 
 
 ### Ma'lumotlar bazasi (PostgreSQL 17)
 
-Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanadi), `matches`, `match_players`. Sxema `migrations/NNN_*.sql` fayllarida. Server ishga tushganda yangi migratsiyalar avtomatik qo'llanadi: har biri o'z tranzaksiyasida, `pg_advisory_lock` bilan himoyalangan. O'yin natijasi va barcha o'yinchilarning reytingi bitta tranzaksiyada yoziladi.
+Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanadi), `matches`, `match_players`, `daily_progress`, `friends`, `clans`, `clan_members`, `clan_invites`. Sxema `migrations/NNN_*.sql` fayllarida. Server ishga tushganda yangi migratsiyalar avtomatik qo'llanadi: har biri o'z tranzaksiyasida, `pg_advisory_lock` bilan himoyalangan. O'yin natijasi va barcha o'yinchilarning reytingi bitta tranzaksiyada yoziladi.
 
 - **Baza paroli:** `.env` faylidagi `ZARBA_DB_PASSWORD`. Fayl git'ga tushmaydi. `deploy/deploy.sh` uni birinchi marta o'zi yaratadi. **`.env` ni o'chirmang:** baza shu parol bilan yaratilgan.
 - **Port:** tashqariga ochilmaydi, bazaga faqat compose ichidagi xizmatlar ulanadi.
@@ -128,7 +129,14 @@ Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanad
 - **Baza ishlamasa:** o'yin baribir ishlaydi (mehmon rejimida), `/api` `503` qaytaradi va server bazaga qayta ulanishga urinib turadi. Holatini `/healthz` dagi `db` maydoni ko'rsatadi.
 - **Oldingi versiyadan ko'chish:** baza bo'sh bo'lsa, server `/data/snapshot.json` va `matches.jsonl` ni (fayl bazasini) avtomatik import qiladi. Hisoblar, parollar, sessiyalar, reyting va tarix saqlanib qoladi, fayllar `*.imported-<sana>` deb qayta nomlanadi.
 
-API: `POST /api/register`, `POST /api/login`, `POST /api/logout`, `GET /api/me`, `GET /api/leaderboard`, `GET /api/players/{login}`.
+API: `POST /api/register`, `POST /api/login`, `POST /api/logout`, `GET /api/me`, `GET /api/leaderboard`, `GET /api/players/{login}`, `GET /api/progress`, `POST /api/loadout`, `GET /api/social`, `POST /api/friends`, `POST /api/clan`, `GET /api/clans`.
+
+### Do'stlar, partiya va klanlar
+
+- **Do'stlar.** Hisob panelidagi «Do'stlar va klan» tugmasi. Do'stni login bo'yicha qo'shasiz, u qabul qilgach ro'yxatda holati ko'rinadi: oflayn, menyuda yoki qaysi xarita va rejimda o'ynayapti. O'ynayotgan do'st xonasiga «Qo'shilish» bilan kirasiz. Menyu har 10 soniyada yangilanadi.
+- **Partiya.** O'yin ichida pauza menyusida (Esc) onlayn do'stlar ro'yxati chiqadi, «Chaqirish» bosilsa do'stga chaqiriq boradi: menyuda bo'lsa pastda xabar, boshqa xonada o'ynayotgan bo'lsa o'yin ichida. Chaqiriq 2 daqiqa amal qiladi. Qabul qilgan do'st sizning jamoangizga tushadi.
+- **Klanlar.** Klan nomi 3–24 belgi, tegi 2–5 ta lotin harfi yoki raqam (katta harfga o'tkaziladi, nom ham, teg ham takrorlanmaydi). Bir o'yinchi faqat bitta klanda bo'ladi, klanda 30 tagacha a'zo. A'zolar klansiz do'stlarini taklif qiladi, egasi a'zoni chiqaradi. Egasi ketsa egalik eng eski a'zoga o'tadi, oxirgi a'zo ketsa klan o'chadi. Klan tegi o'yinda ism ustida va hisob jadvalida ko'rinadi. Klanlar reytingi a'zolarning o'rtacha reytingi bo'yicha.
+- Jadvallar: `friends`, `clans`, `clan_members`, `clan_invites` (`migrations/003_social.sql`). Kim qaysi xonada ekani va chaqiriqlar server xotirasida turadi.
 
 ## Sozlamalar (muhit o'zgaruvchilari)
 

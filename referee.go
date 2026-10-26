@@ -716,7 +716,7 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 	r.forceDeathsLocked(now)
 	prev := g.Ph
 	if g.respawns() {
-		r.tickModeLocked(dt, nA, nB)
+		r.tickModeLocked(now, dt, nA, nB)
 		return r.tr.phase(r, prev, now)
 	}
 	if g.Ph != "warmup" && g.Ph != "over" && (nA == 0 || nB == 0) {
@@ -733,7 +733,7 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 			if g.Cd <= 0 {
 				g.R, g.Ph, g.T, g.SA, g.SB, g.B, g.Bm, g.E = 1, "freeze", 6, 0, 0, nil, -1, randEpoch()
 				g.Mv, g.Mvn, g.Mvr, g.St, r.planter, r.defuser = "", "", "", nil, "", ""
-				r.purses = nil
+				r.purses, r.matchAt = nil, now
 			}
 		} else {
 			g.Cd, g.T = 6, 0
@@ -851,9 +851,14 @@ func (r *room) run(h *hub) {
 			if n++; n%2 == 0 { // holat soniyasiga 10 marta
 				r.broadcast(jsonMsg(map[string]any{"t": "g", "g": r.gs}), "")
 			}
+			gains := r.gains
+			r.gains = nil
 			r.mu.Unlock()
 			if res != nil && h.store.Ready() {
 				go h.finishMatch(r, res)
+			}
+			if len(gains) > 0 && h.store.Ready() {
+				go h.awardProgress(r, gains)
 			}
 		}
 	}

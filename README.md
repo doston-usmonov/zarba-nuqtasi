@@ -15,6 +15,7 @@ zarba-server/
 ├── ws.go              WebSocket (RFC 6455) — serverga kerakli qismi
 ├── economy.go         pul, xaridlar va qo'ldagi qurollar (raqobat rejimi)
 ├── nadesim.go         granatalar va bomba portlashi serverda
+├── progress.go        XP, darajalar, kunlik vazifalar, qurol bo'yoqlari (/api/progress, /api/loadout)
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── modes.go           o'yin rejimlari: deathmatch va qurol poygasi
 ├── gamemap.go         xaritalar panjarasi: ko'rinish, devorlar, bazalar, nuqtalar

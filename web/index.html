@@ -202,6 +202,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 #result .mvp{display:flex;align-items:center;gap:12px;background:rgba(242,181,68,.1);border:1px solid rgba(242,181,68,.4);border-radius:8px;padding:10px 12px;margin-bottom:12px}
 #result .mvp .star{font-size:26px;color:var(--atk)} #result .mvp b{font-family:var(--f-display);font-size:20px} #result .mvp small{display:block;color:var(--dim);font-size:13px}
 #result .stars{color:var(--atk);letter-spacing:1px}
+#result .xpGain{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px} #result .xpGain>b{font-family:var(--f-display);font-size:20px;color:var(--atk)} #result .xpGain>span{font-size:13px;color:var(--dim)}
 .touch #result{font-size:13px;padding:12px}
 #board{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,92vw);background:rgba(16,14,11,.9);border:1px solid var(--line);border-radius:10px;padding:16px 18px;pointer-events:none}
 #board table{width:100%;border-collapse:collapse;font-size:15px}
@@ -270,6 +271,25 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .link{background:none;border:0;padding:0;color:var(--ink);font:inherit;font-weight:600;cursor:pointer;text-align:left}
 .link:hover{color:var(--atk);text-decoration:underline}
 #lb{background:#14120e;align-items:start}
+.xpbar{display:flex;flex-direction:column;gap:5px}
+.xpbar .top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--dim)} .xpbar .top b{font-family:var(--f-display);font-size:18px;color:var(--atk)}
+.xpbar .bar,.mis .bar{height:7px;border-radius:4px;background:rgba(243,239,230,.1);overflow:hidden} .xpbar .bar i,.mis .bar i{display:block;height:100%;background:var(--atk);border-radius:4px}
+#pgOv{background:#14120e;align-items:start}
+.progGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:18px;align-items:start}
+@media (max-width:820px){ .progGrid{grid-template-columns:1fr} }
+.mis{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:8px}
+.mis .t{display:flex;justify-content:space-between;gap:10px;font-size:14px} .mis .t small{color:var(--atk);font-family:var(--f-display);white-space:nowrap}
+.mis.done{border-color:rgba(124,214,124,.5)} .mis.done .bar i{background:var(--good)} .mis .p{font-size:12px;color:var(--dim)}
+.wtabs{display:flex;flex-wrap:wrap;gap:6px}
+.wtabs button{background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:5px;padding:6px 10px;font-weight:600;font-size:13px}
+.wtabs button[aria-pressed="true"]{border-color:var(--atk);background:rgba(242,181,68,.12)}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.fin{display:flex;flex-direction:column;gap:5px;background:transparent;border:1px solid var(--line);border-radius:8px;padding:6px;color:var(--ink);text-align:left;font-size:13px;font-weight:600}
+.fin img,.fin .sw{width:100%;aspect-ratio:1.6;border-radius:5px;object-fit:cover;background:#2a2723;display:block}
+.fin small{color:var(--dim);font-weight:500;font-size:11px}
+.fin[aria-pressed="true"]{border-color:var(--atk);box-shadow:0 0 0 1px var(--atk) inset}
+.fin:disabled{opacity:.45;cursor:not-allowed} .fin:disabled img{filter:grayscale(.8)}
+.lvTag{display:inline-block;font-family:var(--f-display);font-size:11px;padding:0 5px;border-radius:3px;background:rgba(242,181,68,.16);color:var(--atk);margin-left:6px;vertical-align:1px}
 #accPanel .fields{grid-template-columns:1fr}
 .tbl td.wrap{white-space:normal;color:var(--dim);padding:14px}
 .lbWrap{width:min(1040px,100%);display:flex;flex-direction:column;gap:16px}
@@ -475,8 +495,9 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         </div>
         <div id="accIn" hidden>
           <div class="me"><div class="who"><b id="meName"></b><span id="meRank"></span></div><div class="pts"><b id="meRating">1000</b><span>reyting</span></div></div>
+          <div class="xpbar" id="meXP"></div>
           <div class="mini" id="meStats"></div>
-          <div class="row"><button class="cta" type="button" data-lb="1">Reyting jadvali</button><button class="ghost" type="button" id="logoutBtn">Chiqish</button></div>
+          <div class="row"><button class="cta" type="button" data-prog="1">Vazifalar va bo'yoqlar</button><button class="ghost" type="button" data-lb="1">Reyting</button><button class="ghost" type="button" id="logoutBtn">Chiqish</button></div>
         </div>
       </div>
       <div class="panel">
@@ -609,6 +630,20 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
       <div class="panel prof" id="lbProf"></div>
     </div>
     <div class="tiers" id="lbTiers"></div>
+  </div>
+</section>
+
+<section id="pgOv" class="overlay" hidden aria-label="Vazifalar va bo'yoqlar">
+  <div class="lbWrap">
+    <div class="buyHead">
+      <div><span class="eyebrow">Daraja oshgan sari yangi bo'yoqlar ochiladi</span><h2>Vazifalar va bo'yoqlar</h2></div>
+      <button class="ghost" type="button" id="progClose">Yopish</button>
+    </div>
+    <div class="progGrid">
+      <div class="panel prof"><div class="xpbar" id="progXP"></div><h3>Bugungi vazifalar</h3><div id="progMis" style="display:flex;flex-direction:column;gap:8px"></div><p class="note" id="progReset"></p>
+        <p class="note">XP onlayn o'yinni oxirigacha o'ynaganda beriladi: o'ldirish, MVP va g'alaba uchun. Botlar qatnashgan o'yinda XP yarmi.</p></div>
+      <div class="panel prof"><h3>Qurol bo'yoqlari</h3><div class="wtabs" id="progW"></div><div class="fgrid" id="progF"></div><p class="note warn" id="progErr" hidden></p></div>
+    </div>
   </div>
 </section>
 
@@ -1302,6 +1337,62 @@ const GM = {
   bottle:std(0x4b3416, { roughness:.12, metalness:.15 }), fire:std(0xff8a20, { emissive:lin(0xff7010), emissiveIntensity:4 }),
   lens:std(0xff2a1a, { emissive:lin(0xff2a1a), emissiveIntensity:3 }), screen:std(0x2ce06a, { emissive:lin(0x1ac255), emissiveIntensity:1.6 }), red:std(0xa8321f, { roughness:.6 }), yellow:std(0xc9a227, { roughness:.6 }),
 };
+/* ---------- weapon finishes (unlocked by level; original procedural patterns) ---------- */
+const FINISHES = {
+  qum:{ name:'Qum', lvl:2 }, tun:{ name:'Tun', lvl:4, metal:.35, rough:.5 }, zangori:{ name:'Zangori', lvl:6 }, atlas:{ name:'Atlas', lvl:8 },
+  lola:{ name:'Lola', lvl:11 }, gilam:{ name:'Gilam', lvl:14 }, shoh:{ name:'Shoh', lvl:18, metal:.85, rough:.3 }, olov:{ name:'Olov', lvl:23 },
+  muz:{ name:'Muz', lvl:28, metal:.25, rough:.18 }, afsona:{ name:'Afsona', lvl:35, metal:.2, rough:.35 },
+};
+const FIN_WEAPONS = ['rifle','carbine','smg','sniper','deagle','pistol','knife'];
+function drawFinish(id, g, w, h){
+  const r = mulberry(id.length*7919 + id.charCodeAt(0)*31), R = (a, b) => a + r()*(b - a);
+  const blob = (x, y, rad, col) => { g.fillStyle = col; g.beginPath(); for (let k=0;k<9;k++){ const a = k/9*Math.PI*2, rr = rad*(.6 + r()*.5); g.lineTo(x + Math.cos(a)*rr, y + Math.sin(a)*rr); } g.closePath(); g.fill(); };
+  switch (id){
+    case 'qum': g.fillStyle = '#c9b27d'; g.fillRect(0, 0, w, h); ['#a8905e','#dccb9e','#8b7549'].forEach(c => { for (let i=0;i<9;i++) blob(R(0, w), R(0, h), R(18, 46), c); }); break;
+    case 'tun': g.fillStyle = '#1a1b1e'; g.fillRect(0, 0, w, h); g.strokeStyle = '#2c2e33'; g.lineWidth = 2;
+      for (let y=0;y<h+32;y+=28) for (let x=0;x<w+32;x+=32){ const ox = (y/28) % 2 ? 16 : 0; g.beginPath(); for (let k=0;k<6;k++){ const a = Math.PI/6 + k*Math.PI/3; g.lineTo(x + ox + Math.cos(a)*15, y + Math.sin(a)*15); } g.closePath(); g.stroke(); } break;
+    case 'zangori': g.fillStyle = '#efe9da'; g.fillRect(0, 0, w, h);
+      for (let y=0;y<h;y+=64) for (let x=0;x<w;x+=64){ g.fillStyle = '#1d5aa3'; g.save(); g.translate(x + 32, y + 32);
+        for (let k=0;k<2;k++){ g.rotate(Math.PI/4); g.fillRect(-18, -18, 36, 36); } g.restore();
+        g.fillStyle = '#efe9da'; g.beginPath(); g.arc(x + 32, y + 32, 10, 0, 7); g.fill(); g.fillStyle = '#2e9bb0'; g.beginPath(); g.arc(x + 32, y + 32, 5, 0, 7); g.fill();
+        g.fillStyle = '#2e9bb0'; [[0,0],[64,0],[0,64],[64,64]].forEach(([dx, dy]) => { g.beginPath(); g.arc(x + dx, y + dy, 7, 0, 7); g.fill(); }); } break;
+    case 'atlas': { const cols = ['#c2185b','#f4b400','#1b7f5b','#5b2a86','#f2ece0','#e65100'];
+      for (let x=0, i=0; x<w; x+=32, i++){ g.fillStyle = cols[i % cols.length]; g.beginPath(); g.moveTo(x, 0);
+        for (let y=0;y<=h;y+=16) g.lineTo(x + ((y/16) % 2 ? 10 : -6) + R(-3, 3), y); for (let y=h;y>=0;y-=16) g.lineTo(x + 34 + ((y/16) % 2 ? 6 : -10) + R(-3, 3), y); g.closePath(); g.fill(); } break; }
+    case 'lola': g.fillStyle = '#163a2a'; g.fillRect(0, 0, w, h);
+      for (let i=0;i<14;i++){ const x = R(10, w - 10), y = R(20, h - 10), s = R(.6, 1.1);
+        g.strokeStyle = '#3f7a3a'; g.lineWidth = 3*s; g.beginPath(); g.moveTo(x, y); g.lineTo(x + R(-4, 4), y + 30*s); g.stroke();
+        g.fillStyle = '#d6262e'; g.beginPath(); g.ellipse(x, y, 9*s, 12*s, 0, 0, 7); g.fill();
+        g.fillStyle = '#ff4a3d'; g.beginPath(); g.moveTo(x - 9*s, y); g.lineTo(x - 5*s, y - 16*s); g.lineTo(x, y - 6*s); g.lineTo(x + 5*s, y - 16*s); g.lineTo(x + 9*s, y); g.closePath(); g.fill(); } break;
+    case 'gilam': g.fillStyle = '#7a1520'; g.fillRect(0, 0, w, h);
+      for (let y=0;y<h;y+=64) for (let x=0;x<w;x+=64){ g.save(); g.translate(x + 32, y + 32); g.rotate(Math.PI/4);
+        g.fillStyle = '#1d2b4f'; g.fillRect(-20, -20, 40, 40); g.strokeStyle = '#efdcb4'; g.lineWidth = 3; g.strokeRect(-20, -20, 40, 40); g.fillStyle = '#d99a2b'; g.fillRect(-7, -7, 14, 14); g.restore(); }
+      g.fillStyle = '#efdcb4'; for (let y=0;y<h;y+=64) g.fillRect(0, y, w, 3); break;
+    case 'shoh': { const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#f6d77a'); gr.addColorStop(.5, '#b8862b'); gr.addColorStop(1, '#f0c95a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      g.strokeStyle = 'rgba(90,58,10,.55)'; g.lineWidth = 2; for (let i=0;i<22;i++){ const x = R(0, w), y = R(0, h), rr = R(8, 22); g.beginPath(); for (let a=0;a<Math.PI*3;a+=.2) g.lineTo(x + Math.cos(a)*rr*a/9, y + Math.sin(a)*rr*a/9); g.stroke(); } break; }
+    case 'olov': { const gr = g.createLinearGradient(0, h, 0, 0); gr.addColorStop(0, '#ffd23f'); gr.addColorStop(.35, '#ff6a1a'); gr.addColorStop(.7, '#9e1414'); gr.addColorStop(1, '#1a0b08'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      for (let i=0;i<16;i++){ const x = R(0, w), hh = R(60, 170); g.fillStyle = `rgba(255,${(150 + r()*90)|0},40,.55)`; g.beginPath(); g.moveTo(x - 14, h); g.quadraticCurveTo(x - 20, h - hh*.5, x + R(-8, 8), h - hh); g.quadraticCurveTo(x + 18, h - hh*.5, x + 14, h); g.fill(); } break; }
+    case 'muz': { const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#dff4ff'); gr.addColorStop(1, '#6fb6e6'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      g.strokeStyle = 'rgba(255,255,255,.85)'; for (let i=0;i<14;i++){ let x = R(0, w), y = R(0, h); g.lineWidth = R(.8, 2.2); g.beginPath(); g.moveTo(x, y); for (let k=0;k<7;k++){ x += R(-26, 26); y += R(-26, 26); g.lineTo(x, y); } g.stroke(); } break; }
+    case 'afsona': { const gr = g.createRadialGradient(w*.3, h*.3, 10, w*.5, h*.5, w*.8); gr.addColorStop(0, '#6a3fb5'); gr.addColorStop(.5, '#22195a'); gr.addColorStop(1, '#090b1e'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      for (let i=0;i<5;i++){ const x = R(0, w), y = R(0, h), q = g.createRadialGradient(x, y, 0, x, y, R(30, 70)); q.addColorStop(0, 'rgba(240,120,200,.35)'); q.addColorStop(1, 'rgba(240,120,200,0)'); g.fillStyle = q; g.fillRect(0, 0, w, h); }
+      g.fillStyle = '#fff'; for (let i=0;i<120;i++){ const s = r() < .1 ? 2 : 1; g.fillRect(R(0, w), R(0, h), s, s); }
+      g.fillStyle = '#ffe9a8'; g.beginPath(); g.arc(w*.72, h*.28, 16, 0, 7); g.fill(); g.fillStyle = '#22195a'; g.beginPath(); g.arc(w*.72 + 7, h*.28 - 4, 14, 0, 7); g.fill(); break; }
+  }
+}
+const FIN_TEX = {}, FIN_MAT = {};
+function finishCanvas(id){ if (!FIN_TEX[id]){ const c = mkCanvas(256, 256); drawFinish(id, c.getContext('2d'), 256, 256); FIN_TEX[id] = c; } return FIN_TEX[id]; }
+function finishMat(id){ if (!FIN_MAT[id]){ const f = FINISHES[id], t = texOf(finishCanvas(id), [7, 7], true); FIN_MAT[id] = new THREE.MeshStandardMaterial({ map:t, roughness:f.rough ?? .55, metalness:f.metal ?? .15, envMapIntensity:.9 }); } return FIN_MAT[id]; }
+let FIN_BODY = null;
+// paint a gun model (keeps sights, glass and lights as they are)
+function applyFinish(group, fid){
+  if (!FIN_BODY) FIN_BODY = new Set([GM.metal, GM.metal2, GM.poly, GM.wood, GM.green, GM.silver, GM.steel]);
+  const mat = FINISHES[fid] ? finishMat(fid) : null;
+  group.traverse(o => { if (!o.isMesh) return; if (o.userData.m0 === undefined) o.userData.m0 = o.material; if (!FIN_BODY.has(o.userData.m0)) return; o.material = mat || o.userData.m0; });
+}
+// my own finish for a weapon (only with an account; others see it through the server)
+function myFinish(id){ return ACC.me && ACC.lo && FINISHES[ACC.lo[id]] && (ACC.me.level || 1) >= FINISHES[ACC.lo[id]].lvl ? ACC.lo[id] : ''; }
+
 const geoCache = {};
 function rbox(w, h, d, r){ const k = 'rb' + [w,h,d,r].join(); if (geoCache[k]) return geoCache[k];
   r = Math.max(.0006, Math.min(r, w*.45, h*.45, d*.45)); const s = new THREE.Shape(), hw = w/2 - r, hh = h/2 - r;
@@ -1497,15 +1588,17 @@ function solveArm(a, S, T, pole){
 }
 const HOLD = { long:new V3(.1,.38,.33), pistol:new V3(.04,.42,.4), low:new V3(.17,.17,.18) };
 const holdOf = id => ['rifle','carbine','smg','sniper'].includes(id) ? 'long' : (id === 'pistol' || id === 'deagle') ? 'pistol' : 'low';
-function setSoldierWeapon(m, id){
+function setSoldierWeapon(m, id, fn){
   if (!GUNS[id]) id = 'pistol';
-  if (m.cur === id) return;
+  fn = FINISHES[fn] ? fn : '';
+  if (m.cur === id){ const hd = m.guns[id]; if (hd && hd.userData.fin !== fn){ applyFinish(hd, fn); hd.userData.fin = fn; } return; }
   if (m.cur && m.guns[m.cur]) m.guns[m.cur].visible = false;
   let hd = m.guns[id];
   if (!hd){ const Gn = GUNS[id](); hd = new THREE.Group(); hd.rotation.y = Math.PI; Gn.G.position.set(-Gn.grip.x, -Gn.grip.y, -Gn.grip.z); hd.add(Gn.G);
     Gn.G.traverse(o => { if (o.isMesh){ o.castShadow = true; } }); const fl = flashSprite(.55); fl.position.copy(Gn.muzzle); Gn.G.add(fl);
     hd.userData = { Gn, fl }; m.gunHold.add(hd); m.guns[id] = hd; }
   hd.visible = true; m.cur = id; m.flash = hd.userData.fl;
+  if ((hd.userData.fin || '') !== fn){ applyFinish(hd, fn); hd.userData.fin = fn; }
   const Gn = hd.userData.Gn, kind = holdOf(id), hp = HOLD[kind]; m.gunHold.position.copy(hp);
   if (kind === 'low') hd.rotation.set(.5, Math.PI, 0); else hd.rotation.set(0, Math.PI, 0);
   const rel = s => new V3(-(s.x - Gn.grip.x), s.y - Gn.grip.y, -(s.z - Gn.grip.z));
@@ -1923,7 +2016,7 @@ let meModel = null, meTeam = '';
 function killcamStart(killer, w, hs){
   if (SET.kc === 'off' || respawnMode() || !killer || !killer.m || REC.frames.length < 10) return;
   if (!meModel || meTeam !== player.team){ if (meModel) scene.remove(meModel.g); meModel = buildSoldier(player.team === 'CT' ? PAL_CT : PAL_T); meTeam = player.team; meModel.g.visible = false; scene.add(meModel.g); }
-  setSoldierWeapon(meModel, (curItem() || { id:'knife' }).id === 'bomb' ? 'knife' : (curItem() || { id:'knife' }).id);
+  { const wid = (curItem() || { id:'knife' }).id === 'bomb' ? 'knife' : (curItem() || { id:'knife' }).id; setSoldierWeapon(meModel, wid, myFinish(wid)); }
   Object.assign(KC, { on:true, killer, start:S.time, from:Math.max(REC.frames[0].t, S.time - KC_BACK), death:S.time, shotI:0, prevRt:-1 });
   KC.dur = (KC.death - KC.from) + KC_AFTER;
   $('kcName').textContent = killer.name; $('kcInfo').textContent = w.name + (hs ? ' · boshga' : '') + ' · joni ' + Math.max(1, Math.ceil(killer.hp)) + ' qoldi';
@@ -2940,6 +3033,7 @@ function wsJoin(name, opts){
         else if (m.t === 'room'){ netRoomInfo(m); }
         else if (m.t === 'note'){ hint(String(m.msg || '').slice(0, 120), 3000); }
         else if (m.t === 'eco'){ netEco(m); }
+        else if (m.t === 'xp'){ netXP(m); }
         else if (m.t === 'chat'){ chatShow(cleanName(m.nm), m.side === 'CT' ? 'CT' : 'T', !!m.dead, m.tm === 1, String(m.m || '').slice(0, 120), false); }
         else if (m.t === 'err' && !settled){ settled = true; closed = true; reject({ code:m.code || 'refused' }); }
         else if (m.t === 'err' && m.code === 'kicked'){ closed = true; netKicked(); } };
@@ -3176,7 +3270,7 @@ function updateRemote(r, pr, dt){
     r.lastPres = pr;
     const team = pr.tm === 'CT' ? 'CT' : 'T', name = cleanName(pr.nm); r.sq = pr.sq === 'B' ? 'B' : 'A'; r.bot = pr.bot === 1; r.lv = String(pr.lv || ''); r.vo = pr.vo === 2 ? 2 : pr.vo === 1 ? 1 : 0; r.vt = pr.vt === 1;
     const a = pr.acc;
-    r.acc = a && typeof a === 'object' && typeof a.u === 'string' ? { r:num(a.r)|0, rk:String(a.rk || '').slice(0, 24), rc:safeColor(a.rc), cal:!!a.cal } : null;
+    r.acc = a && typeof a === 'object' && typeof a.u === 'string' ? { r:num(a.r)|0, rk:String(a.rk || '').slice(0, 24), rc:safeColor(a.rc), cal:!!a.cal, lv:Math.max(0, Math.min(99, num(a.lv)|0)) } : null;
     if (team !== r.team || !r.m){ r.team = team; r.name = name; dressRemote(r); }
     else if (name !== r.name){ r.name = name; r.m.g.remove(r.tag); r.tag = nameTag(name, team); r.m.g.add(r.tag); }
     r.tpos.set(clamp(num(pr.x), 0, MAPW), clamp(num(pr.y), 0, 3), clamp(num(pr.z), 0, MAPH)); r.tyaw = wrapA(num(pr.yw) + Math.PI); r.cr = clamp(num(pr.cr), 0, 1);
@@ -3184,7 +3278,8 @@ function updateRemote(r, pr, dt){
     if (r.alive && !was){ r.pos.copy(r.tpos); r.yaw = r.tyaw; r.deadT = 1; }
     if (!r.alive && was) r.deadT = 0;
     r.hp = clamp(num(pr.hp), 0, 100); r.w = W[pr.w] ? pr.w : 'pistol'; r.mv = pr.mv === 1; r.k = num(pr.k)|0; r.d = num(pr.d)|0;
-    setSoldierWeapon(r.m, r.w);
+    r.fn = FINISHES[pr.fn] ? pr.fn : '';
+    setSoldierWeapon(r.m, r.w, r.fn);
     // their shots
     const sh = pr.sh;
     if (sh && typeof sh === 'object'){ const n = num(sh.n); if (n > r.shotN){ const cnt = Math.min(3, n - r.shotN); r.shotN = n; const wd = W[sh.w];
@@ -3532,9 +3627,9 @@ function netBoardHTML(){
   if (respawnMode()) return modeBoardHTML('Xona: ' + NET.code + ' · ' + MODES[curMode()].name + (NET.g && NET.g.ph === 'live' ? ' · ' + fmt(NET.g.t) + ' qoldi' : ' · isinish'));
   const g = NET.g || { r:0, sA:0, sB:0, fm:12 }, esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
   const rows = [...NET.remotes.values()].filter(r => r.team).map(r => ({ name:r.name, team:r.team, k:r.k, d:r.d, alive:r.alive, me:false, acc:r.acc, bot:r.bot }));
-  const meAcc = ACC.me ? { r:ACC.me.rating, rk:ACC.me.rank.calibrating ? 'Kalibrlash' : ACC.me.rank.name, rc:safeColor(ACC.me.rank.color) } : null;
+  const meAcc = ACC.me ? { r:ACC.me.rating, rk:ACC.me.rank.calibrating ? 'Kalibrlash' : ACC.me.rank.name, rc:safeColor(ACC.me.rank.color), lv:ACC.me.level || 0 } : null;
   if (player.team) rows.push({ name:NET.name + ' (siz)', team:player.team, k:player.kills, d:player.deaths, alive:player.alive, me:true, acc:meAcc });
-  const who = r => (r.acc ? `<span class="rk" style="--c:${r.acc.rc}" title="${esc(r.acc.rk)}"><i></i></span>` : '') + esc(r.name) + (r.acc ? `<small>${r.acc.r}</small>` : r.bot ? '<small>bot</small>' : '<small>mehmon</small>');
+  const who = r => (r.acc ? `<span class="rk" style="--c:${r.acc.rc}" title="${esc(r.acc.rk)}"><i></i></span>` : '') + esc(r.name) + (r.acc && r.acc.lv ? `<span class="lvTag">${r.acc.lv}</span>` : '') + (r.acc ? `<small>${r.acc.r}</small>` : r.bot ? '<small>bot</small>' : '<small>mehmon</small>');
   const sec = t => { const col = t === 'T' ? 'var(--atk)' : 'var(--def)', list = rows.filter(r => r.team === t).sort((a,b) => b.k - a.k);
     return `<tr><th colspan="4" style="color:${col};padding-top:10px">${TEAM_NAME[t].toUpperCase()} · ${gSideScore(g, t)}</th></tr>` +
       (list.length ? list.map(r => `<tr class="${r.alive ? '' : 'dead'}"><td><span class="tag" style="background:${col}"></span>${who(r)}</td><td class="r">${r.k}</td><td class="r">${r.d}</td><td class="r">${r.me ? '$' + player.money : (r.alive ? 'tirik' : '—')}</td></tr>`).join('')
@@ -3589,7 +3684,7 @@ function leaveOnline(){
 
 
 /* ================= ACCOUNTS & RATING ================= */
-const ACC = { on:false, me:null, mode:'login' };
+const ACC = { on:false, me:null, mode:'login', lo:{}, prog:null, pw:'rifle' };
 const escH = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 function safeColor(c){ return /^#[0-9a-f]{6}$/i.test(c || '') ? c : '#8d8778'; }
 function rankLabel(rank){ return !rank ? '' : rank.calibrating ? `Kalibrlash ${rank.played}/${rank.need}` : rank.name; }
@@ -3605,7 +3700,44 @@ async function apiCall(path, body){
 async function accInit(){
   if (IN_ARTIFACT || !/^https?:$/.test(location.protocol)) return;   // hisoblar faqat o'yin serverida
   const r = await apiCall('/api/me');
-  if (r.status === 200 || r.status === 401){ ACC.on = true; ACC.me = r.status === 200 ? r.data.user : null; renderAcc(); }
+  if (r.status === 200 || r.status === 401){ ACC.on = true; ACC.me = r.status === 200 ? r.data.user : null; renderAcc(); if (ACC.me) loadProgress(); }
+}
+function xpBarHTML(lv, cur, need, xp){ lv = lv || 1; const k = need ? clamp(cur/need, 0, 1) : 1;
+  return `<div class="top"><span><b>${lv}</b>-daraja</span><span>${need ? (cur|0) + ' / ' + (need|0) + ' XP' : 'eng yuqori daraja · ' + (xp|0) + ' XP'}</span></div><div class="bar"><i style="width:${(k*100).toFixed(1)}%"></i></div>`; }
+async function loadProgress(){ const r = await apiCall('/api/progress'); if (!r.ok || !r.data) return null; ACC.prog = r.data; ACC.lo = r.data.loadout || {}; if (ACC.me){ ACC.me.level = r.data.level; ACC.me.xp = r.data.xp; ACC.me.lvCur = r.data.cur; ACC.me.lvNeed = r.data.need; } return r.data; }
+function fmtLeft(sec){ const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60); return h + ' soat ' + m + ' daqiqa'; }
+function renderProg(){
+  const d = ACC.prog; if (!d) return;
+  $('progXP').innerHTML = xpBarHTML(d.level, d.cur, d.need, d.xp);
+  $('progMis').innerHTML = (d.missions || []).map(m => `<div class="mis ${m.done ? 'done' : ''}"><div class="t"><span>${escH(m.text)}</span><small>+${m.reward|0} XP</small></div><div class="bar"><i style="width:${Math.min(100, (m.progress|0)/Math.max(1, m.target|0)*100).toFixed(0)}%"></i></div><div class="p">${m.done ? 'Bajarildi ✓' : Math.min(m.progress|0, m.target|0) + ' / ' + (m.target|0)}</div></div>`).join('');
+  $('progReset').textContent = 'Yangi vazifalar ' + fmtLeft(d.resets|0) + 'dan keyin (Toshkent vaqti bilan yarim tunda).';
+  $('progW').innerHTML = FIN_WEAPONS.map(w => `<button type="button" data-pw="${w}" aria-pressed="${ACC.pw === w}">${escH(W[w].name)}</button>`).join('');
+  const cur = (ACC.lo || {})[ACC.pw] || '';
+  const card = (id, name, lvl) => { const open = !lvl || d.level >= lvl, img = id ? `<img alt="" src="${finishCanvas(id).toDataURL()}">` : '<span class="sw"></span>';
+    return `<button type="button" class="fin" data-fin="${id}" aria-pressed="${cur === id}" ${open ? '' : 'disabled'}>${img}<span>${escH(name)}</span><small>${open ? (cur === id ? 'tanlangan' : 'tanlash') : lvl + '-darajada ochiladi'}</small></button>`; };
+  $('progF').innerHTML = card('', 'Oddiy', 0) + Object.entries(FINISHES).map(([id, f]) => card(id, f.name, f.lvl)).join('');
+}
+async function openProg(){ $('pgOv').hidden = false; $('progMis').innerHTML = '<p class="note">Yuklanmoqda…</p>'; $('progErr').hidden = true; if (await loadProgress()) renderProg(); else $('progMis').innerHTML = `<p class="note">Yuklab bo'lmadi.</p>`; }
+$('progClose').addEventListener('click', () => { $('pgOv').hidden = true; renderAcc(); });
+document.addEventListener('keydown', e => { if (e.code === 'Escape' && !$('pgOv').hidden){ $('pgOv').hidden = true; renderAcc(); } });
+$('pgOv').addEventListener('click', async e => {
+  const t = e.target.closest('[data-pw]'); if (t){ ACC.pw = t.dataset.pw; renderProg(); return; }
+  const f = e.target.closest('[data-fin]'); if (!f || f.disabled) return;
+  const r = await apiCall('/api/loadout', { w:ACC.pw, f:f.dataset.fin });
+  if (r.ok && r.data){ ACC.lo = r.data.loadout || {}; if (ACC.prog) ACC.prog.loadout = ACC.lo; renderProg(); }
+  else { $('progErr').textContent = (r.data && r.data.error) || "Saqlab bo'lmadi"; $('progErr').hidden = false; }
+});
+// XP after an online match (sent by the game server)
+function netXP(m){
+  const gain = num(m.gain)|0, lv = num(m.level)|0;
+  if (ACC.me){ ACC.me.xp = num(m.xp); ACC.me.level = lv; ACC.me.lvCur = num(m.cur); ACC.me.lvNeed = num(m.need); }
+  const done = Array.isArray(m.done) ? m.done.map(d => String(d && d.text || '').slice(0, 60)).filter(Boolean) : [];
+  const unlocked = m.up ? Object.values(FINISHES).filter(f => f.lvl === lv).map(f => f.name) : [];
+  const title = m.up ? 'Yangi daraja: ' + lv + '!' : '+' + gain + ' XP', sub = (m.up ? '+' + gain + ' XP. ' : lv + '-daraja · ' + (num(m.cur)|0) + ' / ' + (num(m.need)|0) + ' XP. ') + (unlocked.length ? "Yangi bo'yoq ochildi: " + unlocked.join(', ') + '. ' : '') + (done.length ? 'Vazifa bajarildi: ' + done.join('; ') : '');
+  const el = $('result');
+  if (!el.hidden){ const d = document.createElement('div'); d.className = 'xpGain'; d.innerHTML = `<b>${escH(title)}</b><span>${escH(sub)}</span>` + xpBarHTML(lv, num(m.cur), num(m.need), num(m.xp)); el.appendChild(d); }
+  else showMsg(title, sub, 'atk', 6000);
+  if (m.up) sfxChord(true);
 }
 function renderAcc(){
   $('accPanel').hidden = !ACC.on; if (!ACC.on) return;
@@ -3613,6 +3745,7 @@ function renderAcc(){
   $('accOut').hidden = !!me; $('accIn').hidden = !me;
   if (me){
     $('meName').textContent = me.username; $('meRank').innerHTML = rankBadge(me.rank); $('meRating').textContent = me.rating;
+    $('meXP').innerHTML = xpBarHTML(me.level, me.lvCur, me.lvNeed, me.xp);
     $('meStats').innerHTML = `<div><b>${me.matches}</b><span>O'yin</span></div><div><b>${pct(me.wins, me.matches)}%</b><span>G'alaba</span></div><div><b>${kdOf(me)}</b><span>K/D</span></div><div><b>${pct(me.hs, me.kills)}%</b><span>Boshga</span></div>` + (me.pos ? `<div><b>#${me.pos}</b><span>O'rin</span></div>` : '');
     nick.value = me.username; nick.disabled = true;
     $('onlineNote').textContent = "Reytingli o'yin: natijalar hisobingizga yoziladi. Do'stlaringiz shu havolani ochib, bir xil xona kodini kiritsin.";
@@ -3640,10 +3773,10 @@ $('authForm').addEventListener('submit', async e => {
   $('authBtn').disabled = true; err.hidden = true;
   const r = await apiCall(ACC.mode === 'login' ? '/api/login' : '/api/register', { username:u, password:pw });
   $('authBtn').disabled = false;
-  if (r.ok && r.data && r.data.user){ ACC.me = r.data.user; $('authPass').value = ''; renderAcc(); }
+  if (r.ok && r.data && r.data.user){ ACC.me = r.data.user; $('authPass').value = ''; renderAcc(); loadProgress(); }
   else fail((r.data && r.data.error) || 'Xatolik yuz berdi, qayta urinib ko\'ring');
 });
-$('logoutBtn').addEventListener('click', async () => { await apiCall('/api/logout', {}); ACC.me = null; renderAcc(); setAuthMode('login'); });
+$('logoutBtn').addEventListener('click', async () => { await apiCall('/api/logout', {}); ACC.me = null; ACC.lo = {}; ACC.prog = null; renderAcc(); setAuthMode('login'); });
 async function accRefresh(){ const r = await apiCall('/api/me'); if (r.status === 200){ ACC.me = r.data.user; renderAcc(); } else if (r.status === 401){ ACC.me = null; renderAcc(); } }
 
 // rating change after an online match (sent by the game server)
@@ -3693,6 +3826,7 @@ async function showProfile(name){
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-lb]'); if (b){ openLB(); return; }
+  if (e.target.closest('[data-prog]')){ openProg(); return; }
   const p = e.target.closest('#lbBody [data-p]'); if (p) showProfile(p.dataset.p);
 });
 $('lbClose').addEventListener('click', () => { $('lb').hidden = true; });
@@ -3792,7 +3926,7 @@ function touchFrame(){
   $('tDrop').hidden = !player.alive || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot];
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){
@@ -4049,6 +4183,7 @@ function render(dt){
   if (vmCur !== id){ Object.values(VM).forEach(v => v.g.visible = false); vmCur = id; }
   if (showVM && id && VM[id]){
     const v = VM[id], w = curW(); v.g.visible = true;
+    const fin = myFinish(id); if (v.fin !== fin){ applyFinish(v.g, fin); v.fin = fin; }
     swayX *= Math.exp(-dt*9); swayY *= Math.exp(-dt*9);
     const sp = Math.hypot(player.vel.x, player.vel.z), bobA = Math.min(1, sp/5)*(player.ground ? 1 : 0);
     let px = v.pos.x - clamp(swayX, -.04, .04) + Math.sin(player.bobT)*.011*bobA, py = v.pos.y + clamp(swayY, -.03, .03) - Math.abs(Math.cos(player.bobT))*.009*bobA - player.crouch*.01, pz = v.pos.z + player.kick*.05;

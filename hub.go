@@ -34,7 +34,8 @@ type client struct {
 	acct *account
 	// quyidagilar room.mu ostida
 	pres    json.RawMessage
-	accJSON json.RawMessage // boshqalarga ko'rsatiladigan hisob ma'lumoti (nom, reyting, daraja)
+	accJSON json.RawMessage   // boshqalarga ko'rsatiladigan hisob ma'lumoti (nom, reyting, daraja)
+	loadout map[string]string // qurol bo'yoqlari (room.mu ostida)
 	info    presInfo
 	deSeen  bool
 	chatAt  time.Time // chat: oxirgi xabar va "chelak" (spamga qarshi)
@@ -72,6 +73,8 @@ type room struct {
 	loss    map[string]int
 	lossE   string
 	purses  map[string]purse // chiqib ketganlarning puli (qayta ulanish uchun)
+	matchAt time.Time        // o'yin boshlangan vaqt (XP uchun)
+	gains   []matchGain      // o'yin oxirida yoziladigan XP
 }
 
 type hub struct {
@@ -79,9 +82,10 @@ type hub struct {
 	rooms      map[string]*room
 	perIP      map[string]int
 	maxPlayers int
-	store      *Store   // nil yoki tayyor emas — hisoblar o'chirilgan
-	voice      voiceCfg // ovozli chat uchun STUN/TURN
-	debug      bool     // ZARBA_DEBUG=1: e2e testlar raund holatini o'zgartira oladi (prod'da o'chiq)
+	store      *Store                      // nil yoki tayyor emas — hisoblar o'chirilgan
+	voice      voiceCfg                    // ovozli chat uchun STUN/TURN
+	debug      bool                        // ZARBA_DEBUG=1: e2e testlar raund holatini o'zgartira oladi (prod'da o'chiq)
+	loadouts   map[int64]map[string]string // hisob → qurol bo'yoqlari (progress.go)
 }
 
 func newHub(maxPlayers int, st *Store) *hub {
@@ -109,19 +113,30 @@ func jsonMsg(v any) []byte { b, _ := json.Marshal(v); return b }
 
 func accPublic(u User) json.RawMessage {
 	rk := rankOf(u.Rating, u.Matches)
-	return jsonMsg(map[string]any{"u": u.Username, "r": u.Rating, "rk": rk.Name, "rc": rk.Color, "cal": rk.Calibrating})
+	lv, _, _ := levelOf(u.XP)
+	return jsonMsg(map[string]any{"u": u.Username, "r": u.Rating, "rk": rk.Name, "rc": rk.Color, "cal": rk.Calibrating, "lv": lv})
 }
 
 // serve runs one player's connection until it closes.
 func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts roomOpts) {
 	defer ws.close()
 	var accJSON json.RawMessage
+	var lo map[string]string
 	if acct != nil && h.store.Ready() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		u, ok := h.store.User(ctx, acct.id)
+		lo, _ = h.store.Loadout(ctx, acct.id)
 		cancel()
 		if ok {
 			accJSON = accPublic(u)
+		}
+		if lo != nil {
+			h.mu.Lock()
+			if h.loadouts == nil {
+				h.loadouts = map[int64]map[string]string{}
+			}
+			h.loadouts[acct.id] = lo
+			h.mu.Unlock()
 		}
 	}
 	h.mu.Lock()
@@ -171,7 +186,7 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 		ws.write(opText, jsonMsg(map[string]string{"t": "err", "code": reject}))
 		return
 	}
-	c := &client{id: newID(), ip: ip, room: r, ws: ws, send: make(chan []byte, sendQueue), acct: acct, accJSON: accJSON, ps: newPState(), joined: time.Now()}
+	c := &client{id: newID(), ip: ip, room: r, ws: ws, send: make(chan []byte, sendQueue), acct: acct, accJSON: accJSON, loadout: lo, ps: newPState(), joined: time.Now()}
 	// greeting + everyone already here, queued before anyone else can write to us
 	c.send <- jsonMsg(map[string]any{"t": "hello", "id": c.id, "ice": h.voice.iceFor(host, c.id, time.Now())})
 	type peer struct {
@@ -331,6 +346,15 @@ func (h *hub) reader(c *client) {
 		c.deSeen = true
 		if c.accJSON != nil {
 			fields["acc"] = c.accJSON
+		}
+		// qurol bo'yog'ini ham server yozadi (faqat ochilganlari)
+		delete(fields, "fn")
+		if c.loadout != nil {
+			var w string
+			json.Unmarshal(fields["w"], &w)
+			if f := c.loadout[w]; f != "" {
+				fields["fn"] = jsonMsg(f)
+			}
 		}
 		out, err := json.Marshal(fields)
 		if err != nil {

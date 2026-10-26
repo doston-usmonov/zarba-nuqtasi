@@ -10,6 +10,7 @@ package main
 import (
 	"math"
 	"sort"
+	"time"
 )
 
 type pstat struct {
@@ -153,6 +154,7 @@ func (r *room) finalStatsLocked() {
 	if len(g.St) > 32 {
 		g.St = g.St[:32]
 	}
+	r.gains = r.gainsLocked(time.Now()) // XP va kunlik vazifalar (progress.go)
 }
 
 func itoa(n int) string {

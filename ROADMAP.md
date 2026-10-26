@@ -50,8 +50,9 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 
 ## 7. Kosmetika va yutuqlar
 - ✅ Raund MVP (eng ko'p o'ldirgan, bombani o'rnatgan yoki zararsizlantirgan), o'yin oxirida natijalar jadvali va o'yin MVP'si, killcam
+- ✅ XP va 40 ta daraja, har kuni 3 ta vazifa (Toshkent vaqti bilan yangilanadi)
+- ✅ Qurol bo'yoqlari (10 ta o'zimizning naqsh: Qum, Tun, Zangori, Atlas, Lola, Gilam, Shoh, Olov, Muz, Afsona) daraja bilan ochiladi; tasodifiy sandiq va pullik narsa yo'q
 - [ ] Yutuqlar va medallar (masalan: "1 raundda 5 ta o'ldirish")
-- [ ] Qurol ko'rinishlari (skinlar): yutuqlar va daraja orqali ochiladi, tasodifiy sandiq va pullik o'yin elementlari yo'q
 
 ## Texnik
 - ✅ PostgreSQL: hisoblar, reyting va o'yinlar tarixi, migratsiyalar, kunlik zaxira

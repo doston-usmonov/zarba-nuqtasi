@@ -45,6 +45,7 @@ func main() {
 	}
 	a := newAPI(st, allowed)
 	h := newHub(maxPlayers, st)
+	a.onLoadout = h.setLoadout
 	h.voice = voiceFromEnv()
 	h.debug = os.Getenv("ZARBA_DEBUG") == "1"
 	if h.debug {

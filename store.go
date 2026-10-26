@@ -56,6 +56,7 @@ type User struct {
 	Kills    int
 	Deaths   int
 	HS       int
+	XP       int64
 	Created  int64 // unix
 }
 
@@ -225,13 +226,13 @@ func tokenHash(token string) []byte { sum := sha256.Sum256([]byte(token)); retur
 
 func validPassword(p string) bool { return len(p) >= 6 && len(p) <= 72 }
 
-const userCols = `id, username, pass_salt, pass_hash, pass_iter, rating, matches, wins, kills, deaths, hs, extract(epoch FROM created_at)::bigint`
+const userCols = `id, username, pass_salt, pass_hash, pass_iter, rating, matches, wins, kills, deaths, hs, xp, extract(epoch FROM created_at)::bigint`
 
 type scanner interface{ Scan(...any) error }
 
 func scanUser(r scanner) (User, error) {
 	var u User
-	err := r.Scan(&u.ID, &u.Username, &u.Salt, &u.Hash, &u.Iter, &u.Rating, &u.Matches, &u.Wins, &u.Kills, &u.Deaths, &u.HS, &u.Created)
+	err := r.Scan(&u.ID, &u.Username, &u.Salt, &u.Hash, &u.Iter, &u.Rating, &u.Matches, &u.Wins, &u.Kills, &u.Deaths, &u.HS, &u.XP, &u.Created)
 	return u, err
 }
 

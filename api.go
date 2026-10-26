@@ -21,6 +21,8 @@ type api struct {
 	allowed []string
 	login   *limiter // noto'g'ri parolni taxmin qilishga qarshi
 	reg     *limiter // ko'plab soxta hisob ochishga qarshi
+	// onLoadout: o'yinchi qurol bo'yog'ini tanladi (xonadagi presence'ga darhol ta'sir qiladi)
+	onLoadout func(uid int64, lo map[string]string)
 }
 
 func newAPI(st *Store, allowed []string) *api {
@@ -48,6 +50,8 @@ func (a *api) routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/logout", h(a.logout))
 	mux.HandleFunc("GET /api/leaderboard", h(a.leaderboard))
 	mux.HandleFunc("GET /api/players/{name}", h(a.player))
+	mux.HandleFunc("GET /api/progress", h(a.progress))
+	mux.HandleFunc("POST /api/loadout", h(a.setFinish))
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeErr(w, http.StatusNotFound, "Topilmadi") })
 }
 
@@ -65,11 +69,16 @@ type userOut struct {
 	HS       int      `json:"hs"`
 	Created  int64    `json:"created"`
 	Pos      int      `json:"pos,omitempty"`
+	XP       int64    `json:"xp"`
+	Level    int      `json:"level"`
+	LvCur    int64    `json:"lvCur"`
+	LvNeed   int64    `json:"lvNeed"`
 }
 
 func toOut(u User) userOut {
+	lv, cur, need := levelOf(u.XP)
 	return userOut{ID: u.ID, Username: u.Username, Rating: u.Rating, Rank: rankOf(u.Rating, u.Matches), Matches: u.Matches,
-		Wins: u.Wins, Kills: u.Kills, Deaths: u.Deaths, HS: u.HS, Created: u.Created}
+		Wins: u.Wins, Kills: u.Kills, Deaths: u.Deaths, HS: u.HS, Created: u.Created, XP: u.XP, Level: lv, LvCur: cur, LvNeed: need}
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {

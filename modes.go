@@ -148,7 +148,7 @@ func (r *room) finishModeLocked(w *client) {
 }
 
 // tickModeLocked: deathmatch va qurol poygasining vaqti va bosqichlari.
-func (r *room) tickModeLocked(dt float64, nA, nB int) {
+func (r *room) tickModeLocked(now time.Time, dt float64, nA, nB int) {
 	g := r.gs
 	ready := nA+nB >= 2
 	if g.Md == modeGG {
@@ -172,6 +172,7 @@ func (r *room) tickModeLocked(dt float64, nA, nB int) {
 				g.T = ggTime
 			}
 			g.Sc, g.Wn, g.Wnm = map[string]int{}, "", ""
+			r.matchAt = now
 		}
 	case "live":
 		g.T -= dt

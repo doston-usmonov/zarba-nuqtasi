@@ -35,6 +35,7 @@ import (
 
 type wspec struct {
 	dmg, pen, rate float64
+	pellets        int // drobovik: bitta o'qda nechta saochma (tegishi bitta da'vo bo'lib keladi)
 	melee, nade    bool
 }
 
@@ -46,6 +47,10 @@ var weaponSpecs = map[string]wspec{
 	"carbine": {dmg: 31, pen: .75, rate: .09},
 	"rifle":   {dmg: 36, pen: .775, rate: .1},
 	"sniper":  {dmg: 115, pen: .97, rate: 1.45},
+	"mpistol": {dmg: 24, pen: .5, rate: .065},
+	"shotgun": {dmg: 20, pen: .6, rate: .85, pellets: 8},
+	"lmg":     {dmg: 32, pen: .8, rate: .08},
+	"scout":   {dmg: 88, pen: .85, rate: 1.2},
 	"he":      {nade: true, pen: .57},
 	"flash":   {nade: true},
 	"smoke":   {nade: true},
@@ -250,6 +255,7 @@ type hitClaim struct {
 	Pn float64 `json:"pn"`
 	P  string  `json:"p"`
 	W  string  `json:"w"`
+	Pc int     `json:"pc,omitempty"` // drobovik: shu nishonga tekkan saochmalar soni
 }
 
 type deathClaim struct {
@@ -475,6 +481,9 @@ func (r *room) validHitLocked(c *client, h hitClaim, now time.Time) string {
 	limit := spec.dmg * mult
 	if spec.melee {
 		limit = spec.dmg
+	}
+	if spec.pellets > 1 { // saochmalar har xil joyga tegadi: eng yomon holat — hammasi qism ko'paytmasi bilan
+		limit = spec.dmg * math.Max(mult, partMult["s"]) * float64(min(max(h.Pc, 1), spec.pellets))
 	}
 	if h.D < 0 || h.D > limit*1.02+1 {
 		return "zarar juda katta"

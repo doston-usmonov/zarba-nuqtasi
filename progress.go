@@ -56,7 +56,7 @@ var finishes = []finishDef{
 	{"gilam", "Gilam", 14}, {"shoh", "Shoh", 18}, {"olov", "Olov", 23}, {"muz", "Muz", 28}, {"afsona", "Afsona", 35},
 }
 
-var finishWeapons = []string{"rifle", "carbine", "smg", "sniper", "deagle", "pistol", "knife"}
+var finishWeapons = []string{"rifle", "carbine", "lmg", "smg", "shotgun", "sniper", "scout", "deagle", "mpistol", "pistol", "knife"}
 
 func finishLevel(id string) int {
 	for _, f := range finishes {

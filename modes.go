@@ -36,7 +36,7 @@ const (
 )
 
 // qurol poygasi zinapoyasi: eng kuchlisidan kuchsiziga (web/index.html dagi GG_LADDER bilan bir xil)
-var ggLadder = []string{"sniper", "rifle", "carbine", "smg", "deagle", "pistol", "knife"}
+var ggLadder = []string{"sniper", "lmg", "rifle", "carbine", "shotgun", "smg", "deagle", "mpistol", "pistol", "knife"}
 
 func validMode(m string) bool {
 	return m == modeComp || m == modeDM || m == modeTDM || m == modeGG || m == modeWM || m == modeRT

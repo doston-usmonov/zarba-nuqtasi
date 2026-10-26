@@ -164,7 +164,24 @@ Bosh sahifada **ochiq o'yinlar ro'yxati** bor (har 5 soniyada yangilanadi, `GET 
 - *Raqobat*, *Wingman* (2 ga 2), *Retake* — raundlar va bomba.
 - *Deathmatch — hamma hammaga*: har kim har kimga qarshi, 6 daqiqada eng ko'p o'ldirgan yutadi.
 - *Deathmatch — jamoa jamoaga*: ikki jamoa, faqat raqib jamoani o'ldirish mumkin (jamoadoshga o'q, granata zarar bermaydi), ekranning tepasida ikkala jamoaning hisobi. 6 daqiqada ko'proq o'ldirgan jamoa yutadi. O'yin har ikki jamoada kamida bittadan o'yinchi (yoki bot) bo'lganda boshlanadi. Botlarga qarshi yakka o'yinda deathmatch doim «hamma hammaga».
-- *Qurol poygasi*: eng kuchli quroldan boshlanib, har 2 o'ldirishda kuchsizrog'iga o'tiladi: Qirg'iy-50 (snayper) → Burkut → Lochin-K → Shamol → Burgut .50 → P-18 → pichoq. Pichoq bilan birinchi o'ldirgan yutadi.
+- *Qurol poygasi*: eng kuchli quroldan boshlanib, har 2 o'ldirishda kuchsizrog'iga o'tiladi: Qirg'iy-50 (snayper) → Tog' (pulemyot) → Burkut → Lochin-K → Bo'ron (drobovik) → Shamol → Burgut .50 → Chaqmoq → P-18 → pichoq (19 o'ldirish). Pichoq bilan birinchi o'ldirgan yutadi.
+
+**Qurollar** (nomlari va dizayni o'zimizniki):
+
+| Qurol | Turi | Narxi | Xususiyati |
+|---|---|---|---|
+| P-18 | to'pponcha | $200 | 20 o'q |
+| Chaqmoq | avtomatik to'pponcha | $500 | 18 o'q, tez otadi |
+| Burgut .50 | og'ir to'pponcha | $700 | boshga bitta o'q |
+| Shamol | pistolet-pulemyot | $1250 | harakatda aniq, o'ldirish uchun $600 |
+| Bo'ron | drobovik | $1200 | 8 ta saochma, yaqindan bir o'qda, uzoqda kuchsiz; o'ldirish uchun $900 |
+| Lochin-K | avtomat | $2050 | yengil tepki |
+| Burkut | avtomat | $2700 | kuchli, tepkisi katta |
+| Tog' | pulemyot | $5000 | 100 o'q, og'ir — sekin yuradi, uzoq qayta o'qlanadi |
+| Sayyod | yengil snayper | $1700 | 10 o'q, harakatda ham aniq, boshga bir o'qda |
+| Qirg'iy-50 | snayper | $4750 | tanaga bir o'qda |
+
+Drobovik o'qi serverga bitta tegish sifatida yuboriladi (nishonga tekkan saochmalar soni bilan), server zarar chegarasini saochmalar soniga qarab tekshiradi.
 
 **Xona egasi** — o'yinni yaratgan o'yinchi. U chiqib ketsa, egalik eng oldin kirgan keyingi o'yinchiga o'tadi. Ega o'yin ichida Esc (telefonda «II») menyusidagi «Xona» bo'limida:
 - bot qo'shadi: hujumga yoki himoyaga, oson / o'rta / qiyin (xonada ko'pi bilan 10 ta bot);

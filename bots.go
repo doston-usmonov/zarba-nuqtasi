@@ -27,9 +27,12 @@ var botLevels = map[string]botLevel{
 	"hard":   {react: .25, turn: 11, acc: .58, head: .24},
 }
 
-var weaponFall = map[string]float64{"pistol": .85, "deagle": .81, "smg": .85, "carbine": .97, "rifle": .98, "sniper": .99, "knife": 1}
-var weaponMag = map[string]int{"pistol": 20, "deagle": 7, "smg": 30, "carbine": 25, "rifle": 30, "sniper": 5}
-var weaponAcc = map[string]float64{"pistol": .85, "deagle": .85, "smg": .8, "carbine": 1, "rifle": 1, "sniper": 1.6}
+var weaponFall = map[string]float64{"pistol": .85, "deagle": .81, "smg": .85, "carbine": .97, "rifle": .98, "sniper": .99, "knife": 1,
+	"mpistol": .8, "shotgun": .55, "lmg": .97, "scout": .99}
+var weaponMag = map[string]int{"pistol": 20, "deagle": 7, "smg": 30, "carbine": 25, "rifle": 30, "sniper": 5,
+	"mpistol": 18, "shotgun": 7, "lmg": 100, "scout": 10}
+var weaponAcc = map[string]float64{"pistol": .85, "deagle": .85, "smg": .8, "carbine": 1, "rifle": 1, "sniper": 1.6,
+	"mpistol": .8, "shotgun": 1.2, "lmg": .9, "scout": 1.4}
 
 func cellCenter(c [2]int) vec3 {
 	return vec3{(float64(c[0]) + .5) * cellSize, 0, (float64(c[1]) + .5) * cellSize}
@@ -139,21 +142,33 @@ func roundInHalf(r, h int) int {
 func pickBotWeapon(rih int) string {
 	switch {
 	case rih <= 1:
-		if rand.Float64() < .3 {
+		switch x := rand.Float64(); {
+		case x < .3:
 			return "deagle"
+		case x < .45:
+			return "mpistol"
 		}
 		return "pistol"
 	case rih == 2:
+		if rand.Float64() < .3 {
+			return "shotgun"
+		}
 		return "smg"
 	}
 	x := rand.Float64()
 	switch {
-	case x < .15:
+	case x < .1:
 		return "sniper"
-	case x < .6:
+	case x < .15:
+		return "scout"
+	case x < .55:
 		return "rifle"
-	case x < .85:
+	case x < .75:
 		return "carbine"
+	case x < .82:
+		return "shotgun"
+	case x < .9:
+		return "lmg"
 	}
 	return "smg"
 }
@@ -463,7 +478,7 @@ func (r *room) botFire(c *client, t *client, dist float64, now time.Time) {
 	}
 	b.fireAt = now.Add(time.Duration(spec.rate*(1.25+rand.Float64()*.35)*1000) * time.Millisecond)
 	b.burst++
-	if (b.weapon == "rifle" || b.weapon == "carbine" || b.weapon == "smg") && b.burst >= 3+rand.IntN(4) {
+	if (b.weapon == "rifle" || b.weapon == "carbine" || b.weapon == "smg" || b.weapon == "lmg" || b.weapon == "mpistol") && b.burst >= 3+rand.IntN(4) {
 		b.burst = 0
 		b.fireAt = b.fireAt.Add(time.Duration(250+rand.IntN(400)) * time.Millisecond)
 	}
@@ -506,8 +521,13 @@ func (r *room) botFire(c *client, t *client, dist float64, now time.Time) {
 		return
 	}
 	dmg := spec.dmg * partMult[part] * math.Pow(weaponFall[b.weapon], dist/10)
+	pc := 0
+	if spec.pellets > 1 { // drobovik: masofa oshgan sari kamroq saochma yetib boradi
+		pc = max(1, int(math.Round(float64(spec.pellets)*math.Max(.1, math.Min(1, 1.3-dist/14)))))
+		dmg *= float64(pc)
+	}
 	b.hiSeq++
-	h := hitClaim{I: b.hiSeq, T: t.id, D: math.Round(dmg), Pn: spec.pen, P: part, W: b.weapon}
+	h := hitClaim{I: b.hiSeq, T: t.id, D: math.Round(dmg), Pn: spec.pen, P: part, W: b.weapon, Pc: pc}
 	if t.bot == nil { // odam: uning brauzeri zararni o'zi qo'llaydi, server ham hisoblaydi
 		b.hits = append(b.hits, h)
 		if len(b.hits) > 8 {

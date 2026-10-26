@@ -22,6 +22,7 @@ zarba-server/
 ├── mapsdata.go        xaritalar (web/index.html dagi MAPS dan tools/genmaps.py yasaydi)
 ├── server_test.go     testlar (go test ./...)
 ├── web/index.html     o'yinning o'zi
+├── web/vo/           o'zbekcha diktor ovozlari (ElevenLabs bilan yozilgan, 13 ta qisqa mp3)
 ├── web/vendor/        three.js r128 (CDN'ga bog'liq emas)
 ├── Dockerfile
 ├── docker-compose.yml

@@ -54,6 +54,9 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Qurol bo'yoqlari (10 ta o'zimizning naqsh: Qum, Tun, Zangori, Atlas, Lola, Gilam, Shoh, Olov, Muz, Afsona) daraja bilan ochiladi; tasodifiy sandiq va pullik narsa yo'q
 - [ ] Yutuqlar va medallar (masalan: "1 raundda 5 ta o'ldirish")
 
+## Ovoz
+- ✅ O'zbekcha diktor: raund boshi, bomba o'rnatildi/zararsizlantirildi, 10 soniya qoldi, g'olib tomon, ketma-ket o'ldirishlar, yarim vaqt, hal qiluvchi raund, o'yin tugadi (sozlamalarda o'chiriladi)
+
 ## Texnik
 - ✅ PostgreSQL: hisoblar, reyting va o'yinlar tarixi, migratsiyalar, kunlik zaxira
 - [ ] O'yin yozuvlari (demo) va qayta ko'rish

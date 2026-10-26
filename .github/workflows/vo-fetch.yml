@@ -1,0 +1,21 @@
+name: vo-fetch
+on:
+  push:
+    branches: [vo-fetch]
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir vo
+          python3 -c "
+          import json, urllib.request
+          for k, u in json.load(open('vo_urls.json')).items():
+              urllib.request.urlretrieve(u, 'vo/' + k + '.mp3')
+          "
+          ls -la vo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vo
+          path: vo

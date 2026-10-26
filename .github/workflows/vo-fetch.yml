@@ -2,20 +2,24 @@ name: vo-fetch
 on:
   push:
     branches: [vo-fetch]
+    paths: [vo_urls.json, .github/workflows/vo-fetch.yml]
+permissions:
+  contents: write
 jobs:
   fetch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: |
-          mkdir vo
+          mkdir -p vo
           python3 -c "
           import json, urllib.request
           for k, u in json.load(open('vo_urls.json')).items():
               urllib.request.urlretrieve(u, 'vo/' + k + '.mp3')
           "
           ls -la vo
-      - uses: actions/upload-artifact@v4
-        with:
-          name: vo
-          path: vo
+          git config user.email noreply@github.com
+          git config user.name vo-fetch
+          git add vo
+          git commit -m "ovozlar"
+          git push

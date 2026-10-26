@@ -219,6 +219,10 @@ O'yin CS kabi ikki yarimdan iborat. Sozlamalarda uzunlikni tanlaysiz: to'liq (MR
 
 Onlayn o'yinda granata otilganda faqat uning boshlang'ich holati yuboriladi, uchishini har bir brauzer bir xil qadam bilan o'zi hisoblaydi, shuning uchun tutun hammada bir joyga tushadi. Har bir o'yinchi o'ziga tekkan zarar va ko'r bo'lishni o'zi qo'llaydi. Jamoadoshning granatasi zarar bermaydi, o'zingizniki esa beradi.
 
+**Mashq** (bosh menyudagi «Mashq» paneli, onlayn hisobga ta'sir qilmaydi, Claude versiyasida ham ishlaydi):
+- *Nishon mashqi* — 60 soniya. Qurolni panelda tanlaysiz, qiyinlikni «Botlarga qarshi» panelida. Oson bo'lsa nishonlar turadi, o'rta bo'lsa yon tomonga yuradi, qiyin bo'lsa tez yuradi va cho'kkalaydi. Nishonlar o'q uzmaydi, o'qlar tugamaydi. Bir vaqtda 3 ta nishon bo'ladi, otib tushirilgani boshqa joyda yana chiqadi. Ochko = nishon × 100 + boshga tekkani uchun +50, so'ng aniqlik bilan ko'paytiriladi. Natijalar: aniqlik, boshga tekkan foiz, o'rtacha reaksiya (ms). Rekord har qurol va qiyinlik uchun brauzerda saqlanadi.
+- *Granata mashqi* — vaqt cheklanmagan, granatalar tugamaydi, 4 tugmasi turini almashtiradi. Tugmani bosib tursangiz, granata qayerdan uchib, qayerga tushishi ko'rinadi: hisob haqiqiy otish bilan aynan bir xil. R — oxirgi otgan joyingizga o'sha nishon burchagi bilan qaytasiz. Oxirgi 8 ta granata tushgan joy belgilanib turadi. O'z granatangiz zarar bermaydi, ko'r qiluvchi esa ko'r qiladi.
+
 O'yin boshlanganda brauzer to'liq ekranga o'tadi va o'yin tugmalarini qulflaydi. Shu tufayli Ctrl+W yorliqni yopmaydi va Ctrl bilan cho'kkalash xavfsiz. Faqat o'yin tugmalari qulflanadi: Alt+Tab va Win ishlayveradi, Esc bosilsa to'liq ekrandan chiqiladi.
 
 ## O'yinni yangilash

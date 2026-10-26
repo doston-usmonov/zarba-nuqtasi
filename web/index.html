@@ -537,6 +537,13 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <label class="field" for="mapSel"><span>Xarita</span><select id="mapSel"><option value="qumtepa">Qumtepa — Klassik: uzun yo'lak, o'rta va tunnel</option><option value="bozor">Bozor — Ixcham: rastalar, tor o'rta, ko'prikcha</option><option value="karvon">Karvonsaroy — Ixcham: markazda hovli, ikki qanot</option></select></label>
         <button class="cta" id="startBtn" type="button">Botlar bilan o'ynash</button>
       </div>
+      <div class="panel" id="trainPanel">
+        <h3>Mashq</h3>
+        <p class="note">Nishon mashqi: 60 soniyada iloji boricha ko'p nishonni tez va aniq uring. Nishonlar o'q uzmaydi, qiyinlik ularning qanchalik tez yurishini belgilaydi. Granata mashqi: cheksiz granata, uchish yo'li ko'rinadi, vaqt cheklanmagan.</p>
+        <label class="field" for="trainW"><span>Nishon mashqi uchun qurol</span><select id="trainW"></select></label>
+        <div class="row"><button class="cta" type="button" data-train="aim">Nishon mashqi</button><button class="ghost" type="button" data-train="nade">Granata mashqi</button></div>
+        <p class="note" id="trainBest"></p>
+      </div>
       <div class="panel" id="onlinePanel">
         <h3>Onlayn o'yin</h3>
         <label class="field" for="nick"><span>Ismingiz</span><input id="nick" maxlength="16" autocomplete="nickname" placeholder="Masalan, Lochin"></label>
@@ -744,7 +751,7 @@ const KB = (desk, touch) => isTouch ? touch : desk;
 
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
-const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa', mode:'comp', kc:'on', vo:'on' }, loadSet());
+const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa', mode:'comp', kc:'on', vo:'on', trainW:'rifle' }, loadSet());
 function saveSet(){ try { localStorage.setItem('zn-set', JSON.stringify(SET)); } catch(e){} }
 const DIFFS = {
   easy:   { react:.85, acc:.18, hs:.07, turn:4.0, defuse:10 },
@@ -1849,7 +1856,7 @@ function drawRadar(){
 
 /* ================= ROUND FLOW ================= */
 function liveTime(){ return MODE === 'online' ? NET.liveT : S.liveT; }
-function canBuy(){ if (!player.alive || S.phase === 'menu' || S.phase === 'over' || !player.team) return false;
+function canBuy(){ if (!player.alive || S.phase === 'menu' || S.phase === 'over' || !player.team || TRAIN(curMode())) return false;
   if (respawnMode() && S.phase !== 'warmup') return isFFA() && S.phase === 'live';
   if (curMode() === 'rt' && S.phase !== 'warmup') return false;   /* Retake: loadouts are handed out */   /* deathmatch: anywhere, any time; gun game: never */ const inZone = cellT(wc(player.pos.x), wc(player.pos.z)) === (player.team === 'CT' ? CTSP : TSP); return inZone && (S.phase === 'warmup' || S.phase === 'freeze' || (S.phase === 'live' && liveTime() < 20)); }
 
@@ -1977,14 +1984,14 @@ function checkRoundEnd(){
 function startMatch(){
   MODE = 'bots'; player.team = 'T'; H.progBar.style.background = ''; bots.forEach(b => b.m.g.visible = true);
   DIFF = DIFFS[SET.diff] || DIFFS.normal; setMap(SET.map);
-  Object.assign(S, { round:0, sA:0, sB:0, H:fmtH(), loss:0, paused:false, md:MODES[SET.mode] ? SET.mode : 'comp' });
+  Object.assign(S, { round:0, sA:0, sB:0, H:fmtH(), loss:0, paused:false, md:TR.pick || (MODES[SET.mode] ? SET.mode : 'comp') });
   if (fixedFm(S.md)) S.H = fixedFm(S.md);
   Object.assign(player, { money:800, kills:0, deaths:0, hs:0, dmg:0, alive:false }); resetInv();
   bots.forEach(b => { b.kills = 0; b.deaths = 0; b.mvp = 0; b.rk = 0; }); S.mvp = 0; S.rk = 0; recClear();
   H.feed.innerHTML = '';
   decals.forEach(d => d.visible = false);
   ['menu','over','pause'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
-  if (RM(S.md)) startModeOffline(); else startRound();
+  if (TRAIN(S.md)) startTrain(); else if (RM(S.md)) startModeOffline(); else startRound();
 }
 
 /* ---------- Wingman and Retake ---------- */
@@ -2047,6 +2054,7 @@ function modeRows(){
 }
 function modeHUD(){
   const el = $('modeInfo'), md = curMode(), live = S.phase === 'live' || S.phase === 'mover';
+  if (TRAIN(md) && inGame()) return trainHUD(el);
   const on = RM(md) && inGame();
   if (!on && inGame()) $('money').style.visibility = md === 'rt' ? 'hidden' : '';
   $('scTL').textContent = on ? 'SIZ' : 'HUJUM'; $('scCTL').textContent = on ? 'YETAKCHI' : 'HIMOYA';
@@ -2119,6 +2127,186 @@ function modeOverOffline(winner){
   if (!winner) winner = top.me ? 'Siz' : top.name;
   S.endWinner = winner; matchOver();
 }
+
+/* ---------- training: aim targets and grenade practice (against nobody, nothing is recorded online) ---------- */
+const TRAIN = md => md === 'aim' || md === 'nade';
+const AIM_TIME = 60, TRAIN_W = ['rifle','carbine','smg','sniper','deagle','pistol'];
+const TR = { pick:null, shots:0, hits:0, hsHits:0, kills:0, hsKills:0, react:[], thrown:0, last:null, land:null, marks:[], line:null, ring:null };
+const NADE_COL = { he:0xff7a3a, flash:0xf3efe6, smoke:0x9db4c8, molly:0xff4a2a };
+const diffName = () => ({ easy:'Oson', normal:"O'rta", hard:'Qiyin' }[SET.diff] || "O'rta");
+function trAcc(){ return TR.shots ? Math.min(100, Math.round(TR.hits/TR.shots*100)) : 0; }
+function trHs(){ return TR.kills ? Math.round(TR.hsKills/TR.kills*100) : 0; }
+function trReact(){ return TR.react.length ? Math.round(TR.react.reduce((a, b) => a + b, 0)/TR.react.length*1000) : 0; }
+function trScore(){ return Math.round((TR.kills*100 + TR.hsKills*50) * (.5 + trAcc()/200)); }
+const trKey = () => (TRAIN_W.includes(SET.trainW) ? SET.trainW : 'rifle') + ':' + SET.diff;
+function trBestAll(){ try { return JSON.parse(localStorage.getItem('zn-train') || '{}') || {}; } catch(e){ return {}; } }
+function trBest(k){ return trBestAll()[k] | 0; }
+function trSaveBest(k, v){ try { const all = trBestAll(); all[k] = v; localStorage.setItem('zn-train', JSON.stringify(all)); } catch(e){} }
+function trainMenu(){
+  const sel = $('trainW'); if (!sel.options.length) sel.innerHTML = TRAIN_W.map(id => `<option value="${id}">${escH(W[id].name)}</option>`).join('');
+  sel.value = TRAIN_W.includes(SET.trainW) ? SET.trainW : 'rifle';
+  const b = trBest(trKey()); $('trainBest').textContent = b ? 'Rekordingiz (' + W[sel.value].name + ', ' + diffName().toLowerCase() + '): ' + b + ' ochko' : "Bu qurol va qiyinlikda hali natija yo'q.";
+}
+$('trainW').addEventListener('change', () => { SET.trainW = $('trainW').value; saveSet(); trainMenu(); });
+$('diffBtns').addEventListener('click', () => setTimeout(trainMenu, 0));
+$('trainPanel').addEventListener('click', e => { const b = e.target.closest('[data-train]'); if (!b) return;
+  initAudio(); goFullscreen(); TR.pick = b.dataset.train; startMatch(); requestLock(); canvas.focus({ preventScroll:true }); });
+function startTrain(){
+  Object.assign(S, { round:1, phase:'live', timer:S.md === 'aim' ? AIM_TIME : 0, liveT:0, roundPlanted:false, deathT:0 });
+  player.team = 'T'; setBotsPal('CT');
+  bomb.planted = false; bomb.mesh.visible = false; bomb.defuser = null; bomb.dropped = false; bomb.carrier = null; bomb.picker = null;
+  clearNades(); clearDrops(); trainClearMarks();
+  Object.assign(TR, { shots:0, hits:0, hsHits:0, kills:0, hsKills:0, react:[], thrown:0, last:null, land:null });
+  resetInv(); player.armor = 100; player.helmet = true; player.money = 0; player.bomb = false; player.kit = false;
+  if (S.md === 'aim'){
+    const id = TRAIN_W.includes(SET.trainW) ? SET.trainW : 'rifle', it = { id, mag:W[id].mag, res:999 }, pistol = W[id].kind === 'pistol';
+    player.inv = { 1:pistol ? null : it, 2:pistol ? it : { id:'pistol', mag:W.pistol.mag, res:999 }, 3:{ id:'knife' } };
+    player.slot = pistol ? 2 : 1;
+  } else {
+    player.inv = { 1:null, 2:null, 3:{ id:'knife' } };
+    player.nades = { he:1, flash:1, smoke:1, molly:1 }; player.nadeSel = 'smoke'; player.slot = 4;
+  }
+  modeSpawn(); drawWeapon();
+  bots.forEach(b => { b.alive = false; b.off = true; b.trD = false; b.m.g.visible = false; });
+  if (S.md === 'aim') for (let i=0;i<3;i++){ bots[i].trD = true; trainSpawnDummy(bots[i]); }
+  $('dead').hidden = true; H.scope.hidden = true; H.progBar.style.background = ''; H.feed.innerHTML = ''; updatePips(); updateHUD();
+  if (S.md === 'aim') showMsg('Nishon mashqi', W[player.inv[player.slot].id].name + ' · ' + diffName() + " · 60 soniya. Nishon yo'qolgach yangisi boshqa joyda chiqadi.", 'atk', 3800);
+  else showMsg('Granata mashqi', "Tugmani bosib turing — uchish yo'li ko'rinadi. Qo'yib yuborsangiz otiladi. " + KB('R', 'Qaytish') + " — oxirgi otgan joyingizga qaytasiz.", 'atk', 5200);
+}
+// a random open spot the player can see, in front of them where possible
+function trainSpot(self){
+  const far = W[SET.trainW] && W[SET.trainW].kind === 'sniper', dMin = far ? 12 : 6, dMax = far ? 42 : 26;
+  const eye = _tv.copy(player.pos); eye.y += 1.6; viewDir(_d, player.yaw, 0);
+  for (let k=0;k<200;k++){
+    const x = 1 + rand()*(MAPW - 2), z = 1 + rand()*(MAPH - 2), dx = x - player.pos.x, dz = z - player.pos.z, d = Math.hypot(dx, dz);
+    if (d < dMin || d > dMax || botSolid(wc(x), wc(z)) || blockedAt(x, z, 0, .4, true)) continue;
+    if (k < 140 && (dx*_d.x + dz*_d.z)/d < .55) continue;   // mostly within the view
+    if (bots.some(o => o !== self && o.trD && o.alive && Math.hypot(o.pos.x - x, o.pos.z - z) < 3)) continue;
+    if (!los(eye, _tv2.set(x, 1.3, z))) continue;
+    return new V3(x, 0, z);
+  }
+  const c = SPAWNS.CT[(rand()*SPAWNS.CT.length)|0]; return new V3(cw(c[0]), 0, cw(c[1]));
+}
+const _tv = new V3(), _tv2 = new V3();
+function trainSpawnDummy(b){
+  const p = trainSpot(b);
+  Object.assign(b, { alive:true, off:true, hp:100, armor:0, helmet:false, weapon:'pistol', deadT:0, deadT0:-99, kneel:0, walk:0, moving:false, speed:0, protT:0, hasBomb:false, planting:0, defuse:0,
+    spawnT:S.time, trDir:rand() < .5 ? 1 : -1, trT:.3 + rand()*.6, trCr:false, trHid:0, trLos:0 });
+  b.pos.copy(p); b.yaw = Math.atan2(player.pos.x - p.x, player.pos.z - p.z);
+  const m = b.m; m.g.visible = true; m.g.rotation.set(0, b.yaw, 0); m.g.position.copy(b.pos); setSoldierWeapon(m, b.weapon); poseSoldier(m, 0, false, 0);
+}
+function trainDummy(b, dt){
+  const m = b.m;
+  if (!b.alive){
+    if (m.g.visible){ b.deadT += dt; const k = Math.min(1, b.deadT/.45); m.g.rotation.x = -k*k*Math.PI/2; if (b.deadT > .8) m.g.visible = false; }
+    if (S.time - b.deadT0 >= .35) trainSpawnDummy(b);
+    return;
+  }
+  b.yaw = Math.atan2(player.pos.x - b.pos.x, player.pos.z - b.pos.z);
+  const sp = { easy:0, normal:2.3, hard:3.8 }[SET.diff] || 0; b.moving = false;
+  if (sp){
+    b.trT -= dt;
+    if (b.trT <= 0){ b.trDir = rand() < .2 ? 0 : rand() < .55 ? -(b.trDir || 1) : (b.trDir || 1); b.trT = .35 + rand()*(SET.diff === 'hard' ? .6 : 1.1); b.trCr = SET.diff === 'hard' && rand() < .25; }
+    if (b.trDir){ const sx = Math.cos(b.yaw)*b.trDir, sz = -Math.sin(b.yaw)*b.trDir, r = moveEntity(b.pos, sx*sp*dt, sz*sp*dt, .34, true);
+      if (r.bx || r.bz) b.trDir = -b.trDir; else { b.moving = true; b.speed = sp; } }
+  }
+  b.kneel += ((b.trCr ? 1 : 0) - b.kneel)*Math.min(1, dt*10);
+  // a target that slipped out of sight for a while moves somewhere else
+  b.trLos -= dt; if (b.trLos <= 0){ b.trLos = .3; const eye = _tv.copy(player.pos); eye.y += 1.6; b.trHid = los(eye, _tv2.set(b.pos.x, 1.2, b.pos.z)) ? 0 : b.trHid + .3; }
+  if (b.trHid > 2.5) return trainSpawnDummy(b);
+  m.g.position.copy(b.pos); m.g.rotation.set(0, b.yaw, 0); b.walk += b.moving ? dt*b.speed*2.3 : 0; poseSoldier(m, b.walk, b.moving, b.kneel);
+}
+function trainKill(b, hs){ TR.kills++; if (hs) TR.hsKills++; TR.react.push(Math.max(0, S.time - b.spawnT)); }
+function trainStep(dt){
+  if (S.phase !== 'live') return;
+  S.liveT += dt;
+  if (!player.alive) modeSpawn();
+  if (S.md === 'aim'){
+    [1, 2].forEach(k => { const it = player.inv[k]; if (it) it.res = 999; });
+    for (const b of bots) if (b.trD) trainDummy(b, dt);
+    S.timer -= dt; if (S.timer <= 0){ S.timer = 0; trainOver(); }
+  } else {
+    NADE_IDS.forEach(id => { if (player.nades[id] < 1) player.nades[id] = 1; });
+    trainPreview();
+  }
+}
+function trainThrown(id){ TR.thrown++; TR.last = { pos:player.pos.clone(), yaw:player.yaw, pitch:player.pitch, from:player.pos.clone(), id }; trainPreview(true); }
+function trainBack(){
+  if (!TR.last){ hint('Avval granata oting — keyin ' + KB('R', 'Qaytish') + ' sizni shu joyga qaytaradi', 2600); return; }
+  player.pos.copy(TR.last.pos); player.vel.set(0, 0, 0); player.yaw = TR.last.yaw; player.pitch = TR.last.pitch;
+  if (TR.last.id && player.nades[TR.last.id] > 0 && player.nadeSel !== TR.last.id){ player.nadeSel = TR.last.id; if (player.slot === 4) drawWeapon(); }
+  hint("Oxirgi otgan joyingizga qaytdingiz", 1400);
+}
+// the flight path while the pin is pulled: the same physics as the real throw, run ahead of time
+function trainLine(){
+  if (TR.line) return;
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3*420), 3)); g.setDrawRange(0, 0);
+  TR.line = new THREE.Line(g, new THREE.LineBasicMaterial({ color:0xf2b544, transparent:true, opacity:.9, depthTest:false }));
+  TR.line.renderOrder = 10; TR.line.frustumCulled = false; scene.add(TR.line);
+  TR.dots = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(3*120), 3)),
+    new THREE.PointsMaterial({ color:0xf2b544, size:5, sizeAttenuation:false, transparent:true, opacity:.95, depthTest:false }));
+  TR.dots.renderOrder = 10; TR.dots.frustumCulled = false; scene.add(TR.dots);
+  TR.ring = new THREE.Mesh(new THREE.RingGeometry(.45, .7, 32), new THREE.MeshBasicMaterial({ color:0xf2b544, transparent:true, opacity:.9, depthTest:false, side:THREE.DoubleSide }));
+  TR.ring.rotation.x = -Math.PI/2; TR.ring.renderOrder = 10; scene.add(TR.ring);
+}
+function simNade(type, pos, vel){
+  const n = { type, p:pos.clone(), v:vel.clone(), t:0, ground:false, rest:false, restT:0, done:false, sim:true }, pts = [n.p.clone()];
+  const fuse = type === 'he' ? 1.6 : type === 'flash' ? 1.5 : type === 'molly' ? 2.0 : 0;
+  for (let i=0; i<6/NADE_H && !n.done; i++){
+    n.t += NADE_H; if (n.rest) n.restT += NADE_H; else nadeMove(n, NADE_H);
+    if (i % 2 === 1 && pts.length < 418) pts.push(n.p.clone());
+    if (fuse && n.t >= fuse) break;
+    if (type === 'smoke' && ((n.rest && n.restT > .3) || n.t > 6)) break;
+  }
+  pts.push(n.p.clone()); return pts;
+}
+function trainPreview(hide){
+  trainLine();
+  const on = !hide && S.md === 'nade' && player.alive && !S.paused && player.slot === 4 && player.nadeSel && player.nadeHold && player.nadeT <= 0;
+  TR.line.visible = TR.ring.visible = TR.dots.visible = !!on; if (!on) return;
+  const { pos, vel } = nadeLaunch(player.nadeHold === 'soft'), pts = simNade(player.nadeSel, pos, vel), a = TR.line.geometry.attributes.position;
+  pts.forEach((p, i) => a.setXYZ(i, p.x, p.y, p.z)); a.needsUpdate = true; TR.line.geometry.setDrawRange(0, pts.length);
+  const da = TR.dots.geometry.attributes.position; let nd = 0; for (let i=4; i<pts.length && nd < 120; i += 5) da.setXYZ(nd++, pts[i].x, pts[i].y, pts[i].z);
+  da.needsUpdate = true; TR.dots.geometry.setDrawRange(0, nd);
+  const end = pts[pts.length - 1], col = NADE_COL[player.nadeSel] || 0xf2b544;
+  TR.ring.position.set(end.x, surfaceY(end.x, end.z) + .03, end.z); TR.ring.material.color.setHex(col); TR.line.material.color.setHex(col); TR.dots.material.color.setHex(col);
+}
+// where each practice grenade went off: small rings that fade out, the last few stay
+function trainMark(n){
+  const m = new THREE.Mesh(new THREE.RingGeometry(.18, .3, 20), new THREE.MeshBasicMaterial({ color:NADE_COL[n.type] || 0xffffff, transparent:true, opacity:.85, depthTest:false, side:THREE.DoubleSide }));
+  m.rotation.x = -Math.PI/2; m.position.set(n.p.x, surfaceY(n.p.x, n.p.z) + .03, n.p.z); m.renderOrder = 9; scene.add(m);
+  TR.marks.push(m); while (TR.marks.length > 8){ const o = TR.marks.shift(); scene.remove(o); o.geometry.dispose(); }
+  if (TR.last) TR.land = { id:n.type, d:Math.round(Math.hypot(n.p.x - TR.last.from.x, n.p.z - TR.last.from.z)) };
+}
+function trainClearMarks(){ TR.marks.forEach(m => { scene.remove(m); m.geometry.dispose(); }); TR.marks.length = 0; if (TR.line) TR.line.visible = TR.ring.visible = TR.dots.visible = false; }
+function trainHUD(el){
+  $('money').style.visibility = 'hidden';
+  const aim = S.md === 'aim';
+  $('scTL').textContent = aim ? 'NISHON' : 'OTILDI'; H.scT.textContent = aim ? TR.kills : TR.thrown;
+  $('scCTL').textContent = aim ? 'ANIQLIK' : 'MASOFA'; H.scCT.textContent = aim ? trAcc() + '%' : TR.land ? TR.land.d + ' m' : '—';
+  const html = aim ? `<b>${trScore()} ochko</b><small>boshga ${trHs()}% · reaksiya ${trReact() || '—'} ms</small>`
+    : `<b>${escH(W[player.nadeSel || 'smoke'] ? W[player.nadeSel || 'smoke'].name : 'Granata')}</b><small>${KB('4', 'Granata')} — turi · ${KB('R', 'Qaytish')} — qaytish · o'ng tugma — yaqinga</small>`;
+  if (html !== el._h){ el._h = html; el.innerHTML = html; }
+  el.hidden = false;
+}
+function trainBoardHTML(){
+  if (S.md === 'nade') return `<h3>Granata mashqi · ${diffName()}</h3><table><tr><th>Ko'rsatkich</th><th class="r">Qiymat</th></tr><tr><td>Otilgan granatalar</td><td class="r">${TR.thrown}</td></tr><tr><td>Oxirgisi qayerga tushdi</td><td class="r">${TR.land ? TR.land.d + ' m' : '—'}</td></tr></table>`;
+  const rows = [["Ochko", trScore()], ["Nishonlar", TR.kills], ["Aniqlik", trAcc() + '%'], ["Boshga", trHs() + '%'], ["O'rtacha reaksiya", (trReact() || '—') + ' ms'], ["Otilgan o'q", TR.shots], ["Rekord", trBest(trKey()) || '—']];
+  return `<h3>Nishon mashqi · ${escH(W[SET.trainW] ? W[SET.trainW].name : '')} · ${fmt(Math.max(0, S.timer))} qoldi</h3><table><tr><th>Ko'rsatkich</th><th class="r">Qiymat</th></tr>${rows.map(r => `<tr><td>${r[0]}</td><td class="r">${r[1]}</td></tr>`).join('')}</table>`;
+}
+function trainOver(){
+  const score = trScore(), key = trKey(), best = trBest(key), rec = score > best;
+  if (rec) trSaveBest(key, score);
+  S.phase = 'over'; $('hud').hidden = true; $('dead').hidden = true; $('board').hidden = true; if (document.pointerLockElement) document.exitPointerLock();
+  bots.forEach(b => { if (b.trD){ b.alive = false; b.m.g.visible = false; } });
+  $('overEyebrow').textContent = 'Nishon mashqi · ' + W[SET.trainW].name + ' · ' + diffName();
+  $('overTitle').textContent = score + ' ochko'; $('overTitle').style.color = 'var(--atk)';
+  $('overLead').textContent = rec ? (best ? 'Yangi rekord! Oldingisi: ' + best + ' ochko.' : 'Birinchi natija — rekord sifatida saqlandi.') : 'Rekordingiz: ' + best + ' ochko. Ochko: nishon × 100, boshga tekkani uchun +50, aniqlik bilan ko\'paytiriladi.';
+  const st = document.querySelector('#over .stats'); if (!st._orig) st._orig = st.innerHTML;
+  st.innerHTML = `<div><b>${TR.kills}</b><span>Nishon</span></div><div><b>${trAcc()}%</b><span>Aniqlik</span></div><div><b>${trHs()}%</b><span>Boshga</span></div><div><b>${trReact() || '—'}</b><span>Reaksiya, ms</span></div><div><b>${TR.shots}</b><span>O'q</span></div>`;
+  $('over').hidden = false; sfxChord(rec); trainMenu();
+}
+setTimeout(trainMenu, 0);
 
 /* ---------- killcam ----------
    The last few seconds of everybody's movement and shots are kept in a ring buffer. When a bot or another
@@ -2214,6 +2402,7 @@ function switchSlot(s){
   player.lastSlot = player.slot; player.slot = s; player.planting = 0; drawWeapon();
 }
 function startReload(){
+  if (MODE !== 'online' && S.md === 'nade' && inGame()) return trainBack();   // practice: R brings you back to the last throw
   const it = curItem(), w = curW(); if (!it || it.mag === undefined || player.reloadT > 0 || it.mag >= w.mag || it.res <= 0) return;
   player.reloadT = w.reload; player.scope = 0; sfxReload(w.reload);
 }
@@ -2236,7 +2425,7 @@ function playerFire(){
   if (w.kind === 'knife') return knifeAttack(false);
   if (player.fireCd > 0 || player.drawT > 0 || player.reloadT > 0) return;
   if (it.mag <= 0){ sfxClick(); player.fireCd = .25; if (it.res > 0) startReload(); return; }
-  it.mag--; player.fireCd = w.rate;
+  it.mag--; player.fireCd = w.rate; if (MODE !== 'online' && TRAIN(S.md)) TR.shots++;
   const pat = w.pattern[Math.min(w.pattern.length-1, Math.floor(player.recoil))];
   const inacc = inaccuracy(w), r = Math.sqrt(rand())*inacc, a = rand()*Math.PI*2;
   const yaw = player.yaw - pat[0]*DEG + Math.cos(a)*r, pitch = player.pitch + pat[1]*DEG + Math.sin(a)*r;
@@ -2278,9 +2467,11 @@ function knifeAttack(heavy){
 }
 
 function botKilled(b, w, hs){
-  if (!RM(S.md)) botDropGun(b);
+  const tr = TRAIN(S.md);
+  if (!RM(S.md) && !tr) botDropGun(b);
   if (b.hasBomb) dropBomb(b);
-  b.alive = false; if (bomb.picker === b) assignPicker(); b.deadT = 0; b.deadT0 = S.time; b.deaths++; player.kills++; S.rk = (S.rk || 0) + 1; if (hs) player.hs++; voKill();
+  b.alive = false; if (bomb.picker === b) assignPicker(); b.deadT = 0; b.deadT0 = S.time; b.deaths++; player.kills++; S.rk = (S.rk || 0) + 1; if (hs) player.hs++; if (!tr) voKill();
+  if (tr) return trainKill(b, hs);
   if (!RM(S.md) && S.md !== 'rt') addMoney(w.kill, '');
   feed('Siz', 'a', w.name, b.name, 'd', hs, true);
   if (bomb.defuser === b) bomb.defuser = null;
@@ -2291,6 +2482,7 @@ function botKilled(b, w, hs){
 }
 function damageBot(b, w, part, dist, pos, flat){
   if (b.protT > S.time && RM(S.md)) return;   // just respawned
+  if (TRAIN(S.md)){ TR.hits++; if (part === 'head') TR.hsHits++; }
   let dmg = flat ? w.dmg : w.dmg * MULT[part] * Math.pow(w.fall, dist/10);
   const r = armorCalc(dmg, part, b.armor, b.helmet, w.pen); dmg = r.dmg; b.armor = Math.max(0, b.armor - r.armorLoss);
   const dealt = Math.min(b.hp, dmg); b.hp -= dmg; player.dmg += dealt;
@@ -2611,17 +2803,25 @@ function nadeInput(){
 function throwNade(soft){
   const id = player.nadeSel; player.nadeHold = null;
   if (!id || player.nades[id] <= 0 || !player.alive) return;
-  player.nades[id]--; player.nadeT = .3; player.fireCd = .5; player.nadeNext = true;
+  const practice = MODE !== 'online' && S.md === 'nade';
+  if (!practice) player.nades[id]--;
+  player.nadeT = .3; player.fireCd = .5; player.nadeNext = true;
   if (!player.nades[id]) player.nadeSel = nextNade(id);
+  const { pos, vel } = nadeLaunch(soft);
+  if (practice) trainThrown(id);
+  if (MODE === 'online') NET.nade = { n:++NET.nadeN, k:id, x:pos.x, y:pos.y, z:pos.z, vx:vel.x, vy:vel.y, vz:vel.z };
+  spawnNade(id, pos, vel, null, player.team);
+  sfxThrow(); updateHUD();
+}
+// where a grenade thrown right now starts and how fast it flies (shared by the throw and the practice preview)
+function nadeLaunch(soft){
   viewDir(_d, player.yaw, Math.min(1.45, player.pitch + .1));
   const pos = new V3().copy(camera.position).addScaledVector(_d, .25); pos.y -= .1;
   const sp = soft ? 7.5 : 17.5, vel = new V3().copy(_d).multiplyScalar(sp); vel.x += player.vel.x*.8; vel.z += player.vel.z*.8; vel.y += Math.max(0, player.vel.y)*.8;
   pos.set(r2(pos.x), r2(pos.y), r2(pos.z)); vel.set(r2(vel.x), r2(vel.y), r2(vel.z));
   // never start inside a wall when hugging one
   if (blockedAt(pos.x, pos.z, pos.y, .02, false)) pos.set(r2(camera.position.x), r2(camera.position.y - .1), r2(camera.position.z));
-  if (MODE === 'online') NET.nade = { n:++NET.nadeN, k:id, x:pos.x, y:pos.y, z:pos.z, vx:vel.x, vy:vel.y, vz:vel.z };
-  spawnNade(id, pos, vel, null, player.team);
-  sfxThrow(); updateHUD();
+  return { pos, vel };
 }
 function spawnNade(type, pos, vel, owner, team){
   const m = NADE_PROTO[type].clone(); m.position.copy(pos); scene.add(m);
@@ -2657,11 +2857,11 @@ function nadeMove(n, h){
       n.p.addScaledVector(_nd, Math.max(0, hit.t - NADE_R));
       const vn = n.v.dot(hit.n), impact = -vn;
       if (hit.n.y > .5){
-        if (n.type === 'molly' && n.t > .12){ n.p.y = surfaceY(n.p.x, n.p.z) + NADE_R; detonate(n); return; }
+        if (n.type === 'molly' && n.t > .12){ n.p.y = surfaceY(n.p.x, n.p.z) + NADE_R; if (n.sim) n.done = true; else detonate(n); return; }
         if (impact < 2.2){ n.ground = true; n.v.y = 0; n.p.y = surfaceY(n.p.x, n.p.z) + NADE_R; }
         else { n.v.addScaledVector(hit.n, -vn*1.45); n.v.x *= .7; n.v.z *= .7; }
       } else { n.v.addScaledVector(hit.n, -vn*1.45); n.v.multiplyScalar(.8); }
-      if (impact > 1.5 && n.p.distanceTo(camera.position) < 40) sfxBounce(n.p, impact);
+      if (impact > 1.5 && !n.sim && n.p.distanceTo(camera.position) < 40) sfxBounce(n.p, impact);
     } else n.p.addScaledVector(_nd, dist);
   }
   if (n.ground){
@@ -2682,9 +2882,10 @@ function updateNades(dt){
 }
 
 /* ---------- effects ---------- */
-function canHurtMe(n){ return n.owner === null || n.team !== player.team; }
+function canHurtMe(n){ if (MODE !== 'online' && TRAIN(S.md)) return false; return n.owner === null || n.team !== player.team; }
 function detonate(n){
   n.done = true; n.m.visible = false; const p = n.p;
+  if (MODE !== 'online' && S.md === 'nade' && n.owner === null) trainMark(n);
   if (n.type === 'he') explodeHE(n);
   else if (n.type === 'flash') popFlash(n);
   else if (n.type === 'smoke') deploySmoke(n);
@@ -2973,7 +3174,7 @@ function pauseGame(){ S.paused = true; mouseL = mouseR = false; $('pause').hidde
 function resumeGame(){ S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); requestLock(); canvas.focus({ preventScroll:true }); }
 $('resumeBtn').addEventListener('click', () => { goFullscreen(); resumeGame(); });
 $('quitBtn').addEventListener('click', () => { S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); toMenu(); });
-function toMenu(){ if (MODE === 'online') leaveOnline(); clearNades(); clearDrops(); setTimeout(() => { if (S.phase === 'menu'){ setMap(SET.map); placeBackdrop(); } }, 0); S.phase = 'menu'; $('hud').hidden = true; $('dead').hidden = true; $('over').hidden = true; $('menu').hidden = false; showBoard(false); if (document.pointerLockElement) document.exitPointerLock(); bots.forEach(b => { b.m.g.visible = true; }); }
+function toMenu(){ if (MODE === 'online') leaveOnline(); clearNades(); trainClearMarks(); clearDrops(); setTimeout(() => { if (S.phase === 'menu'){ setMap(SET.map); placeBackdrop(); } }, 0); S.phase = 'menu'; $('hud').hidden = true; $('dead').hidden = true; $('over').hidden = true; $('menu').hidden = false; showBoard(false); if (document.pointerLockElement) document.exitPointerLock(); bots.forEach(b => { b.m.g.visible = true; }); }
 $('onlineBtn').addEventListener('click', () => { joinOnline(false); });
 $('createBtn').addEventListener('click', () => { joinOnline(true); });
 $('mapSel').value = SET.map; $('newMap').value = SET.map;
@@ -3037,7 +3238,7 @@ function kickSure(id){ return kickAsk && kickAsk.id === id && performance.now() 
 function confirmKick(btn, r){ if (kickSure(r.peer)){ kickAsk = null; return true; } kickAsk = { id:r.peer, until:performance.now() + 3000 }; btn.textContent = 'Tasdiqlash'; setTimeout(renderAdmin, 3100); return false; }
 $('admMax').addEventListener('change', () => { if (isOwner()) NET.room.admin({ a:'set', max:+$('admMax').value || 0 }); });
 $('nick').value = SET.nick || ''; $('roomCode').value = SET.room || 'umumiy';
-$('startBtn').addEventListener('click', () => { initAudio(); goFullscreen(); startMatch(); requestLock(); canvas.focus({ preventScroll:true }); });
+$('startBtn').addEventListener('click', () => { initAudio(); goFullscreen(); TR.pick = null; startMatch(); requestLock(); canvas.focus({ preventScroll:true }); });
 $('againBtn').addEventListener('click', () => { initAudio(); goFullscreen(); startMatch(); requestLock(); });
 $('menuBtn').addEventListener('click', toMenu);
 
@@ -3109,6 +3310,7 @@ function buy(id){
 function showBoard(on){
   const el = $('board'); if (!on || !inGame()){ el.hidden = true; return; }
   if (MODE === 'online'){ el.innerHTML = netBoardHTML(); el.hidden = false; return; }
+  if (TRAIN(S.md)){ el.innerHTML = trainBoardHTML(); el.hidden = false; return; }
   if (RM(S.md)){ el.innerHTML = modeBoardHTML(MODES[S.md].name + ' · ' + fmt(S.timer) + ' qoldi'); el.hidden = false; return; }
   const row = (cls, name, k, d, extra, dead) => `<tr class="${dead ? 'dead' : ''}"><td><span class="tag" style="background:${cls}"></span>${name}</td><td class="r">${k}</td><td class="r">${d}</td><td class="r">${extra}</td></tr>`;
   const mine = player.team === 'T' ? 'var(--atk)' : 'var(--def)', theirs = player.team === 'T' ? 'var(--def)' : 'var(--atk)';
@@ -3749,6 +3951,7 @@ function netFrame(dt){
 setInterval(() => { if (MODE !== 'online' || !NET.room) return; const now = performance.now(); if (now - NET.tickLast > 300){ const dt = Math.min(1, (now - NET.tickLast)/1000); NET.tickLast = now; S.time += dt; netStep(dt); } }, 250);
 
 function clockText(){
+  if (MODE !== 'online' && TRAIN(S.md)) return S.md === 'aim' ? fmt(Math.max(0, S.timer)) : 'MASHQ';
   if (MODE !== 'online' && RM(S.md)) return S.phase === 'live' ? fmt(S.timer) : fmt(0);
   if (MODE === 'online'){ const g = NET.g; if (!g) return '—'; if (g.ph === 'warmup') return g.t > 0 ? fmt(g.t) : 'ISINISH'; if (RM(g.md)) return g.ph === 'live' ? fmt(g.t) : fmt(0); if (bomb.planted) return 'BOMBA'; if (g.ph === 'freeze' || g.ph === 'live') return fmt(g.t); return fmt(0); }
   return bomb.planted ? 'BOMBA' : (S.phase === 'freeze' || S.phase === 'live') ? fmt(S.timer) : fmt(0);
@@ -4197,7 +4400,7 @@ function touchFrame(){
   $('tDrop').hidden = !player.alive || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot];
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, SOC, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){
@@ -4284,7 +4487,8 @@ function step(dt){
   recFrame();
   if (MODE === 'online'){ netFrame(dt); return; }
   // timers
-  if (RM(S.md)) modeStepOffline(dt);
+  if (TRAIN(S.md)) trainStep(dt);
+  else if (RM(S.md)) modeStepOffline(dt);
   else if (S.phase === 'freeze'){ S.timer -= dt; if (S.timer <= 0){ S.phase = 'live'; S.timer = roundTimeOf(S.md); showMsg('Boshladik!', '', 'atk', 1200); vo('start'); } }
   else if (S.phase === 'live'){ S.liveT += dt; if (!bomb.planted){ S.timer -= dt; if (S.timer <= 0) endRound('CT', 'Vaqt tugadi — bomba o\'rnatilmadi', 'time'); } }
   else if (S.phase === 'post'){ S.timer -= dt; if (S.timer <= 0){ if (matchWinner(S.sA, S.sB, S.round, S.H)) return matchOver(); startRound(); } }
@@ -4393,6 +4597,7 @@ function updatePlant(dt){
 
 function matchOver(){
   vo('over');
+  const stBox = document.querySelector('#over .stats'); if (stBox._orig){ stBox.innerHTML = stBox._orig; stBox._orig = null; }
   S.phase = 'over'; $('hud').hidden = true; $('dead').hidden = true; if (document.pointerLockElement) document.exitPointerLock();
   if (RM(S.md)){
     const rows = modeRows(), place = rows.findIndex(r => r.me) + 1, win = S.endWinner === 'Siz';

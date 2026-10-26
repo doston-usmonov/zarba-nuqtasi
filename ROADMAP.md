@@ -57,6 +57,11 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Qurol bo'yoqlari (10 ta o'zimizning naqsh: Qum, Tun, Zangori, Atlas, Lola, Gilam, Shoh, Olov, Muz, Afsona) daraja bilan ochiladi; tasodifiy sandiq va pullik narsa yo'q
 - [ ] Yutuqlar va medallar (masalan: "1 raundda 5 ta o'ldirish")
 
+## Mashq
+- ✅ Nishon mashqi: 60 soniya, qurolni o'zingiz tanlaysiz, nishonlar o'q uzmaydi, qiyinlikka qarab turadi, yuradi yoki cho'kkalaydi. Natija: ochko, aniqlik, boshga tekkani, o'rtacha reaksiya. Har qurol va qiyinlik uchun rekord brauzerda saqlanadi
+- ✅ Granata mashqi: cheksiz granata, tugma bosib turilganda uchish yo'li va tushadigan joy ko'rinadi (haqiqiy otish bilan aynan bir xil fizika), R — oxirgi otgan joyga qaytish, tushgan joylar belgilanib qoladi, o'z granatangiz zarar bermaydi
+- [ ] Xarita bo'yicha tayyor granata otish joylari (smoke lineup) to'plami
+
 ## Ovoz
 - ✅ O'zbekcha diktor: raund boshi, bomba o'rnatildi/zararsizlantirildi, 10 soniya qoldi, g'olib tomon, ketma-ket o'ldirishlar, yarim vaqt, hal qiluvchi raund, o'yin tugadi (sozlamalarda o'chiriladi)
 

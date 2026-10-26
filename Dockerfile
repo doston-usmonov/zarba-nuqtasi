@@ -5,7 +5,8 @@ RUN go mod download
 COPY *.go ./
 COPY migrations ./migrations
 COPY web ./web
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /zarba . \
+ARG VERSION=dev
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /zarba . \
  && mkdir -p /out/data
 
 FROM gcr.io/distroless/static-debian12:nonroot

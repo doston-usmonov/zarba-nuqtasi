@@ -298,6 +298,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 #socOv{background:#14120e;align-items:start;grid-template-columns:minmax(0,1fr)}
 #socOv .panel{min-width:0}
 .cta.sm{padding:7px 12px;font-size:13px}
+.trainQuick{align-items:center;gap:8px} .trainQuick .note{margin:0}
 .socList{display:flex;flex-direction:column;gap:8px}
 .socList:empty{display:none}
 .fr{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;min-width:0}
@@ -502,7 +503,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
     <div class="col">
       <span class="eyebrow">Brauzerdagi taktik otishma · Qumtepa xaritasi</span>
       <h1>Zarba <span>Nuqtasi</span></h1>
-      <p class="lead">Hujumchilar bombani A yoki B nuqtaga o'rnatadi, himoyachilar uni to'xtatadi. Botlarga qarshi yoki do'stlaringiz bilan onlayn o'ynang. Uch rejim bor: raqobat (raundlar va bomba), deathmatch va qurol poygasi.</p>
+      <p class="lead">Hujumchilar bombani A yoki B nuqtaga o'rnatadi, himoyachilar uni to'xtatadi. Botlarga qarshi yoki do'stlaringiz bilan onlayn o'ynang. Rejimlar: raqobat, Wingman, Retake, deathmatch va qurol poygasi. Nishon olish va granata otishni mashq qilish ham mumkin.</p>
       <div class="modes">
       <div class="panel" id="accPanel" hidden>
         <h3>Hisob va reyting</h3>
@@ -534,6 +535,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         </div>
         <div class="field"><span>Rejim</span><div class="seg modeSeg" data-set="mode"><button type="button" data-v="comp">Raqobat</button><button type="button" data-v="wm">Wingman</button><button type="button" data-v="rt">Retake</button><button type="button" data-v="dm">Deathmatch</button><button type="button" data-v="gg">Qurol poygasi</button></div></div>
         <p class="note" id="modeNote"></p>
+        <div class="row trainQuick"><span class="note">Mashq:</span><button class="ghost sm" type="button" data-train="aim">Nishon mashqi</button><button class="ghost sm" type="button" data-train="nade">Granata mashqi</button></div>
         <label class="field" for="mapSel"><span>Xarita</span><select id="mapSel"><option value="qumtepa">Qumtepa — Klassik: uzun yo'lak, o'rta va tunnel</option><option value="bozor">Bozor — Ixcham: rastalar, tor o'rta, ko'prikcha</option><option value="karvon">Karvonsaroy — Ixcham: markazda hovli, ikki qanot</option></select></label>
         <button class="cta" id="startBtn" type="button">Botlar bilan o'ynash</button>
       </div>
@@ -567,6 +569,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
       </div>
       </div>
       <p class="note" id="touchNote" hidden>Telefonda o'ynash uchun uni yotqizing. Ekran tugmalari o'yin boshlanganda chiqadi.</p>
+      <p class="note" id="verNote" hidden></p>
       <p class="note" id="errNote" hidden><span class="warn">3D kutubxona yuklanmadi.</span> Internet aloqasini tekshirib, sahifani yangilang.</p>
     </div>
     <div class="col">
@@ -2149,7 +2152,7 @@ function trainMenu(){
 }
 $('trainW').addEventListener('change', () => { SET.trainW = $('trainW').value; saveSet(); trainMenu(); });
 $('diffBtns').addEventListener('click', () => setTimeout(trainMenu, 0));
-$('trainPanel').addEventListener('click', e => { const b = e.target.closest('[data-train]'); if (!b) return;
+document.addEventListener('click', e => { const b = e.target.closest('#menu [data-train]'); if (!b) return;
   initAudio(); goFullscreen(); TR.pick = b.dataset.train; startMatch(); requestLock(); canvas.focus({ preventScroll:true }); });
 function startTrain(){
   Object.assign(S, { round:1, phase:'live', timer:S.md === 'aim' ? AIM_TIME : 0, liveT:0, roundPlanted:false, deathT:0 });
@@ -4306,6 +4309,8 @@ $('pfList').addEventListener('click', async e => { const b = e.target.closest('[
 setInterval(() => { if (ACC.me && !document.hidden && (S.phase === 'menu' || S.paused || !$('socOv').hidden)) socLoad(); else socInvites(); }, 10000);
 
 accInit();
+// which build the server runs (helps to see whether an update has arrived)
+if (!IN_ARTIFACT && /^https?:$/.test(location.protocol)) fetch('/healthz', { cache:'no-store' }).then(r => r.json()).then(d => { if (d && d.version){ $('verNote').textContent = 'Versiya: ' + String(d.version).slice(0, 12); $('verNote').hidden = false; } }).catch(() => {});
 
 /* ================= TOUCH CONTROLS ================= */
 const TOUCH = { mx:0, my:0, mag:0, crouch:false };

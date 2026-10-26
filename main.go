@@ -25,6 +25,9 @@ var webFS embed.FS
 
 var roomName = regexp.MustCompile(`^[a-z0-9][a-z0-9_.-]{0,47}$`)
 
+// version: build vaqtida commit SHA (Dockerfile: -ldflags -X main.version=...), /healthz va menyuda ko'rinadi
+var version = "dev"
+
 func main() {
 	addr := env("ADDR", ":8080")
 	// bitta xonadagi o'yinchilar (botlar bilan) uchun umumiy yuqori chegara; xona egasi undan pastroq chegara qo'yishi mumkin
@@ -97,7 +100,11 @@ func main() {
 				db = "ok"
 			}
 		}
-		json.NewEncoder(w).Encode(map[string]any{"rooms": rooms, "players": players, "db": db})
+		v := version
+		if len(v) > 7 {
+			v = v[:7]
+		}
+		json.NewEncoder(w).Encode(map[string]any{"rooms": rooms, "players": players, "db": db, "version": v})
 	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" || r.URL.Path == "/index.html" {

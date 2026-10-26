@@ -126,6 +126,9 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 		if opts.gmap != "" {
 			r.gs.M = opts.gmap
 		}
+		if opts.mode != "" {
+			r.gs.Md = opts.mode
+		}
 		h.rooms[roomName] = r
 		go r.run(h)
 	}

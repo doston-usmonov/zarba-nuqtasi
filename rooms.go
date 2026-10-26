@@ -19,11 +19,14 @@ import (
 
 const kickBan = 10 * time.Minute
 
+var modeNames = map[string]string{modeComp: "Raqobat", modeDM: "Deathmatch", modeGG: "Qurol poygasi"}
+
 type roomOpts struct {
 	create bool // "yaratish" tugmasi: bunday xona bor bo'lsa — xato
 	pub    bool
 	max    int    // 0 — cheksiz
 	gmap   string // xarita
+	mode   string // o'yin rejimi
 }
 
 func parseRoomOpts(q map[string][]string) roomOpts {
@@ -36,6 +39,10 @@ func parseRoomOpts(q map[string][]string) roomOpts {
 	o := roomOpts{create: get("create") == "1", pub: get("pub") != "0", gmap: defaultMap}
 	if validMap(get("map")) {
 		o.gmap = get("map")
+	}
+	o.mode = modeComp
+	if validMode(get("mode")) {
+		o.mode = get("mode")
 	}
 	if m, err := strconv.Atoi(get("max")); err == nil && m >= 2 && m <= 64 {
 		o.max = m
@@ -126,6 +133,12 @@ func (h *hub) adminLocked(r *room, c *client, d json.RawMessage, now time.Time) 
 		}
 		t.trySend(jsonMsg(map[string]string{"t": "err", "code": "kicked"}))
 		go func(t *client) { time.Sleep(200 * time.Millisecond); t.ws.close() }(t)
+	case "mode":
+		if !validMode(m.M) || m.M == r.gs.Md {
+			return
+		}
+		r.changeModeLocked(m.M, now)
+		r.broadcast(jsonMsg(map[string]string{"t": "note", "msg": "Rejim: " + modeNames[m.M] + " — o'yin isinishdan qayta boshlanadi"}), "")
 	case "map":
 		if !validMap(m.M) || m.M == r.gs.M {
 			return
@@ -169,6 +182,7 @@ type roomListing struct {
 	Bots   int    `json:"bots"`
 	Max    int    `json:"max"`
 	Map    string `json:"map"`
+	Mode   string `json:"mode"`
 	Phase  string `json:"phase"`
 	Round  int    `json:"round"`
 	SA     int    `json:"sA"`
@@ -194,7 +208,7 @@ func (h *hub) publicRooms() []roomListing {
 				owner = cleanGuestName(o.info.Nm)
 			}
 			if humans > 0 {
-				out = append(out, roomListing{Code: strings.TrimPrefix(r.name, "zn-"), Owner: owner, Humans: humans, Bots: bots, Max: r.max, Map: r.gs.M,
+				out = append(out, roomListing{Code: strings.TrimPrefix(r.name, "zn-"), Owner: owner, Humans: humans, Bots: bots, Max: r.max, Map: r.gs.M, Mode: r.gs.Md,
 					Phase: r.gs.Ph, Round: r.gs.R, SA: r.gs.SA, SB: r.gs.SB, Fm: r.gs.Fm})
 			}
 		}

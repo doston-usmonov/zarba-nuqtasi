@@ -179,17 +179,24 @@ func (r *room) spawnBotLocked(c *client, now time.Time) {
 		zone = cCTSpawn
 	}
 	pos := r.gm().randomCellIn(zone)
+	modeLive := g.respawns() && g.Ph == "live"
+	if modeLive && g.ffa() {
+		pos = r.dmSpawnLocked(c)
+	}
 	rih := 1
 	if g.Ph == "warmup" || g.R <= 0 {
 		b.life, c.info.In, rih = -1, 0, 3
 	} else {
 		b.life, c.info.In = g.R, g.R
 		rih = roundInHalf(g.R, g.Fm)
-		if g.R > 2*g.Fm {
+		if g.R > 2*g.Fm || g.respawns() {
 			rih = 3
 		}
 	}
 	b.weapon = pickBotWeapon(rih)
+	if modeLive && g.Md == modeGG {
+		b.weapon = ggWeapon(g.Sc[c.id])
+	}
 	b.mag = weaponMag[b.weapon]
 	b.reloadAt, b.target, b.path, b.actT, b.cr, b.burst = time.Time{}, "", nil, 0, 0, 0
 	b.knownAt, b.alertAt = time.Time{}, time.Time{}
@@ -198,9 +205,12 @@ func (r *room) spawnBotLocked(c *client, now time.Time) {
 	if rih > 1 {
 		p.armor, p.helmet = 100, rih > 2
 	}
-	p.dueAt = time.Time{}
+	p.dueAt, p.spawnAt = time.Time{}, now
 	p.push(sample{t: now, p: pos})
-	if c.info.Tm == "T" {
+	if modeLive {
+		b.yaw = rand.Float64() * 2 * math.Pi
+		b.mode, b.goal, b.path = "roam", r.gm().roamPoint(), nil
+	} else if c.info.Tm == "T" {
 		b.yaw = 0
 		b.site = []string{"A", "B"}[rand.IntN(2)]
 		spots := r.gm().spots[b.site]
@@ -226,7 +236,7 @@ func (r *room) botDieLocked(v, killer *client, w string, hs bool, now time.Time)
 	if !v.ps.alive {
 		return
 	}
-	v.ps.alive, v.ps.dueAt = false, time.Time{}
+	v.ps.alive, v.ps.dueAt, v.ps.deadAt = false, time.Time{}, now
 	b.deadAt, b.deaths, b.target, b.actT = now, b.deaths+1, "", 0
 	b.deN++
 	by := ""
@@ -238,6 +248,9 @@ func (r *room) botDieLocked(v, killer *client, w string, hs bool, now time.Time)
 	}
 	b.de = &deathClaim{N: b.deN, By: by, W: w, HS: map[bool]int{true: 1}[hs]}
 	r.tr.death(r, v, killer, hs)
+	if killer != nil {
+		r.creditKillLocked(v, killer, now)
+	}
 }
 
 // ---- yo'l topish (A*) ----
@@ -385,7 +398,7 @@ func (r *room) botSees(c *client, now time.Time) (*client, float64) {
 	var best *client
 	bd := 80.0
 	for _, o := range r.clients {
-		if o == c || !o.ps.alive || !o.ps.posOK || o.info.Tm == "" || o.info.Tm == c.info.Tm {
+		if o == c || !o.ps.alive || !o.ps.posOK || o.info.Tm == "" || !r.foes(c, o) {
 			continue
 		}
 		d := eyeP.sub(o.ps.pos).len()
@@ -409,6 +422,24 @@ func (r *room) botFire(c *client, t *client, dist float64, now time.Time) {
 	b, p := c.bot, c.ps
 	spec := weaponSpecs[b.weapon]
 	lv := botLevels[b.lv]
+	if b.weapon == "knife" { // pichoq: yaqin kelib uradi
+		b.fireAt = now.Add(time.Duration(700+rand.IntN(300)) * time.Millisecond)
+		b.shotN++
+		b.sh = map[string]any{"n": b.shotN, "w": "knife", "sx": 0, "sy": 0, "sz": 0, "ex": 0, "ey": 0, "ez": 0}
+		if dist > 2 || rand.Float64() > .8 {
+			return
+		}
+		b.hiSeq++
+		h := hitClaim{I: b.hiSeq, T: t.id, D: 55, Pn: spec.pen, P: "c", W: "knife"}
+		if t.bot == nil {
+			b.hits = append(b.hits, h)
+			if len(b.hits) > 8 {
+				b.hits = b.hits[1:]
+			}
+		}
+		r.applyHitLocked(c, h, now)
+		return
+	}
 	b.mag--
 	if b.mag <= 0 {
 		b.reloadAt = now.Add(2600 * time.Millisecond)
@@ -487,6 +518,8 @@ func (r *room) botStepLocked(c *client, now time.Time, dt float64) {
 		}
 	case g.Ph == "freeze" && g.R > 0 && b.life != g.R:
 		r.spawnBotLocked(c, now)
+	case g.respawns() && g.Ph == "live" && (b.life != g.R || (!p.alive && now.Sub(b.deadAt) > 2*time.Second)):
+		r.spawnBotLocked(c, now)
 	}
 	if !p.alive || g.Ph == "freeze" || g.Ph == "over" {
 		r.publishBotLocked(c, now)
@@ -502,7 +535,10 @@ func (r *room) botStepLocked(c *client, now time.Time, dt float64) {
 		b.lastKnown, b.knownAt = t.ps.pos, now
 		b.actT = 0
 		off := b.turn(yawTo(p.pos, t.ps.pos), lv.turn, dt)
-		if now.After(b.reactAt) && now.After(b.fireAt) && now.After(b.reloadAt) && off < .15 {
+		if b.weapon == "knife" && dist > 1.6 {
+			r.botGo(c, t.ps.pos, 5, dt, now)
+			b.turn(yawTo(p.pos, t.ps.pos), lv.turn, dt)
+		} else if now.After(b.reactAt) && now.After(b.fireAt) && now.After(b.reloadAt) && off < .15 {
 			r.botFire(c, t, dist, now)
 		}
 	} else {
@@ -519,6 +555,10 @@ func (r *room) botStepLocked(c *client, now time.Time, dt float64) {
 
 func (r *room) botObjectiveLocked(c *client, now time.Time, dt float64) {
 	b, p, g := c.bot, c.ps, r.gs
+	if g.respawns() && g.Ph == "live" {
+		r.botRoamLocked(c, now, dt)
+		return
+	}
 	// yaqinda raqibni ko'rgan bo'lsa — o'sha joyga boradi
 	chase := !b.knownAt.IsZero() && now.Sub(b.knownAt) < 5*time.Second
 	if g.B != nil {

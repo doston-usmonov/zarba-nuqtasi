@@ -158,7 +158,7 @@ func (t *tracker) phase(r *room, prev string, now time.Time) *matchResult {
 		t.active = false
 	case g.Ph == "warmup":
 		t.active = false // o'yinchilar chiqib ketdi yoki o'yin tugadi
-	case g.E != "" && g.E != t.epoch && (g.Ph == "freeze" || g.Ph == "live" || g.Ph == "post"):
+	case !g.respawns() && g.E != "" && g.E != t.epoch && (g.Ph == "freeze" || g.Ph == "live" || g.Ph == "post"):
 		*t = tracker{epoch: g.E, active: true, started: now, players: map[string]*tplayer{}}
 	}
 	t.round = g.R

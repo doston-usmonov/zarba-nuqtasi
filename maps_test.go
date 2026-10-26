@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
+	"math"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -96,5 +99,163 @@ func TestRoomMap(t *testing.T) {
 	r.gs.reset()
 	if r.gs.M != "karvon" {
 		t.Fatal("reset xaritani saqlashi kerak")
+	}
+}
+
+// TestModes: deathmatch (har kim har kimga) va qurol poygasi qoidalari.
+func TestModes(t *testing.T) {
+	r, a, b := newRefRoom()
+	r.gs.Md = modeDM
+	// ikkalasi bir jamoada (A), lekin deathmatch'da baribir raqib
+	pres := func(c *client, x, z float64, extra map[string]any) map[string]json.RawMessage {
+		d := map[string]any{"v": 1, "hc": 1, "sq": "A", "tm": "T", "in": 1, "al": 1, "x": x, "y": 0, "z": z, "w": "rifle"}
+		for k, v := range extra {
+			d[k] = v
+		}
+		return refPres(r, c, d)
+	}
+	r.mu.Lock()
+	r.tickLocked(time.Now(), .05)
+	if r.gs.Ph != "warmup" {
+		t.Fatal("bitta jamoada ikki kishi: deathmatch isinishda boshlanishi kerak")
+	}
+	r.mu.Unlock()
+	pres(a, 43, 75, nil)
+	pres(b, 43, 70, nil)
+	r.mu.Lock()
+	for i := 0; i < 130; i++ {
+		r.tickLocked(time.Now(), .05)
+	}
+	if r.gs.Ph != "live" || r.gs.T < 300 {
+		t.Fatalf("deathmatch boshlanmadi: %+v", r.gs)
+	}
+	r.mu.Unlock()
+	// birinchi hayot istalgan ochiq joyda boshlanadi (bazada emas)
+	gm := mapByID("")
+	open := cellCenter(gm.open[len(gm.open)/2])
+	f := pres(a, open.X, open.Z, nil)
+	if x, _ := num(f["x"]); math.Abs(x-open.X) > .01 {
+		t.Fatalf("deathmatch'da ochiq joyda tug'ilish rad etildi: %s", f["x"])
+	}
+	pres(b, open.X+3, open.Z, nil)
+	// tug'ilgandagi himoya: darhol otilgan o'q o'tmaydi
+	f = pres(a, open.X, open.Z, map[string]any{"hi": []map[string]any{{"i": 1, "t": "b", "d": 30, "pn": .7, "p": "c", "w": "rifle"}}})
+	if string(f["hi"]) != "null" {
+		t.Fatalf("himoyadagi o'yinchiga o'q o'tdi: %s", f["hi"])
+	}
+	r.mu.Lock()
+	a.ps.spawnAt, b.ps.spawnAt = time.Now().Add(-3*time.Second), time.Now().Add(-3*time.Second)
+	r.mu.Unlock()
+	// bir jamoada bo'lsa ham o'q tegadi va o'ldirish sanaladi
+	f = pres(a, open.X, open.Z, map[string]any{"hi": []map[string]any{{"i": 2, "t": "b", "d": 36, "pn": .7, "p": "c", "w": "rifle"}}})
+	if string(f["hi"]) == "null" {
+		t.Fatal("deathmatch'da o'q rad etildi")
+	}
+	pres(b, open.X+3, open.Z, map[string]any{"al": 0, "de": map[string]any{"n": 1, "by": "a", "w": "rifle", "hs": 0}})
+	if r.gs.Sc["a"] != 1 {
+		t.Fatalf("o'ldirish sanalmadi: %v", r.gs.Sc)
+	}
+	// qayta tug'ilish: darhol emas, 1,6 soniyadan keyin
+	f = pres(b, open.X+3, open.Z, nil)
+	if string(f["al"]) != "0" {
+		t.Fatal("o'lgan zahoti tirilish qabul qilindi")
+	}
+	r.mu.Lock()
+	b.ps.deadAt = time.Now().Add(-2 * time.Second)
+	r.mu.Unlock()
+	f = pres(b, open.X+3, open.Z, nil)
+	if string(f["al"]) == "0" || !b.ps.alive {
+		t.Fatal("qayta tug'ilish rad etildi")
+	}
+	// vaqt tugadi — eng ko'p o'ldirgan yutadi
+	r.mu.Lock()
+	r.gs.T = .01
+	r.tickLocked(time.Now(), .05)
+	if r.gs.Ph != "over" || r.gs.Wn != "a" {
+		t.Fatalf("g'olib noto'g'ri: %+v", r.gs)
+	}
+	r.mu.Unlock()
+
+	// qurol poygasi: ikki jamoa, faqat hozirgi qurol bilan
+	r2, x, y := newRefRoom()
+	r2.gs.Md, r2.gs.Ph, r2.gs.R, r2.gs.T, r2.gs.Sc = modeGG, "live", 1, 500, map[string]int{}
+	p2 := func(c *client, sq, tm string, z float64, extra map[string]any) map[string]json.RawMessage {
+		d := map[string]any{"v": 1, "hc": 1, "sq": sq, "tm": tm, "in": 1, "al": 1, "x": 43, "y": 0, "z": z, "w": "rifle"}
+		for k, v := range extra {
+			d[k] = v
+		}
+		return refPres(r2, c, d)
+	}
+	p2(x, "A", "T", 75, nil)
+	p2(y, "B", "CT", 9, nil)
+	r2.mu.Lock()
+	x.ps.spawnAt, y.ps.spawnAt = time.Time{}, time.Time{}
+	x.ps.pos, y.ps.pos = vec3{43, 0, 30}, vec3{43, 0, 34} // ochiq o'rta yo'lak
+	for i := range 3 {
+		x.ps.push(sample{t: time.Now(), p: x.ps.pos})
+		y.ps.push(sample{t: time.Now(), p: y.ps.pos})
+		_ = i
+	}
+	r2.mu.Unlock()
+	f = refPres(r2, x, map[string]any{"v": 1, "hc": 1, "sq": "A", "tm": "T", "in": 1, "al": 1, "x": 43, "y": 0, "z": 30,
+		"hi": []map[string]any{{"i": 1, "t": y.id, "d": 30, "pn": .7, "p": "c", "w": "sniper"}}})
+	if string(f["hi"]) != "null" {
+		t.Fatal("qurol poygasida navbatdagi bo'lmagan qurol bilan o'q o'tdi")
+	}
+	r2.mu.Lock()
+	for i := 0; i < ggWinKills()-1; i++ {
+		r2.creditKillLocked(y, x, time.Now())
+	}
+	if ggWeapon(r2.gs.Sc[x.id]) != "knife" || r2.gs.Ph != "live" {
+		t.Fatalf("pichoq bosqichi: %v %s", r2.gs.Sc, r2.gs.Ph)
+	}
+	r2.creditKillLocked(y, x, time.Now())
+	if r2.gs.Ph != "over" || r2.gs.Wn != x.id {
+		t.Fatalf("pichoq bilan o'ldirgan yutishi kerak: %+v", r2.gs)
+	}
+	r2.mu.Unlock()
+}
+
+// TestModeBots: deathmatch'da botlar tug'iladi, aylanadi va bir-birini o'ldiradi.
+func TestModeBots(t *testing.T) {
+	r := &room{name: "zn-dm", clients: map[string]*client{}, gs: newGameState(), stop: make(chan struct{}), manual: true}
+	r.gs.Md = modeDM
+	now := time.Now()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for range 4 {
+		r.addBotLocked("A", "hard", now)
+	}
+	dt := .05
+	for i := 0; i < 20*120; i++ { // 2 daqiqa
+		now = now.Add(50 * time.Millisecond)
+		for _, c := range r.clients {
+			r.botStepLocked(c, now, dt)
+		}
+		r.tickLocked(now, dt)
+	}
+	total := 0
+	for _, k := range r.gs.Sc {
+		total += k
+	}
+	if r.gs.Ph != "live" || total < 3 {
+		t.Fatalf("deathmatch'da botlar o'ynamadi: ph=%s sc=%v", r.gs.Ph, r.gs.Sc)
+	}
+	for _, c := range r.clients {
+		if c.ps.alive && r.gm().botSolid(wc(c.ps.pos.X), wc(c.ps.pos.Z)) {
+			t.Fatalf("bot devor ichida: %v", c.ps.pos)
+		}
+	}
+}
+
+// TestGGLadderMatchesClient: qurol poygasi zinapoyasi brauzerdagi bilan bir xil.
+func TestGGLadderMatchesClient(t *testing.T) {
+	b, err := os.ReadFile("web/index.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "const GG_LADDER = ['" + strings.Join(ggLadder, "','") + "'], GG_PER = " + strconv.Itoa(ggPerLevel) + ","
+	if !strings.Contains(string(b), want) {
+		t.Fatalf("web/index.html da %q topilmadi", want)
 	}
 }

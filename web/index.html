@@ -49,6 +49,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 #top .side.t{justify-content:flex-end;border-bottom:3px solid var(--atk);border-radius:6px 0 0 6px}
 #top .side.ct{border-bottom:3px solid var(--def);border-radius:0 6px 6px 0}
 #top .side span{font-size:12px;letter-spacing:.14em;font-weight:700;color:var(--dim)}
+#modeInfo{position:absolute;top:calc(64px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--shade);border-radius:6px;padding:4px 12px;font-size:14px;font-weight:600;white-space:nowrap;display:flex;gap:10px;align-items:center}
+#modeInfo b{font-family:var(--f-display);color:var(--atk)} #modeInfo small{color:var(--dim);font-weight:500;font-size:13px}
+#modeInfo .lv{display:flex;gap:3px} #modeInfo .lv i{width:12px;height:5px;border-radius:2px;background:rgba(243,239,230,.18)} #modeInfo .lv i.on{background:var(--atk)} #modeInfo .lv i.cur{background:var(--ink)}
+.touch #modeInfo{top:calc(54px + env(safe-area-inset-top,0px));font-size:12px}
 #top .side b{font-family:var(--f-display);font-size:26px;line-height:1}
 #top .side.t b{color:var(--atk)} #top .side.ct b{color:var(--def)}
 #clockBox{background:rgba(14,13,11,.78);padding:4px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:92px}
@@ -163,6 +167,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .set input[type=range]{width:100%;accent-color:var(--atk)}
 .seg{display:flex;gap:4px;flex-wrap:wrap}
 .seg button{flex:1;min-width:0;background:transparent;color:var(--ink);border:1px solid var(--line);padding:6px 8px;border-radius:5px;font-size:13px;font-weight:600;white-space:nowrap}
+.modeSeg button{padding:8px 6px;font-size:14px}
 .seg button[aria-pressed="true"]{border-color:var(--atk);background:rgba(242,181,68,.12)}
 .set output{font-family:var(--f-display);text-align:right;color:var(--dim)}
 .swatches{display:flex;gap:8px}
@@ -366,10 +371,11 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
     <div id="voiceList" aria-live="off"></div>
   </div>
   <div id="top">
-    <div class="side t"><span>HUJUM</span><b id="scT">0</b></div>
+    <div class="side t"><span id="scTL">HUJUM</span><b id="scT">0</b></div>
     <div id="clockBox"><span id="clock" class="num">1:55</span><div id="pips"></div></div>
-    <div class="side ct"><b id="scCT">0</b><span>HIMOYA</span></div>
+    <div class="side ct"><b id="scCT">0</b><span id="scCTL">HIMOYA</span></div>
   </div>
+  <div id="modeInfo" hidden></div>
   <div id="feed"></div>
   <div id="scope" hidden></div>
   <div id="cross"><i></i><i></i><i></i><i></i></div>
@@ -435,7 +441,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
     <div class="col">
       <span class="eyebrow">Brauzerdagi taktik otishma · Qumtepa xaritasi</span>
       <h1>Zarba <span>Nuqtasi</span></h1>
-      <p class="lead">Hujumchilar bombani A yoki B nuqtaga o'rnatadi, himoyachilar uni to'xtatadi. Botlarga qarshi yoki do'stlaringiz bilan onlayn o'ynang. Har raundda pul topasiz va yangi qurol sotib olasiz. 8 raund yutgan jamoa g'olib.</p>
+      <p class="lead">Hujumchilar bombani A yoki B nuqtaga o'rnatadi, himoyachilar uni to'xtatadi. Botlarga qarshi yoki do'stlaringiz bilan onlayn o'ynang. Uch rejim bor: raqobat (raundlar va bomba), deathmatch va qurol poygasi.</p>
       <div class="modes">
       <div class="panel" id="accPanel" hidden>
         <h3>Hisob va reyting</h3>
@@ -464,6 +470,8 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <button type="button" data-d="normal">O'rta<small>Muvozanatli</small></button>
           <button type="button" data-d="hard">Qiyin<small>Tez va aniq</small></button>
         </div>
+        <div class="field"><span>Rejim</span><div class="seg modeSeg" data-set="mode"><button type="button" data-v="comp">Raqobat</button><button type="button" data-v="dm">Deathmatch</button><button type="button" data-v="gg">Qurol poygasi</button></div></div>
+        <p class="note" id="modeNote"></p>
         <label class="field" for="mapSel"><span>Xarita</span><select id="mapSel"><option value="qumtepa">Qumtepa — Klassik: uzun yo'lak, o'rta va tunnel</option><option value="bozor">Bozor — Ixcham: rastalar, tor o'rta, ko'prikcha</option><option value="karvon">Karvonsaroy — Ixcham: markazda hovli, ikki qanot</option></select></label>
         <button class="cta" id="startBtn" type="button">Botlar bilan o'ynash</button>
       </div>
@@ -481,6 +489,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <div class="srv-only createrow">
           <label class="field" for="newCode"><span>Kod</span><input id="newCode" maxlength="40" autocomplete="off"></label>
           <label class="field" for="newPub"><span>Kimga</span><select id="newPub"><option value="1">Ommaviy</option><option value="0">Yopiq (kod bilan)</option></select></label>
+          <label class="field" for="newMode"><span>Rejim</span><select id="newMode"><option value="comp">Raqobat</option><option value="dm">Deathmatch</option><option value="gg">Qurol poygasi</option></select></label>
           <label class="field" for="newMap"><span>Xarita</span><select id="newMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option></select></label>
           <label class="field" for="newMax"><span>Maks. o'yinchi</span><select id="newMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select></label>
         </div>
@@ -561,6 +570,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <div class="row"><button class="ghost sm" type="button" data-adm="botT">+ Bot hujumga</button><button class="ghost sm" type="button" data-adm="botCT">+ Bot himoyaga</button></div>
           <div class="set"><span>Bot darajasi</span><div class="seg" data-set="botLv"><button type="button" data-v="easy">Oson</button><button type="button" data-v="normal">O'rta</button><button type="button" data-v="hard">Qiyin</button></div><span></span></div>
           <div class="set"><span>Xona turi</span><div class="seg" id="admPub"><button type="button" data-v="1">Ommaviy</button><button type="button" data-v="0">Yopiq</button></div><span></span></div>
+          <label class="set" for="admMode">Rejim <select id="admMode"><option value="comp">Raqobat</option><option value="dm">Deathmatch</option><option value="gg">Qurol poygasi</option></select><span></span></label>
           <label class="set" for="admMap">Xarita <select id="admMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option></select><span></span></label>
           <label class="set" for="admMax">Maks. o'yinchi <select id="admMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select><span></span></label>
         </div>
@@ -630,7 +640,7 @@ const KB = (desk, touch) => isTouch ? touch : desk;
 
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
-const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa' }, loadSet());
+const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa', mode:'comp' }, loadSet());
 function saveSet(){ try { localStorage.setItem('zn-set', JSON.stringify(SET)); } catch(e){} }
 const DIFFS = {
   easy:   { react:.85, acc:.18, hs:.07, turn:4.0, defuse:10 },
@@ -1499,7 +1509,7 @@ function poseSoldier(m, walk, moving, kneel){
 const player = { team:'T', pos:new V3(cw(21), 0, cw(37)), vel:new V3(), yaw:0, pitch:0, ground:true, crouch:0, hp:100, armor:0, helmet:false, money:800, alive:true,
   inv:{ 1:null, 2:{ id:'pistol', mag:20, res:120 }, 3:{ id:'knife' } }, bomb:true, slot:2, lastSlot:3, fireCd:0, reloadT:0, drawT:0, recoil:0, lastShot:-9,
   scope:0, kills:0, deaths:0, hs:0, dmg:0, stepT:0, planting:0, punchY:0, punchX:0, knifeT:0, kick:0, bobT:0, killer:null, deathPos:new V3(), hitT:-9, tagT:0,
-  nades:{ he:0, flash:0, smoke:0, molly:0 }, nadeSel:null, nadeHold:null, nadeT:0, nadeNext:false, kit:false };
+  nades:{ he:0, flash:0, smoke:0, molly:0 }, nadeSel:null, nadeHold:null, nadeT:0, nadeNext:false, kit:false, spawnT:-9, ggLv:-1 };
 const BOMB_IT = { id:'bomb' }, NADE_IT = { he:{ id:'he' }, flash:{ id:'flash' }, smoke:{ id:'smoke' }, molly:{ id:'molly' } };
 function curItem(){ return player.slot === 5 ? BOMB_IT : player.slot === 4 ? (player.nadeSel ? NADE_IT[player.nadeSel] : null) : player.inv[player.slot]; }
 function nadeTotal(){ const n = player.nades; return n.he + n.flash + n.smoke + n.molly; }
@@ -1530,8 +1540,21 @@ function rayHitBot(o, d, b, maxT){
   return best;
 }
 
+/* ================= GAME MODES =================
+   comp — raundlar va bomba; dm — har kim har kimga, qayta tug'ilish; gg — qurol poygasi (ikki jamoa, qayta tug'ilish,
+   har 2 o'ldirishda keyingi qurol, oxiri pichoq). Server versiyasida hisobni server yuritadi (g.sc). */
+const MODES = { comp:{ name:'Raqobat', desc:"Raundlar, bomba va iqtisod. Jamoa bo'lib o'ynaladi." }, dm:{ name:'Deathmatch', desc:"Har kim har kimga qarshi, o'lgan zahoti qayta tug'ilasiz. 6 daqiqada eng ko'p o'ldirgan yutadi. Qurollar bepul." }, gg:{ name:'Qurol poygasi', desc:"Har 2 o'ldirishda keyingi qurol beriladi. Oxirgi bosqich — pichoq: u bilan birinchi o'ldirgan yutadi." } };
+const GG_LADDER = ['rifle','carbine','smg','sniper','deagle','pistol','knife'], GG_PER = 2, GG_WIN = (GG_LADDER.length - 1)*GG_PER + 1;
+const DM_TIME = 360, GG_TIME = 900, RESPAWN_T = 2, SHIELD_T = 1.5;
+const ggLevel = k => Math.min(GG_LADDER.length - 1, Math.floor(Math.max(0, k)/GG_PER));
+function curMode(){ return MODE === 'online' ? ((NET.g && MODES[NET.g.md]) ? NET.g.md : 'comp') : (S.md || 'comp'); }
+function respawnMode(){ return curMode() !== 'comp'; }
+function isFFA(){ return curMode() === 'dm'; }
+function foe(r){ return isFFA() || r.team !== player.team; }   // an online player: an enemy?
+function shielded(){ return respawnMode() && S.time - (player.spawnT || -9) < SHIELD_T; }
+
 /* ================= GAME STATE ================= */
-const S = { phase:'menu', paused:false, round:0, sA:0, sB:0, H:12, timer:0, liveT:0, time:0, loss:0, specIdx:0, deathT:0, buyOpen:false, endWinner:null, roundPlanted:false, tSite:'A', execT:30 };
+const S = { phase:'menu', md:'comp', paused:false, round:0, sA:0, sB:0, H:12, timer:0, liveT:0, time:0, loss:0, specIdx:0, deathT:0, buyOpen:false, endWinner:null, roundPlanted:false, tSite:'A', execT:30 };
 const bomb = { planted:false, pos:new V3(), timer:40, beepT:0, mesh:null, led:null, defuser:null, site:null };
 (function buildBomb(){ const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.BoxGeometry(.38,.13,.26), MS(0x5b5a3b)); b.position.y = .065; b.castShadow = true; g.add(b);
   const led = new THREE.Mesh(new THREE.SphereGeometry(.025,8,6), new THREE.MeshBasicMaterial({ color:0xff2a1a })); led.position.set(.12,.14,-.06); g.add(led);
@@ -1590,6 +1613,7 @@ function updateHUD(){
   if (key !== lastHudKey){ updateSlots(); lastHudKey = key; }
   H.buyHint.style.visibility = canBuy() ? 'visible' : 'hidden';
   if (MODE === 'online') netHUD(); else { $('teamTag').hidden = true; H.scT.textContent = sideScore('T'); H.scCT.textContent = sideScore('CT'); }
+  modeHUD();
 }
 
 /* radar */
@@ -1613,7 +1637,7 @@ function drawRadar(){
   bots.forEach(b => { if (!b.alive){ if (S.time - b.deadT0 < 6 && b.spotT > 0){ rctx.strokeStyle = 'rgba(255,90,70,.7)'; rctx.lineWidth = RS*.6; const x=b.pos.x*RS, z=b.pos.z*RS, k=RS*.9; rctx.beginPath(); rctx.moveTo(x-k,z-k); rctx.lineTo(x+k,z+k); rctx.moveTo(x+k,z-k); rctx.lineTo(x-k,z+k); rctx.stroke(); } return; } if (S.time < b.spotT) dot(b.pos.x, b.pos.z, '#ff5a46', 5); });
   for (const sm of smokes){ rctx.fillStyle = `rgba(205,203,195,${(.55*sm.dens).toFixed(2)})`; rctx.beginPath(); rctx.arc(sm.p.x*RS, sm.p.z*RS, SMOKE_R*RS, 0, 7); rctx.fill(); }
   for (const f of fires){ rctx.fillStyle = 'rgba(255,120,40,.5)'; rctx.beginPath(); rctx.arc(f.p.x*RS, f.p.z*RS, FIRE_R*RS, 0, 7); rctx.fill(); }
-  if (MODE === 'online') NET.remotes.forEach(r => { if (!r.alive || !r.team) return; if (r.team === player.team) dot(r.pos.x, r.pos.z, r.team === 'T' ? '#f2b544' : '#76aee0', 5); else if (S.time < r.spotT) dot(r.pos.x, r.pos.z, '#ff5a46', 5); });
+  if (MODE === 'online') NET.remotes.forEach(r => { if (!r.alive || !r.team) return; if (!foe(r)) dot(r.pos.x, r.pos.z, r.team === 'T' ? '#f2b544' : '#76aee0', 5); else if (S.time < r.spotT) dot(r.pos.x, r.pos.z, '#ff5a46', 5); });
   rctx.restore();
   // player arrow (always pointing up)
   rctx.save(); rctx.translate(W2/2, W2/2); rctx.fillStyle = !player.alive ? '#999' : player.team === 'CT' ? '#76aee0' : '#f2b544'; rctx.beginPath(); rctx.moveTo(0,-12); rctx.lineTo(8,9); rctx.lineTo(0,4); rctx.lineTo(-8,9); rctx.closePath(); rctx.fill(); rctx.restore();
@@ -1621,7 +1645,8 @@ function drawRadar(){
 
 /* ================= ROUND FLOW ================= */
 function liveTime(){ return MODE === 'online' ? NET.liveT : S.liveT; }
-function canBuy(){ if (!player.alive || S.phase === 'menu' || S.phase === 'over' || !player.team) return false; const inZone = cellT(wc(player.pos.x), wc(player.pos.z)) === (player.team === 'CT' ? CTSP : TSP); return inZone && (S.phase === 'warmup' || S.phase === 'freeze' || (S.phase === 'live' && liveTime() < 20)); }
+function canBuy(){ if (!player.alive || S.phase === 'menu' || S.phase === 'over' || !player.team) return false;
+  if (respawnMode() && S.phase !== 'warmup') return isFFA() && S.phase === 'live';   /* deathmatch: anywhere, any time; gun game: never */ const inZone = cellT(wc(player.pos.x), wc(player.pos.z)) === (player.team === 'CT' ? CTSP : TSP); return inZone && (S.phase === 'warmup' || S.phase === 'freeze' || (S.phase === 'live' && liveTime() < 20)); }
 
 /* match format: halves, side swap and overtime (the same rules online and against bots) */
 const FMT = { short:8, long:12 }, OT_HALF = 3;
@@ -1730,13 +1755,128 @@ function checkRoundEnd(){
 function startMatch(){
   MODE = 'bots'; player.team = 'T'; H.progBar.style.background = ''; bots.forEach(b => b.m.g.visible = true);
   DIFF = DIFFS[SET.diff] || DIFFS.normal; setMap(SET.map);
-  Object.assign(S, { round:0, sA:0, sB:0, H:fmtH(), loss:0, paused:false });
+  Object.assign(S, { round:0, sA:0, sB:0, H:fmtH(), loss:0, paused:false, md:MODES[SET.mode] ? SET.mode : 'comp' });
   Object.assign(player, { money:800, kills:0, deaths:0, hs:0, dmg:0, alive:false }); resetInv();
   bots.forEach(b => { b.kills = 0; b.deaths = 0; });
   H.feed.innerHTML = '';
   decals.forEach(d => d.visible = false);
   ['menu','over','pause'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
-  startRound();
+  if (S.md !== 'comp') startModeOffline(); else startRound();
+}
+
+/* ---------- deathmatch / gun game: loadout, spawning, levels ---------- */
+function modeLoadout(keep){
+  player.nades = { he:0, flash:0, smoke:0, molly:0 }; player.nadeSel = null; player.nadeHold = null; player.nadeT = 0; player.nadeNext = false;
+  player.kit = false; player.armor = 100; player.helmet = true; player.bomb = false; player.money = curMode() === 'dm' ? 16000 : 0;
+  if (curMode() === 'gg'){ player.ggLv = -1; ggEquip(false); return; }
+  if (!keep || (!player.inv[1] && !player.inv[2])) player.inv = { 1:{ id:'rifle', mag:W.rifle.mag, res:W.rifle.res }, 2:{ id:'pistol', mag:20, res:120 }, 3:{ id:'knife' } };
+  refill(); player.slot = bestSlot(); drawWeapon();
+}
+function ggEquip(announce){
+  const lv = ggLevel(player.kills), id = GG_LADDER[lv];
+  if (lv === player.ggLv) return;
+  player.ggLv = lv; player.inv = { 1:null, 2:null, 3:{ id:'knife' } };
+  if (id !== 'knife'){ const w = W[id]; player.inv[w.slot] = { id, mag:w.mag, res:w.res }; player.slot = w.slot; } else player.slot = 3;
+  player.reloadT = 0; drawWeapon();
+  if (announce){ sfxPlantKey(); showMsg(id === 'knife' ? 'Oxirgi bosqich: pichoq!' : 'Yangi qurol: ' + W[id].name, id === 'knife' ? "Pichoq bilan bitta o'ldiring — o'yinni yutasiz" : (lv + 1) + '-bosqich / ' + GG_LADDER.length, 'atk', 1800); }
+}
+// a kill of mine counted (feeds the gun game ladder)
+function onModeKill(){ if (curMode() === 'gg' && player.alive) ggEquip(true); }
+// open cells far from enemies (deathmatch spawns)
+function dmSpawnPoint(enemies){
+  const list = SPAWNS.ALL.length ? SPAWNS.ALL : SPAWNS.T; let best = null, bd = -1;
+  for (let i=0;i<16;i++){ const c = list[(rand()*list.length)|0], x = cw(c[0]), z = cw(c[1]);
+    let d = 1e9; for (const e of enemies) d = Math.min(d, Math.hypot(e.x - x, e.z - z)); d += rand()*6;
+    if (d > bd){ bd = d; best = c; } }
+  return new V3(cw(best[0]) + (rand()-.5)*.6, 0, cw(best[1]) + (rand()-.5)*.6);
+}
+function modeEnemies(){ return MODE === 'online' ? [...NET.remotes.values()].filter(r => r.alive && foe(r)).map(r => r.pos) : bots.filter(b => b.alive).map(b => b.pos); }
+function modeSpawn(){
+  if (isFFA()){ const p = dmSpawnPoint(modeEnemies()); player.pos.copy(p); player.vel.set(0, 0, 0); player.yaw = rand()*Math.PI*2; player.pitch = 0; }
+  else spawnAt(player.team);
+  player.alive = true; player.hp = 100; player.planting = 0; player.scope = 0; player.recoil = 0; player.punchX = player.punchY = 0; player.spawnT = S.time;
+  S.deathT = 0; $('dead').hidden = true; H.cross.style.display = ''; H.prog.hidden = true;
+}
+function modeRespawn(){ modeLoadout(true); modeSpawn(); if (MODE === 'online') NET.deadT = 0; updateHUD(); }
+function modeRows(){
+  if (MODE !== 'online') return [{ name:'Siz', k:player.kills, d:player.deaths, me:true, team:player.team, alive:player.alive }, ...bots.map(b => ({ name:b.name, k:b.kills, d:b.deaths, me:false, team:b.side, alive:b.alive, w:b.weapon }))].sort((a,b) => b.k - a.k);
+  const g = NET.g, sc = g && g.sc;
+  const rows = [...NET.remotes.values()].filter(r => r.team).map(r => ({ name:r.name, k: sc && sc[r.peer] !== undefined ? sc[r.peer] : r.k, d:r.d, alive:r.alive, me:false, team:r.team, acc:r.acc, bot:r.bot, w:r.w }));
+  if (player.team) rows.push({ name:NET.name + ' (siz)', k:player.kills, d:player.deaths, alive:player.alive, me:true, team:player.team });
+  return rows.sort((a,b) => b.k - a.k);
+}
+function modeHUD(){
+  const el = $('modeInfo'), md = curMode(), live = S.phase === 'live' || S.phase === 'mover';
+  const on = md !== 'comp' && inGame();
+  $('scTL').textContent = on ? 'SIZ' : 'HUJUM'; $('scCTL').textContent = on ? 'YETAKCHI' : 'HIMOYA';
+  $('money').style.visibility = on && live ? 'hidden' : '';
+  if (!on || !live){ el.hidden = true; return; }
+  const rows = modeRows(), lead = rows.find(r => !r.me);
+  H.scT.textContent = player.kills; H.scCT.textContent = lead ? lead.k : 0;
+  let html;
+  if (md === 'gg'){ const lv = ggLevel(player.kills), id = GG_LADDER[lv], left = GG_PER - player.kills % GG_PER;
+    html = `<span class="lv">${GG_LADDER.map((_, i) => `<i class="${i < lv ? 'on' : i === lv ? 'cur' : ''}"></i>`).join('')}</span><b>${W[id].name}</b><small>${id === 'knife' ? "pichoq bilan o'ldiring — g'alaba!" : 'keyingisi: ' + W[GG_LADDER[lv + 1]].name + ' · yana ' + left + " o'ldirish"}</small>`; }
+  else { const place = rows.findIndex(r => r.me) + 1; html = `<b>${place}-o'rin</b><small>${KB('B', 'Xarid tugmasi')} — qurol tanlash (bepul)</small>`; }
+  if (html !== el._h){ el._h = html; el.innerHTML = html; }
+  el.hidden = false;
+}
+function modeBoardHTML(title){
+  const md = curMode(), esc = escH, rows = modeRows();
+  return `<h3>${esc(title)}</h3><table><tr><th>#</th><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">${md === 'gg' ? 'QUROL' : 'HOLAT'}</th></tr>` +
+    rows.map((r, i) => { const col = md === 'dm' ? 'var(--ink)' : r.team === 'CT' ? 'var(--def)' : 'var(--atk)';
+      return `<tr class="${r.alive ? '' : 'dead'}"><td>${i + 1}</td><td><span class="tag" style="background:${col}"></span>${esc(r.name)}${r.bot ? '<small>bot</small>' : ''}</td><td class="r">${r.k}</td><td class="r">${r.d}</td><td class="r">${md === 'gg' ? esc(W[GG_LADDER[ggLevel(r.k)]].name) : r.alive ? 'tirik' : '—'}</td></tr>`; }).join('') + '</table>';
+}
+
+/* ---------- deathmatch / gun game against bots ---------- */
+function botModeWeapon(b){ return S.md === 'gg' ? GG_LADDER[ggLevel(b.kills)] : ['rifle','rifle','carbine','smg','sniper','deagle'][(rand()*6)|0]; }
+function botModeSpawn(b){
+  b.alive = true; b.hp = 100; b.armor = 100; b.helmet = true; b.weapon = botModeWeapon(b); b.mag = W[b.weapon].mag || 0; b.reloadT = 0;
+  b.mode = 'roam'; b.roam = null; b.path = null; b.seeing = false; b.vis = null; b.lastKnown = null; b.lastSeen = -99; b.alertPos = null; b.alertT = -99; b.investigate = false;
+  b.spotT = -99; b.deadT = 0; b.deadT0 = -99; b.kneel = 0; b.stuck = 0; b.blindT = 0; b.hasBomb = false; b.planting = 0; b.protT = S.time + SHIELD_T;
+  if (S.md === 'dm') b.pos.copy(dmSpawnPoint(player.alive ? [player.pos] : []));
+  else { const c = SPAWNS.CT[(rand()*SPAWNS.CT.length)|0]; b.pos.set(cw(c[0]) + (rand()-.5)*.6, 0, cw(c[1]) + (rand()-.5)*.6); }
+  b.yaw = rand()*Math.PI*2;
+  b.m.g.visible = true; b.m.g.rotation.set(0, 0, 0); b.m.g.position.copy(b.pos); poseSoldier(b.m, 0, false, 0); setSoldierWeapon(b.m, b.weapon);
+}
+function botRoamPoint(){
+  if (rand() < .35 && player.alive) return player.pos.clone().add(new V3((rand()-.5)*10, 0, (rand()-.5)*10));   // they "hear" you
+  const H2 = MAP.holds, all = [...H2.A, ...H2.B, ...H2.M];
+  if (rand() < .6){ const h = all[(rand()*all.length)|0]; return new V3(cw(h[0][0]), 0, cw(h[0][1])); }
+  const c = SPAWNS.ALL[(rand()*SPAWNS.ALL.length)|0]; return new V3(cw(c[0]), 0, cw(c[1]));
+}
+function roamThink(b, dt){
+  if (b.lastKnown && S.time - b.lastSeen < 6){
+    if (goTo(b, b.lastKnown, 4.2, dt) || Math.hypot(b.lastKnown.x-b.pos.x, b.lastKnown.z-b.pos.z) < 1.2) b.lastKnown = null; return; }
+  if (b.alertPos && S.time - b.alertT < 3){ if (goTo(b, b.alertPos, 4, dt) || Math.hypot(b.alertPos.x-b.pos.x, b.alertPos.z-b.pos.z) < 1.5) b.alertT = -99; return; }
+  if (!b.roam || Math.hypot(b.roam.x-b.pos.x, b.roam.z-b.pos.z) < 1.4 || S.time > b.roamT){ b.roam = botRoamPoint(); b.roamT = S.time + 12 + rand()*10; b.path = null; }
+  goTo(b, b.roam, 4, dt); if (!b.path) b.roam = null;
+}
+function botKnife(b){
+  b.fireCd = .75 + rand()*.3; b.flashT = 0; sfxKnife();
+  if (b.vis && b.vis.dist < 2 && rand() < .8) damagePlayer(b, { name:W.knife.name, dmg:55, pen:.85, fall:1, kind:'knife', id:'knife' }, 'chest', 1);
+}
+function startModeOffline(){
+  Object.assign(S, { round:1, phase:'live', timer:S.md === 'dm' ? DM_TIME : GG_TIME, liveT:0, roundPlanted:false, deathT:0 });
+  player.team = 'T'; setBotsPal('CT');
+  bomb.planted = false; bomb.mesh.visible = false; bomb.defuser = null; bomb.dropped = false; bomb.carrier = null; bomb.picker = null;
+  clearNades(); clearDrops();
+  player.ggLv = -1; resetInv(); modeLoadout(false); modeSpawn();
+  bots.forEach(b => botModeSpawn(b));
+  $('dead').hidden = true; H.scope.hidden = true; H.progBar.style.background = ''; updatePips(); updateHUD();
+  showMsg(MODES[S.md].name, MODES[S.md].desc, 'atk', 4200);
+}
+function modeStepOffline(dt){
+  if (S.phase !== 'live') return;
+  S.timer -= dt; S.liveT += dt;
+  if (S.timer <= 0) return modeOverOffline(null);
+  if (!player.alive && S.deathT >= RESPAWN_T) modeRespawn();
+  for (const b of bots) if (!b.alive && S.time - b.deadT0 >= RESPAWN_T + .4) botModeSpawn(b);
+}
+function modeOverOffline(winner){
+  if (S.phase !== 'live') return;
+  const rows = modeRows(), top = rows[0];
+  if (!winner) winner = top.me ? 'Siz' : top.name;
+  S.endWinner = winner; matchOver();
 }
 
 /* ================= COMBAT ================= */
@@ -1824,15 +1964,19 @@ function knifeAttack(heavy){
 }
 
 function botKilled(b, w, hs){
-  botDropGun(b);
+  if (S.md === 'comp') botDropGun(b);
   if (b.hasBomb) dropBomb(b);
   b.alive = false; if (bomb.picker === b) assignPicker(); b.deadT = 0; b.deadT0 = S.time; b.deaths++; player.kills++; if (hs) player.hs++;
-  addMoney(w.kill, '');
+  if (S.md === 'comp') addMoney(w.kill, '');
   feed('Siz', 'a', w.name, b.name, 'd', hs, true);
   if (bomb.defuser === b) bomb.defuser = null;
-  updatePips(); checkRoundEnd();
+  updatePips();
+  if (S.md === 'comp') return checkRoundEnd();
+  onModeKill();
+  if (S.md === 'gg' && player.kills >= GG_WIN) modeOverOffline('Siz');
 }
 function damageBot(b, w, part, dist, pos, flat){
+  if (b.protT > S.time && S.md !== 'comp') return;   // just respawned
   let dmg = flat ? w.dmg : w.dmg * MULT[part] * Math.pow(w.fall, dist/10);
   const r = armorCalc(dmg, part, b.armor, b.helmet, w.pen); dmg = r.dmg; b.armor = Math.max(0, b.armor - r.armorLoss);
   const dealt = Math.min(b.hp, dmg); b.hp -= dmg; player.dmg += dealt;
@@ -1858,7 +2002,7 @@ function noise(pos, radius, gun){
 }
 
 function damagePlayer(bt, w, part, dist){
-  if (!player.alive) return;
+  if (!player.alive || shielded()) return;
   let dmg = w.dmg * MULT[part] * Math.pow(w.fall, dist/10);
   const r = armorCalc(dmg, part, player.armor, player.helmet, w.pen); dmg = r.dmg; player.armor = Math.max(0, player.armor - r.armorLoss);
   player.hp -= dmg; player.hitT = S.time; player.tagT = .35;
@@ -1871,16 +2015,18 @@ function damagePlayer(bt, w, part, dist){
 }
 function playerDie(bt, w, hs){
   player.alive = false; player.hp = 0; player.deaths++; player.deathPos.copy(camera.position); player.killer = bt; S.deathT = 0;
-  dropOnDeath();
+  if (!respawnMode()) dropOnDeath();
   player.planting = 0; H.prog.hidden = true;
   if (MODE === 'online'){ NET.death = { n:++NET.deathN, by: bt ? bt.peer : '', w: w.id || 'pistol', hs: hs ? 1 : 0 }; NET.deadT = 0; if (bt) feed(bt.name, teamCls(bt.team), w.name, 'Siz', teamCls(player.team), hs, true); else if (w.kind === 'nade') feed('Siz', teamCls(player.team), w.name, 'Siz', teamCls(player.team), false, true); else feed('Bomba', 'a', '', 'Siz', teamCls(player.team), false, true); }
-  else if (bt){ bt.kills++; feed(bt.name, 'd', w.name, 'Siz', 'a', hs, true); }
+  else if (bt){ bt.kills++; feed(bt.name, 'd', w.name, 'Siz', 'a', hs, true);
+    if (S.md === 'gg'){ const nw = GG_LADDER[ggLevel(bt.kills)]; if (nw !== bt.weapon){ bt.weapon = nw; bt.mag = W[nw].mag || 0; bt.reloadT = .4; setSoldierWeapon(bt.m, nw); } if (bt.kills >= GG_WIN) setTimeout(() => modeOverOffline(bt.name), 0); } }
   else if (w.kind === 'nade') feed('Siz', 'a', w.name, 'Siz', 'a', false, true);
   $('deadT').textContent = bt ? `${bt.name} sizni o'ldirdi` : "Siz halok bo'ldingiz";
   $('deadS').textContent = bt ? `${w.name}${hs ? ', boshga' : ''} · uning joni ${Math.max(1, Math.ceil(bt.hp))} qoldi` + (bomb.planted ? (' · ' + KB('Chap tugma', 'Ekranga bosing') + ' — kuzatiladigan botni almashtirish') : '') : '';
-  if (MODE === 'online') $('deadS').textContent += NET.g && NET.g.ph === 'warmup' ? " · 3 soniyadan keyin qayta tug'ilasiz" : (' · ' + KB('Chap tugma', 'Ekranga bosing') + ' — jamoadoshni kuzatish');
+  if (respawnMode() && S.phase === 'live') $('deadS').textContent += " · " + RESPAWN_T + " soniyadan keyin qayta tug'ilasiz";
+  else if (MODE === 'online') $('deadS').textContent += NET.g && NET.g.ph === 'warmup' ? " · 3 soniyadan keyin qayta tug'ilasiz" : (' · ' + KB('Chap tugma', 'Ekranga bosing') + ' — jamoadoshni kuzatish');
   $('dead').hidden = false; H.scope.hidden = true; H.cross.style.display = 'none';
-  updatePips(); if (MODE !== 'online') checkRoundEnd();
+  updatePips(); if (MODE !== 'online' && S.md === 'comp') checkRoundEnd();
 }
 
 /* ================= BOT AI ================= */
@@ -1970,7 +2116,10 @@ function updateBot(b, dt){
       const dir = b.strafe > 0 ? 1 : -1, sx = Math.cos(b.yaw)*dir, sz = -Math.sin(b.yaw)*dir;
       moveEntity(b.pos, sx*2.6*dt, sz*2.6*dt, .34, true); b.moving = true; b.speed = 2.6;
     }
-    if (b.react <= 0 && off < .12 && b.fireCd <= 0 && b.pause <= 0 && b.reloadT <= 0) botFire(b);
+    if (b.weapon === 'knife'){ if (b.vis.dist > 1.6) goTo(b, player.pos, 5, dt); else if (b.react <= 0 && b.fireCd <= 0) botKnife(b); }
+    else if (b.react <= 0 && off < .12 && b.fireCd <= 0 && b.pause <= 0 && b.reloadT <= 0) botFire(b);
+  } else if (S.md !== 'comp' && MODE !== 'online'){
+    roamThink(b, dt);
   } else if (b.side === 'T'){
     kneelTarget = tBotThink(b, dt);
   } else {
@@ -2420,6 +2569,7 @@ function throwGun(slot, speed){
   return d;
 }
 function dropCurrent(){
+  if (respawnMode() && S.phase !== 'warmup') return;
   if (!player.alive || S.paused || player.reloadT > 0 || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot]) return;
   throwGun(player.slot, 4.2); player.slot = bestSlot(); drawWeapon(); sfxThrow();
 }
@@ -2512,6 +2662,11 @@ $('createBtn').addEventListener('click', () => { joinOnline(true); });
 $('mapSel').value = SET.map; $('newMap').value = SET.map;
 $('mapSel').addEventListener('change', () => { SET.map = $('mapSel').value; saveSet(); setMap(SET.map); });
 $('newMap').addEventListener('change', () => { SET.map = $('newMap').value; saveSet(); $('mapSel').value = SET.map; setMap(SET.map); });
+$('admMode').addEventListener('change', () => { if (isOwner() && NET.room.admin && $('admMode').value !== curMode()){ NET.room.admin({ a:'mode', m:$('admMode').value }); hint("Rejim almashtirilmoqda — o'yin isinishdan qayta boshlanadi", 3000); } });
+$('newMode').value = MODES[SET.mode] ? SET.mode : 'comp';
+$('newMode').addEventListener('change', () => { SET.mode = $('newMode').value; saveSet(); syncSegs(); modeNote(); });
+function modeNote(){ $('modeNote').textContent = MODES[SET.mode] ? MODES[SET.mode].desc : ''; }
+modeNote();
 $('admMap').addEventListener('change', () => { if (isOwner() && $('admMap').value !== (NET.g && NET.g.m)){ NET.room.admin({ a:'map', m:$('admMap').value }); hint("Xarita almashtirilmoqda — o'yin isinishdan qayta boshlanadi", 3000); } });
 $('newCode').value = 'xona-' + Math.floor(1000 + Math.random()*9000);
 /* public games on the home screen (server version) */
@@ -2523,9 +2678,9 @@ async function loadRooms(){
     const el = $('roomList');
     if (!list.length){ el.innerHTML = `<p class="note">Hozircha ochiq o'yin yo'q — pastda o'zingiz yarating.</p>`; return; }
     el.innerHTML = list.map(r => {
-      const code = String(r.code || ''), ph = { warmup:'isinish', freeze:r.round + '-raund', live:r.round + '-raund', post:r.round + '-raund', over:"o'yin tugadi" }[r.phase] || '';
+      const code = String(r.code || ''), ph = { warmup:'isinish', freeze:r.round + '-raund', live:r.mode && r.mode !== 'comp' ? 'davom etmoqda' : r.round + '-raund', post:r.round + '-raund', over:"o'yin tugadi" }[r.phase] || '';
       const people = (r.humans|0) + " o'yinchi" + (r.bots ? ' + ' + (r.bots|0) + ' bot' : '') + ' / ' + (r.max ? r.max|0 : '∞');
-      return `<div class="rm"><b>${escH(code)}</b><small>${escH((MAPS[r.map] || MAPS.qumtepa).name)} · ${escH(r.owner || '')} · ${people} · ${ph}${r.round ? ' · ' + (r.sA|0) + ':' + (r.sB|0) : ''}</small><button class="ghost sm" type="button" data-room="${escH(code)}"${r.max && (r.humans + r.bots) >= r.max ? ' disabled' : ''}>Kirish</button></div>`;
+      return `<div class="rm"><b>${escH(code)}</b><small>${escH((MODES[r.mode] || MODES.comp).name)} · ${escH((MAPS[r.map] || MAPS.qumtepa).name)} · ${escH(r.owner || '')} · ${people} · ${ph}${r.round && (!r.mode || r.mode === 'comp') ? ' · ' + (r.sA|0) + ':' + (r.sB|0) : ''}</small><button class="ghost sm" type="button" data-room="${escH(code)}"${r.max && (r.humans + r.bots) >= r.max ? ' disabled' : ''}>Kirish</button></div>`;
     }).join('');
   } catch(e){ $('roomList').innerHTML = `<p class="note">Ro'yxatni yuklab bo'lmadi.</p>`; }
 }
@@ -2546,7 +2701,7 @@ function renderAdmin(){
   $('admInfo').textContent = 'Kod: ' + NET.code + ' · ' + (ri.pub ? 'ommaviy' : 'yopiq') + ' · ' + (ri.max ? 'ko\'pi bilan ' + ri.max : 'cheksiz') + ' · egasi: ' + (own ? 'siz' : ownerR ? ownerR.name : '—') + (own ? '' : '. Botlarni va o\'yinchilarni faqat xona egasi boshqaradi.');
   $('admCtl').hidden = !own;
   $('admPub').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === (ri.pub ? '1' : '0'))));
-  $('admMax').value = String(ri.max || 0); if (NET.g && NET.g.m) $('admMap').value = NET.g.m;
+  $('admMax').value = String(ri.max || 0); if (NET.g && NET.g.m) $('admMap').value = NET.g.m; if (NET.g && document.activeElement !== $('admMode')) $('admMode').value = curMode();
   const rows = [...NET.remotes.values()].filter(r => r.team).sort((a, b) => (a.team > b.team ? 1 : -1) || (a.bot - b.bot));
   $('admList').innerHTML = `<tr><td class="${player.team === 'CT' ? 'ct' : 't'}">${escH(NET.name)} <small>siz${own ? ', egasi' : ''}</small></td><td class="r"></td></tr>` +
     rows.map(r => `<tr><td class="${r.team === 'CT' ? 'ct' : 't'}">${escH(r.name)}${r.bot ? ' <small>bot · ' + ({ easy:'oson', normal:"o'rta", hard:'qiyin' }[r.lv] || '') + '</small>' : r.peer === ri.owner ? ' <small>egasi</small>' : ''}</td><td class="r">${own ? `<button class="ghost sm" type="button" data-kick="${escH(r.peer)}">${kickSure(r.peer) ? 'Tasdiqlash' : 'Chiqarish'}</button>` : ''}</td></tr>`).join('');
@@ -2575,7 +2730,7 @@ diffBtns.forEach(b => b.addEventListener('click', () => { SET.diff = b.dataset.d
 // segmented settings: <div class="seg" data-set="key"><button data-v="value">
 function syncSegs(){ document.querySelectorAll('.seg[data-set]').forEach(g => g.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(SET[g.dataset.set]) === b.dataset.v ? 'true' : 'false'))); }
 document.querySelectorAll('.seg[data-set]').forEach(g => g.addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; SET[g.dataset.set] = b.dataset.v; saveSet(); syncSegs(); if (SEG_HOOK[g.dataset.set]) SEG_HOOK[g.dataset.set](); }));
-const SEG_HOOK = { voice(){ if (MODE === 'online' && voiceMode() && VOICE.mic === 'none') voiceMic(); } };
+const SEG_HOOK = { voice(){ if (MODE === 'online' && voiceMode() && VOICE.mic === 'none') voiceMic(); }, mode(){ $('newMode').value = SET.mode; modeNote(); } };
 syncSegs();
 
 // settings (one panel moved between the menu and the pause sheet)
@@ -2599,12 +2754,14 @@ function closeBuy(silent){ S.buyOpen = false; $('buy').hidden = true; if (!silen
 $('buyClose').addEventListener('click', () => closeBuy());
 function owns(id){ if (W[id] && W[id].kind === 'nade') return player.nades[id] >= W[id].max; if (id === 'kit') return player.kit;
   return (player.inv[1] && player.inv[1].id === id) || (player.inv[2] && player.inv[2].id === id) || (id === 'kevlar' && player.armor >= 100) || (id === 'helmet' && player.armor >= 100 && player.helmet); }
-function priceOf(id){ if (id === 'helmet' && player.armor >= 100 && !player.helmet) return 350; return (W[id] || GEAR[id]).price; }
+function dmFree(){ return isFFA() && S.phase === 'live'; }
+function priceOf(id){ if (dmFree()) return 0; if (id === 'helmet' && player.armor >= 100 && !player.helmet) return 350; return (W[id] || GEAR[id]).price; }
 function renderBuy(){
   const g = $('buyGrid'); g.innerHTML = '';
   $('buyMoney').textContent = '$' + player.money;
-  $('buyTime').textContent = S.phase === 'freeze' ? 'Raund boshlanmoqda' : 'Xarid uchun ' + Math.max(0, Math.ceil(20 - liveTime())) + ' soniya';
+  $('buyTime').textContent = dmFree() ? 'Deathmatch: qurollar bepul' : S.phase === 'freeze' ? 'Raund boshlanmoqda' : 'Xarid uchun ' + Math.max(0, Math.ceil(20 - liveTime())) + ' soniya';
   SHOP.forEach(([cat, ids]) => {
+    if (dmFree() && (cat === 'Granatalar' || cat === 'Jihozlar')) return;
     const h = document.createElement('div'); h.className = 'buyCat'; h.textContent = cat; g.appendChild(h);
     ids.forEach(id => {
       const d = W[id] || GEAR[id], price = priceOf(id), own = owns(id), nade = d.kind === 'nade', full = nade && !own && nadeTotal() >= NADE_MAX;
@@ -2622,7 +2779,7 @@ function buy(id){
   const price = priceOf(id); if (player.money < price || owns(id)) return;
   if (W[id] && W[id].kind === 'nade'){ if (nadeTotal() >= NADE_MAX) return; player.nades[id]++; if (!player.nadeSel || !player.nades[player.nadeSel]) player.nadeSel = id; }
   else if (id === 'kit'){ if (player.team !== 'CT') return; player.kit = true; }
-  else if (W[id]){ const w = W[id]; if (player.inv[w.slot]) throwGun(w.slot, .7); player.inv[w.slot] = { id, mag:w.mag, res:w.res }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); }
+  else if (W[id]){ const w = W[id]; if (player.inv[w.slot] && !respawnMode()) throwGun(w.slot, .7); player.inv[w.slot] = { id, mag:w.mag, res:w.res }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); }
   else if (id === 'kevlar'){ player.armor = 100; }
   else if (id === 'helmet'){ player.armor = 100; player.helmet = true; }
   player.money -= price; sfxClick(); renderBuy(); updateHUD();
@@ -2632,6 +2789,7 @@ function buy(id){
 function showBoard(on){
   const el = $('board'); if (!on || !inGame()){ el.hidden = true; return; }
   if (MODE === 'online'){ el.innerHTML = netBoardHTML(); el.hidden = false; return; }
+  if (S.md !== 'comp'){ el.innerHTML = modeBoardHTML(MODES[S.md].name + ' · ' + fmt(S.timer) + ' qoldi'); el.hidden = false; return; }
   const row = (cls, name, k, d, extra, dead) => `<tr class="${dead ? 'dead' : ''}"><td><span class="tag" style="background:${cls}"></span>${name}</td><td class="r">${k}</td><td class="r">${d}</td><td class="r">${extra}</td></tr>`;
   const mine = player.team === 'T' ? 'var(--atk)' : 'var(--def)', theirs = player.team === 'T' ? 'var(--def)' : 'var(--atk)';
   el.innerHTML = `<h3>Raund ${S.round} · ${S.sA} : ${S.sB} · ${fmtLabel(S.H)}${S.round > 2*S.H ? " · qo'shimcha vaqt" : ''}</h3><table><tr><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">PUL / JON</th></tr>` +
@@ -2658,7 +2816,7 @@ function wsJoin(name, opts){
   return new Promise((resolve, reject) => {
     opts = opts || {};
     const url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?room=' + encodeURIComponent(name) +
-      (opts.create ? '&create=1&pub=' + (opts.pub ? 1 : 0) + '&max=' + (opts.max|0) + '&map=' + encodeURIComponent(opts.map || 'qumtepa') : '');
+      (opts.create ? '&create=1&pub=' + (opts.pub ? 1 : 0) + '&max=' + (opts.max|0) + '&map=' + encodeURIComponent(opts.map || 'qumtepa') + '&mode=' + encodeURIComponent(opts.mode || 'comp') : '');
     const others = new Map(); let ws = null, me = null, conn = false, closed = false, mine = {}, snap = [], dirty = true, settled = false, tries = 0;
     const api = {
       peers(){ if (dirty){ dirty = false; const a = []; if (me) a.push({ peer:me, presence:mine, sameTab:true, isMe:true, kind:'viewer', guest:false, by:null });
@@ -2893,17 +3051,18 @@ function cleanName(s){ const t = String(s || '').replace(/[^\p{L}\p{N} _.'-]/gu,
 function cleanCode(s){ const t = String(s || '').toLowerCase().replace(/[^a-z0-9_.-]+/g, '-').replace(/^[^a-z0-9]+/, '').slice(0, 40); return t || 'umumiy'; }
 function segDist(p, a, b){ const ab = _tmp.copy(b).sub(a), l2 = ab.lengthSq(); if (l2 < 1e-6) return p.distanceTo(a); const t = clamp(_tmp2.copy(p).sub(a).dot(ab)/l2, 0, 1); return _tmp2.copy(a).addScaledVector(ab, t).distanceTo(p); }
 
-const SPAWNS = { T:[], CT:[] };
+const SPAWNS = { T:[], CT:[], ALL:[] };
 // spawn points: base cells that have no crate around them
 function recomputeSpawns(){ const free = ([x,z]) => [[1,0],[-1,0],[0,1],[0,-1]].every(([dx,dz]) => !botSolid(x+dx, z+dz) || cellT(x+dx, z+dz) === WALL);
-  SPAWNS.T = cellsOf(TSP).filter(free); SPAWNS.CT = cellsOf(CTSP).filter(free); if (!SPAWNS.T.length) SPAWNS.T = cellsOf(TSP); if (!SPAWNS.CT.length) SPAWNS.CT = cellsOf(CTSP); }
+  SPAWNS.T = cellsOf(TSP).filter(free); SPAWNS.CT = cellsOf(CTSP).filter(free); if (!SPAWNS.T.length) SPAWNS.T = cellsOf(TSP); if (!SPAWNS.CT.length) SPAWNS.CT = cellsOf(CTSP);
+  SPAWNS.ALL = []; for (let z=0;z<GH;z++) for (let x=0;x<GW;x++) if (!botSolid(x, z) && free([x, z])) SPAWNS.ALL.push([x, z]); }
 recomputeSpawns();
 function spawnAt(team){ const list = SPAWNS[team] || SPAWNS.T, c = list[(rand()*list.length)|0]; player.pos.set(cw(c[0]) + (rand()-.5)*.6, 0, cw(c[1]) + (rand()-.5)*.6); player.vel.set(0,0,0); player.yaw = team === 'CT' ? Math.PI : 0; player.pitch = 0; }
 function resetInv(){ player.inv = { 1:null, 2:{ id:'pistol', mag:20, res:120 }, 3:{ id:'knife' } }; player.slot = 2; player.armor = 0; player.helmet = false;
   player.nades = { he:0, flash:0, smoke:0, molly:0 }; player.nadeSel = null; player.nadeHold = null; player.nadeT = 0; player.nadeNext = false; player.kit = false; }
 function refill(){ [1,2].forEach(k => { const it = player.inv[k]; if (it){ it.mag = W[it.id].mag; it.res = W[it.id].res; } }); if (player.slot === 5 || (player.slot === 4 ? !nadeTotal() : !player.inv[player.slot])) player.slot = bestSlot(); }
 
-function targetList(){ return MODE === 'online' ? [...NET.remotes.values()].filter(r => r.alive && r.team && r.team !== player.team) : bots.filter(b => b.alive); }
+function targetList(){ return MODE === 'online' ? [...NET.remotes.values()].filter(r => r.alive && r.team && foe(r)) : bots.filter(b => b.alive); }
 
 function nameTag(text, team){
   const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
@@ -2937,7 +3096,7 @@ function updateRemote(r, pr, dt){
       if (wd && wd.shot){ const a = new V3(num(sh.sx), num(sh.sy), num(sh.sz)), b = new V3(num(sh.ex), num(sh.ey), num(sh.ez)); const at = r.pos.clone();
         for (let i=0;i<cnt;i++) setTimeout(() => sfxShot(wd.shot, at), i*45);
         tracer(a, b); r.flashT = .06; puff(b, 0xb39e7c, .3, .4, 2);
-        if (r.team !== player.team && player.alive && segDist(camera.position, a, b) < 2.2) sfxWhiz(); }
+        if (foe(r) && player.alive && segDist(camera.position, a, b) < 2.2) sfxWhiz(); }
       else if (sh.w === 'knife') { const sp = spatial(r.pos); noiseHit(sp, .25, .15, 3000, 2); } } }
     // their grenades (every client simulates the same throw; each one applies only its own damage)
     const gn = pr.gn;
@@ -2954,7 +3113,7 @@ function updateRemote(r, pr, dt){
     if (de && typeof de === 'object'){ const n = num(de.n); if (n > r.deathN){ r.deathN = n;
       const wd = W[de.w] || W.pistol, byMe = !!NET.me && de.by === NET.me, killer = byMe ? null : NET.remotes.get(de.by), self = !byMe && !killer && wd.kind === 'nade';
       feed(byMe ? 'Siz' : killer ? killer.name : self ? r.name : 'Bomba', teamCls(byMe ? player.team : killer ? killer.team : self ? r.team : 'T'), byMe || killer || self ? wd.name : '', r.name, teamCls(r.team), de.hs === 1, byMe);
-      if (byMe){ player.kills++; if (de.hs === 1) player.hs++; if (S.phase !== 'warmup') addMoney(wd.kill || 300, ''); hitMark(true); } } }
+      if (byMe){ player.kills++; if (de.hs === 1) player.hs++; if (S.phase !== 'warmup' && !respawnMode()) addMoney(wd.kill || 300, ''); hitMark(true); if (S.phase === 'live') onModeKill(); } } }
   }
   // smoothing and pose
   const dist = r.pos.distanceTo(r.tpos);
@@ -2965,7 +3124,7 @@ function updateRemote(r, pr, dt){
   const m = r.m; m.g.position.copy(r.pos);
   if (r.alive){ m.g.rotation.set(0, r.yaw, 0); r.walk += r.moving ? dt*9 : 0; poseSoldier(m, r.walk, r.moving, r.kneel); }
   else { r.deadT = Math.min(1, r.deadT + dt); const k = Math.min(1, r.deadT/.45); m.g.rotation.x = -k*k*Math.PI/2; poseSoldier(m, 0, false, 0); }
-  r.tag.visible = r.alive && r.team === player.team;
+  r.tag.visible = r.alive && r.team === player.team && !isFFA();
   if (r.flashT > 0){ r.flashT -= dt; m.flash.visible = true; } else m.flash.visible = false;
   if (r.alive && r.mv){ r.stepT -= dt; if (r.stepT <= 0){ r.stepT = .38; if (r.pos.distanceTo(player.pos) < 24) sfxStep(r.pos, .7); } }
 }
@@ -2981,7 +3140,7 @@ function hurtFX(src, part){
 // the server's own health count says we are dead (for example a hit we missed): obey it
 function netServerKill(m){ if (!player.alive || MODE !== 'online') return; const k = NET.remotes.get(String(m.by || '')); playerDie(k || null, W[m.w] || W.pistol, !!m.hs); }
 function netApplyHit(r, h){
-  if (!player.alive || r.team === player.team) return;
+  if (!player.alive || !foe(r) || shielded()) return;
   const part = ({ h:'head', c:'chest', s:'stomach', l:'legs' })[h.p] || 'chest';
   const a = armorCalc(clamp(num(h.d), 0, 600), part, player.armor, player.helmet, clamp(num(h.pn, .5), 0, 1));
   player.armor = Math.max(0, player.armor - a.armorLoss); player.hp -= a.dmg;
@@ -3000,8 +3159,9 @@ function netHit(r, w, part, dist, pos, flat){
 
 const PHS = ['warmup','freeze','live','post','over'];
 function sanitizeG(g){ const b = g.b && typeof g.b === 'object' ? { x:num(g.b.x), z:num(g.b.z), s:g.b.s === 'B' ? 'B' : 'A', t:num(g.b.t) } : 0;
-  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', m:MAPS[g.m] ? g.m : 'qumtepa', t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
-function gOut(g){ return g ? { r:g.r, ph:g.ph, m:g.m, t:r2(g.t), sA:g.sA, sB:g.sB, fm:g.fm, b: g.b ? { x:g.b.x, z:g.b.z, s:g.b.s, t:r2(g.b.t) } : 0, w:g.w, y:g.y, bm:g.bm, e:g.e, cd:r2(g.cd) } : null; }
+  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', m:MAPS[g.m] ? g.m : 'qumtepa', md:MODES[g.md] ? g.md : 'comp', sc:sanitizeSc(g.sc), wn:String(g.wn || '').slice(0, 40), wnm:cleanName(g.wnm), t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
+function sanitizeSc(sc){ if (!sc || typeof sc !== 'object') return null; const o = {}; let n = 0; for (const k in sc){ if (++n > 80) break; o[String(k).slice(0, 40)] = Math.max(0, num(sc[k])|0); } return o; }
+function gOut(g){ return g ? { r:g.r, ph:g.ph, m:g.m, md:g.md, wn:g.wn, wnm:g.wnm, t:r2(g.t), sA:g.sA, sB:g.sB, fm:g.fm, b: g.b ? { x:g.b.x, z:g.b.z, s:g.b.s, t:r2(g.b.t) } : 0, w:g.w, y:g.y, bm:g.bm, e:g.e, cd:r2(g.cd) } : null; }
 function buildPres(){
   const it = curItem();
   return { v:1, hc:1, nm:NET.name, sq:NET.sq, tm:player.team, x:r2(player.pos.x), y:r2(player.pos.y), z:r2(player.pos.z), yw:r2(player.yaw), pt:r2(player.pitch), cr:r2(player.crouch),
@@ -3012,10 +3172,12 @@ function buildPres(){
 function gSideScore(g, side){ if (!g || !g.r) return 0; return sideOfSquad('A', g.r, g.fm) === side ? g.sA : g.sB; }
 function hostEnd(g, w, y){ g.ph = 'post'; g.t = 6; g.w = w; g.y = y; if (sideOfSquad('A', g.r, g.fm) === w) g.sA++; else g.sB++; }
 function hostStep(dt, valid){
-  let g = NET.g; if (!g) g = NET.g = { r:0, ph:'warmup', m:SET.map, t:0, sA:0, sB:0, fm:fmtH(), b:0, w:'', y:'', bm:-1, e:'', cd:6 };
+  let g = NET.g; if (!g) g = NET.g = { r:0, ph:'warmup', m:SET.map, md:'comp', wn:'', wnm:'', t:0, sA:0, sB:0, fm:fmtH(), b:0, w:'', y:'', bm:-1, e:'', cd:6 };
   const all = valid.map(p => p.presence); all.push(buildPres());
   const nT = all.filter(p => p.sq === 'A').length, nCT = all.filter(p => p.sq === 'B').length;   // squads, so the half-time swap never looks like an empty side
   const part = tm => all.filter(p => p.tm === tm && p.in === g.r), alive = tm => part(tm).filter(p => p.al === 1).length;
+  if (g.ph === 'warmup') g.md = MODES[SET.mode] ? SET.mode : 'comp';
+  if (g.md !== 'comp') return hostModeStep(g, dt, all, nT, nCT);
   if (g.ph !== 'warmup' && g.ph !== 'over' && (!nT || !nCT)){ g.ph = 'warmup'; g.r = 0; g.cd = 6; g.t = 0; g.b = 0; return; }
   switch (g.ph){
     case 'warmup':
@@ -3038,8 +3200,45 @@ function hostStep(dt, valid){
   }
 }
 
+// the Claude version: the host runs deathmatch / gun game from everybody's presence
+function hostModeStep(g, dt, all, nA, nB){
+  const ready = g.md === 'dm' ? all.length >= 2 : nA && nB;
+  if (g.ph !== 'warmup' && g.ph !== 'over' && !ready){ g.ph = 'warmup'; g.r = 0; g.cd = 6; g.t = 0; return; }
+  const top = () => { let b = null; for (const p of all) if (!b || num(p.k) > num(b.k)) b = p; return b; };
+  if (g.ph === 'warmup'){ g.m = MAPS[SET.map] ? SET.map : 'qumtepa';
+    if (ready){ g.cd -= dt; g.t = Math.max(0, g.cd); if (g.cd <= 0){ g.r = 1; g.ph = 'live'; g.t = g.md === 'dm' ? DM_TIME : GG_TIME; g.b = 0; g.wn = ''; g.wnm = ''; g.e = Math.random().toString(36).slice(2, 8); } }
+    else { g.cd = 6; g.t = 0; } }
+  else if (g.ph === 'live'){ g.t -= dt;
+    const w = g.md === 'gg' ? all.find(p => num(p.k) >= GG_WIN && p.in === g.r) : null;
+    if (w || g.t <= 0){ const p = w || top(); g.ph = 'over'; g.t = 10; g.wnm = p ? cleanName(p.nm) : ''; g.wn = p && p.nm === NET.name && p.sq === NET.sq ? (NET.me || '') : ''; } }
+  else if (g.ph === 'over'){ g.t -= dt; if (g.t <= 0){ g.ph = 'warmup'; g.r = 0; g.cd = 6; g.t = 0; } }
+}
+function modePhase(g){
+  const ph = g.ph; S.phase = ph === 'over' ? 'mover' : ph;
+  const key = g.e + ':' + g.r;
+  if (ph === 'warmup'){
+    if (NET.lastPh !== 'warmup' || NET.lastMd !== g.md){ NET.roundKey = ''; player.team = NET.sq === 'B' ? 'CT' : 'T'; enterWarmup(); }
+    if (!player.alive && NET.deadT > 3) respawnWarm();
+    if (g.t > 0){ const c = Math.ceil(g.t); if (c !== NET.cdShown){ NET.cdShown = c; showMsg(MODES[g.md].name + ' ' + c + ' soniyada boshlanadi', MODES[g.md].desc, 'atk', 1100); } } else NET.cdShown = -1;
+  } else if (ph === 'live'){
+    if (key !== NET.roundKey){   // a new match (or we just joined one)
+      NET.roundKey = key; player.team = NET.sq === 'B' ? 'CT' : 'T'; NET.inRound = g.r;
+      player.kills = player.deaths = player.hs = 0; player.dmg = 0; player.ggLv = -1; resetInv(); clearNades(); clearDrops();
+      bomb.planted = false; bomb.mesh.visible = false; modeLoadout(false); modeSpawn();
+      showMsg(MODES[g.md].name, MODES[g.md].desc, isFFA() ? 'atk' : teamMsg(player.team), 4200);
+    } else if (!player.alive && NET.deadT >= RESPAWN_T) modeRespawn();
+    // the server's own count of my kills (it only counts kills it has confirmed)
+    if (g.sc && NET.me && g.sc[NET.me] !== undefined && g.sc[NET.me] > player.kills){ player.kills = g.sc[NET.me]; onModeKill(); }
+  } else if (ph === 'over' && NET.lastPh !== 'over'){
+    const mine = (g.wn && g.wn === NET.me) || (!g.wn && g.wnm === NET.name), rows = modeRows(), place = rows.findIndex(r => r.me) + 1;
+    showMsg(mine ? "Siz yutdingiz!" : (g.wnm || "Kimdir") + ' yutdi', (g.md === 'gg' ? "Qurol poygasi tugadi. " : "Deathmatch tugadi. ") + 'Siz ' + place + "-o'rindasiz, " + player.kills + " o'ldirish. Isinish 10 soniyadan keyin boshlanadi.", mine ? 'atk' : '', 9000);
+    sfxChord(mine); if (S.buyOpen) closeBuy(true);
+  }
+  NET.lastPh = ph; NET.lastMd = g.md;
+}
 function respawnWarm(){ spawnAt(player.team); player.alive = true; player.hp = 100; player.money = 16000; refill(); NET.inRound = 0; NET.deadT = 0; S.deathT = 0; player.planting = 0; $('dead').hidden = true; H.cross.style.display = ''; drawWeapon(); }
-function enterWarmup(){ clearDrops(); respawnWarm(); showMsg('Isinish', "O'yin har ikki jamoada kamida bittadan o'yinchi bo'lganda boshlanadi. " + KB('M', 'Jamoa tugmasi') + " — jamoani almashtirish.", teamMsg(player.team), 4200); }
+function enterWarmup(){ clearDrops(); respawnWarm(); const md = curMode();
+  showMsg('Isinish · ' + MODES[md].name, md === 'dm' ? "O'yin xonada kamida 2 kishi bo'lganda boshlanadi." : "O'yin har ikki jamoada kamida bittadan o'yinchi bo'lganda boshlanadi. " + KB('M', 'Jamoa tugmasi') + " — jamoani almashtirish.", teamMsg(player.team), 4200); }
 function spawnRound(g){
   const newHalf = halfStart(g.r, g.fm), survived = player.alive && NET.inRound > 0 && !newHalf;
   player.team = sideOfSquad(NET.sq, g.r, g.fm);
@@ -3074,8 +3273,9 @@ function clientPhase(dt){
   const g = NET.g; if (!g || !player.team) return;
   if (g.m && g.m !== MAP_ID && setMap(g.m)){   // the room switched maps: rebuild and stand on the new map
     hint('Xarita: ' + MAP.name, 2500);
-    if (g.ph === 'warmup') respawnWarm(); else if (player.alive) spawnAt(player.team); else { spawnAt(player.team); player.deathPos.set(player.pos.x, 3, player.pos.z); }
+    if (g.ph === 'warmup') respawnWarm(); else if (respawnMode()) modeSpawn(); else if (player.alive) spawnAt(player.team); else { spawnAt(player.team); player.deathPos.set(player.pos.x, 3, player.pos.z); }
   }
+  if (g.md !== 'comp' || NET.lastMd !== 'comp'){ if (g.md !== 'comp') return modePhase(g); NET.lastMd = 'comp'; NET.lastPh = ''; }
   const ph = g.ph; S.phase = ph === 'over' ? 'mover' : ph;
   const key = g.e + ':' + g.r;
   if (ph === 'warmup'){
@@ -3136,6 +3336,7 @@ function netStep(dt){
 }
 function defuseTime(){ return player.kit ? 4 : 7; }
 function netPlantDefuse(dt){
+  if (respawnMode()){ player.bomb = false; if (player.slot === 5){ player.slot = bestSlot(); drawWeapon(); } return; }
   const g = NET.g, wantE = !!keys.KeyE && !S.paused;
   player.bomb = player.team === 'T' && !!g && (g.ph === 'live' || g.ph === 'freeze') && !g.b && !(NET.plant && NET.plant.r === g.r) && NET.inRound === g.r && player.alive;
   if (!player.bomb && player.slot === 5){ player.slot = bestSlot(); drawWeapon(); }
@@ -3170,14 +3371,15 @@ function netFrame(dt){
   if (bomb.planted){ NET.beepT -= dt; if (NET.beepT <= 0){ NET.beepT = Math.max(.1, .15 + (bomb.timer/40)*.95); sfxBeep(); bomb.led.material.opacity = 1; } bomb.led.material.opacity = Math.max(0, bomb.led.material.opacity - dt*6); }
   spotT -= dt;
   if (spotT <= 0 && player.alive){ spotT = .15; viewDir(_d, player.yaw, player.pitch);
-    NET.remotes.forEach(r => { if (!r.alive || r.team === player.team) return; _be.copy(r.pos); _be.y += 1.2; _tmp.subVectors(_be, camera.position); const dist = _tmp.length(); if (_tmp.dot(_d)/dist > Math.cos(SET.fov*.6*DEG) && player.flashT < 1 && seeLos(camera.position, _be)) r.spotT = S.time + 1.5; }); }
+    NET.remotes.forEach(r => { if (!r.alive || !foe(r)) return; _be.copy(r.pos); _be.y += 1.2; _tmp.subVectors(_be, camera.position); const dist = _tmp.length(); if (_tmp.dot(_d)/dist > Math.cos(SET.fov*.6*DEG) && player.flashT < 1 && seeLos(camera.position, _be)) r.spotT = S.time + 1.5; }); }
   if (!player.alive){ S.deathT += dt; NET.deadT += dt; }
 }
 // keep the room ticking when the tab is in the background (the host keeps the round clock)
 setInterval(() => { if (MODE !== 'online' || !NET.room) return; const now = performance.now(); if (now - NET.tickLast > 300){ const dt = Math.min(1, (now - NET.tickLast)/1000); NET.tickLast = now; S.time += dt; netStep(dt); } }, 250);
 
 function clockText(){
-  if (MODE === 'online'){ const g = NET.g; if (!g) return '—'; if (g.ph === 'warmup') return g.t > 0 ? fmt(g.t) : 'ISINISH'; if (bomb.planted) return 'BOMBA'; if (g.ph === 'freeze' || g.ph === 'live') return fmt(g.t); return fmt(0); }
+  if (MODE !== 'online' && S.md !== 'comp') return S.phase === 'live' ? fmt(S.timer) : fmt(0);
+  if (MODE === 'online'){ const g = NET.g; if (!g) return '—'; if (g.ph === 'warmup') return g.t > 0 ? fmt(g.t) : 'ISINISH'; if (g.md !== 'comp') return g.ph === 'live' ? fmt(g.t) : fmt(0); if (bomb.planted) return 'BOMBA'; if (g.ph === 'freeze' || g.ph === 'live') return fmt(g.t); return fmt(0); }
   return bomb.planted ? 'BOMBA' : (S.phase === 'freeze' || S.phase === 'live') ? fmt(S.timer) : fmt(0);
 }
 function netPips(){
@@ -3194,12 +3396,13 @@ function voiceHUD(){
 function netHUD(){
   voiceHUD();
   if (!$('pause').hidden){ NET.admT = (NET.admT || 0) + 1; if (NET.admT % 6 === 0) renderAdmin(); }
-  const g = NET.g; H.scT.textContent = gSideScore(g, 'T'); H.scCT.textContent = gSideScore(g, 'CT'); netPips();
+  const g = NET.g; if (!respawnMode()){ H.scT.textContent = gSideScore(g, 'T'); H.scCT.textContent = gSideScore(g, 'CT'); } netPips();
   const tt = $('teamTag'); tt.hidden = false;
-  tt.textContent = (player.team ? 'Jamoa: ' + TEAM_NAME[player.team] : 'Jamoa tanlanmoqda…') + ' · Xona: ' + NET.code + ' · ' + (NET.remotes.size + 1) + " o'yinchi" + (NET.room && !NET.room.connected() ? ' · aloqa uzildi' : '');
+  tt.textContent = (isFFA() ? 'Deathmatch' : player.team ? 'Jamoa: ' + TEAM_NAME[player.team] : 'Jamoa tanlanmoqda…') + ' · Xona: ' + NET.code + ' · ' + (NET.remotes.size + 1) + " o'yinchi" + (NET.room && !NET.room.connected() ? ' · aloqa uzildi' : '');
   tt.style.color = player.team === 'CT' ? 'var(--def)' : 'var(--atk)';
 }
 function netBoardHTML(){
+  if (respawnMode()) return modeBoardHTML('Xona: ' + NET.code + ' · ' + MODES[curMode()].name + (NET.g && NET.g.ph === 'live' ? ' · ' + fmt(NET.g.t) + ' qoldi' : ' · isinish'));
   const g = NET.g || { r:0, sA:0, sB:0, fm:12 }, esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
   const rows = [...NET.remotes.values()].filter(r => r.team).map(r => ({ name:r.name, team:r.team, k:r.k, d:r.d, alive:r.alive, me:false, acc:r.acc, bot:r.bot }));
   const meAcc = ACC.me ? { r:ACC.me.rating, rk:ACC.me.rank.calibrating ? 'Kalibrlash' : ACC.me.rank.name, rc:safeColor(ACC.me.rank.color) } : null;
@@ -3217,7 +3420,7 @@ async function joinOnline(create, codeOverride){
   NET.name = cleanName($('nick').value); NET.code = cleanCode(raw); $('nick').value = NET.name; SET.nick = NET.name;
   if (create) $('newCode').value = NET.code; else { $('roomCode').value = NET.code; SET.room = NET.code; }
   saveSet();
-  const opts = create ? { create:true, pub:$('newPub').value === '1', max:+$('newMax').value || 0, map:$('newMap').value } : null;
+  const opts = create ? { create:true, pub:$('newPub').value === '1', max:+$('newMax').value || 0, map:$('newMap').value, mode:$('newMode').value } : null;
   btn.disabled = true; note.textContent = 'Ulanmoqda…';
   const room = await roomP;
   if (!room){ btn.disabled = false; note.textContent = "Onlayn rejim bu ko'rinishda ishlamaydi. Sahifani claude.ai'da hisobingizga kirib oching; do'stlaringiz ham artifakt ulashilgan hisob bilan kirishi kerak."; return; }
@@ -3237,7 +3440,7 @@ async function joinOnline(create, codeOverride){
 }
 function goOnline(named){
   MODE = 'online'; NET.room = named;
-  Object.assign(NET, { drops:[], picks:[], me:null, host:false, g:null, gSrc:null, hits:[], shot:null, death:null, plant:null, def:null, seen:{}, inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, joinT:1.6, cdShown:-1, tickLast:performance.now() });
+  Object.assign(NET, { lastMd:'comp', drops:[], picks:[], me:null, host:false, g:null, gSrc:null, hits:[], shot:null, death:null, plant:null, def:null, seen:{}, inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, joinT:1.6, cdShown:-1, tickLast:performance.now() });
   player.team = null; NET.sq = null; player.alive = false; player.hp = 100; player.kills = player.deaths = player.hs = 0; player.dmg = 0; resetInv(); player.money = 16000; player.killer = null;
   spawnAt('T'); player.deathPos.set(player.pos.x, 3, player.pos.z);
   bots.forEach(b => { b.alive = false; b.m.g.visible = false; });
@@ -3461,7 +3664,7 @@ function touchFrame(){
   $('tDrop').hidden = !player.alive || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot];
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){
@@ -3547,15 +3750,16 @@ function step(dt){
   if (S.phase === 'menu' || S.phase === 'over'){ return; }
   if (MODE === 'online'){ netFrame(dt); return; }
   // timers
-  if (S.phase === 'freeze'){ S.timer -= dt; if (S.timer <= 0){ S.phase = 'live'; S.timer = 115; showMsg('Boshladik!', '', 'atk', 1200); } }
+  if (S.md !== 'comp') modeStepOffline(dt);
+  else if (S.phase === 'freeze'){ S.timer -= dt; if (S.timer <= 0){ S.phase = 'live'; S.timer = 115; showMsg('Boshladik!', '', 'atk', 1200); } }
   else if (S.phase === 'live'){ S.liveT += dt; if (!bomb.planted){ S.timer -= dt; if (S.timer <= 0) endRound('CT', 'Vaqt tugadi — bomba o\'rnatilmadi', 'time'); } }
   else if (S.phase === 'post'){ S.timer -= dt; if (S.timer <= 0){ if (matchWinner(S.sA, S.sB, S.round, S.H)) return matchOver(); startRound(); } }
   if (S.buyOpen && !canBuy()) closeBuy(true);
-  if (S.buyOpen && S.round) $('buyTime').textContent = S.phase === 'freeze' ? 'Raund boshlanmoqda' : 'Xarid uchun ' + Math.max(0, Math.ceil(20 - liveTime())) + ' soniya';
+  if (S.buyOpen && S.round && S.md === 'comp') $('buyTime').textContent = S.phase === 'freeze' ? 'Raund boshlanmoqda' : 'Xarid uchun ' + Math.max(0, Math.ceil(20 - liveTime())) + ' soniya';
 
   updatePlayer(dt);
   updateWeapon(dt);
-  updatePlant(dt);
+  if (S.md === 'comp') updatePlant(dt);
   updateNades(dt);
   updateDrops(dt);
   if (S.phase !== 'freeze') for (const b of bots) updateBot(b, dt);
@@ -3653,6 +3857,14 @@ function updatePlant(dt){
 
 function matchOver(){
   S.phase = 'over'; $('hud').hidden = true; $('dead').hidden = true; if (document.pointerLockElement) document.exitPointerLock();
+  if (S.md !== 'comp'){
+    const rows = modeRows(), place = rows.findIndex(r => r.me) + 1, win = S.endWinner === 'Siz';
+    $('overEyebrow').textContent = MODES[S.md].name + ' · ' + ({ easy:'Oson', normal:"O'rta", hard:'Qiyin' }[SET.diff]) + ' botlar';
+    $('overTitle').textContent = win ? "G'alaba" : "O'yin tugadi"; $('overTitle').style.color = win ? 'var(--atk)' : 'var(--ink)';
+    $('overLead').textContent = (win ? (S.md === 'gg' ? "Siz qurol poygasini birinchi bo'lib tugatdingiz." : "Siz eng ko'p o'ldirdingiz.") : S.endWinner + ' yutdi. ') + (win ? '' : 'Siz ' + place + "-o'rindasiz (" + player.kills + " o'ldirish).");
+    $('stK').textContent = player.kills; $('stD').textContent = player.deaths; $('stHS').textContent = (player.kills ? Math.round(player.hs/player.kills*100) : 0) + '%'; $('stDmg').textContent = Math.round(player.dmg);
+    $('over').hidden = false; sfxChord(win); return;
+  }
   const win = S.sA > S.sB;
   $('overEyebrow').textContent = "O'yin tugadi · " + ({ easy:'Oson', normal:"O'rta", hard:'Qiyin' }[SET.diff]) + ' botlar';
   $('overTitle').textContent = win ? "G'alaba" : "Mag'lubiyat"; $('overTitle').style.color = win ? 'var(--atk)' : 'var(--def)';
@@ -3674,7 +3886,7 @@ function render(dt){
     camera.position.set(player.pos.x, player.pos.y + eyeH(), player.pos.z);
     camera.rotation.set(player.pitch + player.punchY*DEG*.5, player.yaw + player.punchX*DEG*.3, 0);
   } else {
-    const specList = MODE === 'online' ? [...NET.remotes.values()].filter(r => r.alive && r.team === player.team) : bots.filter(b => b.alive);
+    const specList = respawnMode() ? [] : MODE === 'online' ? [...NET.remotes.values()].filter(r => r.alive && r.team === player.team) : bots.filter(b => b.alive);
     if (S.deathT < 2.6 || (MODE !== 'online' && (!bomb.planted || S.phase !== 'live')) || !specList.length){
       camera.position.lerp(_tmp.copy(player.deathPos).setY(Math.max(.4, player.deathPos.y - S.deathT*.8)), Math.min(1, dt*3));
       if (player.killer && player.killer.alive){ _tmp2.copy(player.killer.pos).setY(1.4); const dx = _tmp2.x-camera.position.x, dz = _tmp2.z-camera.position.z, dy = _tmp2.y-camera.position.y; camera.rotation.set(Math.atan2(dy, Math.hypot(dx,dz)), Math.atan2(-dx,-dz), 0); }

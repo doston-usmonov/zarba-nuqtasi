@@ -65,7 +65,8 @@ type bombState struct {
 type gameState struct {
 	R  int        `json:"r"`
 	Ph string     `json:"ph"`
-	M  string     `json:"m"` // xarita
+	M  string     `json:"m"`  // xarita
+	Md string     `json:"md"` // rejim: comp | dm | gg (modes.go)
 	T  float64    `json:"t"`
 	SA int        `json:"sA"`
 	SB int        `json:"sB"`
@@ -76,11 +77,17 @@ type gameState struct {
 	Bm int        `json:"bm"`
 	E  string     `json:"e"`
 	Cd float64    `json:"cd"`
+	// deathmatch / qurol poygasi
+	Sc  map[string]int `json:"sc,omitempty"`  // o'yinchi id → server tasdiqlagan o'ldirishlar
+	Wn  string         `json:"wn,omitempty"`  // g'olib id
+	Wnm string         `json:"wnm,omitempty"` // g'olib ismi
 
 	liveAt time.Time // jonli faza boshlangan vaqt (xarid vaqtini bilish uchun)
 }
 
-func newGameState() *gameState { return &gameState{Ph: "warmup", M: defaultMap, Fm: 12, Bm: -1, Cd: 6} }
+func newGameState() *gameState {
+	return &gameState{Ph: "warmup", M: defaultMap, Md: modeComp, Fm: 12, Bm: -1, Cd: 6}
+}
 
 func randEpoch() string {
 	var b [3]byte
@@ -170,6 +177,9 @@ type pstate struct {
 	plN        int
 	dfN        int
 	deN        int
+	deadAt     time.Time // oxirgi o'lim (qayta tug'ilish vaqti uchun)
+	spawnAt    time.Time // oxirgi tirilish (tug'ilgandagi himoya)
+	lvAt       time.Time // qurol poygasida oxirgi qurol almashgan vaqt
 	// server jonini nolga tushirgan, lekin mijoz hali o'lmagan
 	dueAt      time.Time
 	dueBy      string
@@ -260,17 +270,22 @@ func (r *room) refereeLocked(c *client, f map[string]json.RawMessage, info presI
 		switch {
 		case g.Ph == "warmup" && (!p.alive || p.life != -1):
 			newLife, p.life = true, -1
-		case (g.Ph == "freeze" || g.Ph == "live") && info.In == g.R && g.R > 0 && p.life != g.R:
+		case g.respawns() && g.Ph == "live" && info.In == g.R && g.R > 0 && (p.life != g.R || (!p.alive && now.Sub(p.deadAt) >= respawnDelay)):
+			newLife, p.life = true, g.R // qayta tug'iladigan rejimlar
+		case !g.respawns() && (g.Ph == "freeze" || g.Ph == "live") && info.In == g.R && g.R > 0 && p.life != g.R:
 			newLife, p.life = true, g.R
 		}
 	}
 	if newLife {
-		p.alive, p.hp, p.posOK, p.forced, p.killSent, p.dueAt = true, 100, false, false, false, time.Time{}
+		p.alive, p.hp, p.posOK, p.forced, p.killSent, p.dueAt, p.spawnAt = true, 100, false, false, false, time.Time{}, now
 	}
 	if info.Tm != p.tm {
 		p.tm, p.posOK = info.Tm, false // jamoa almashdi: boshqa bazaga o'tadi
 	}
 	if !claimAlive {
+		if p.alive {
+			p.deadAt = now
+		}
 		p.alive = false
 	} else if !p.alive {
 		f["al"] = jsonMsg(0) // raund o'rtasida o'z-o'zidan tirilib bo'lmaydi
@@ -306,7 +321,7 @@ func (r *room) refereeLocked(c *client, f map[string]json.RawMessage, info presI
 				if (np.flat(p.pos) > lim && !respawn) || r.gm().insideSolid(np) || (np.Y-p.pos.Y > 2.8 && !respawn) || np.X < 0 || np.Z < 0 || np.X > gridW*cellSize || np.Z > gridH*cellSize {
 					ok = false
 				}
-			} else if r.gm().insideSolid(np) || (info.Tm != "" && !r.gm().inSpawn(np, info.Tm)) {
+			} else if r.gm().insideSolid(np) || !r.spawnOKLocked(np, info.Tm) {
 				// yangi hayot faqat o'z bazasida boshlanadi (mijoz bazaga o'tguncha biroz kutamiz)
 				ok = false
 				if p.badSpawnAt.IsZero() {
@@ -377,7 +392,9 @@ func (r *room) checkHitsLocked(c *client, f map[string]json.RawMessage, now time
 		}
 		maxSeen = max(maxSeen, h.I)
 		if why := r.validHitLocked(c, h, now); why != "" {
-			c.warnLocked("rad etilgan o'q: "+why, now)
+			if why[0] != '~' { // "~" — qoidaga mos holat (masalan, tug'ilgandagi himoya), ogohlantirish emas
+				c.warnLocked("rad etilgan o'q: "+why, now)
+			}
 			continue
 		}
 		p.okHits[h.I] = true
@@ -411,11 +428,25 @@ func (r *room) validHitLocked(c *client, h hitClaim, now time.Time) string {
 	if v == nil || v == c || !v.ps.alive {
 		return "nishon yo'q yoki o'lik"
 	}
-	if c.info.Tm == "" || v.info.Tm == "" || c.info.Tm == v.info.Tm {
+	if c.info.Tm == "" || v.info.Tm == "" || !r.foes(c, v) {
 		return "o'z jamoadoshi"
 	}
 	spec, ok := weaponSpecs[h.W]
 	mult, okp := partMult[h.P]
+	if g.respawns() {
+		if !v.ps.spawnAt.IsZero() && now.Sub(v.ps.spawnAt) < spawnShield {
+			return "~tug'ilgandagi himoya"
+		}
+		if spec.nade {
+			return "bu rejimda granata yo'q"
+		}
+		if g.Md == modeGG && h.W != "knife" {
+			k := g.Sc[c.id]
+			if h.W != ggWeapon(k) && !(k > 0 && h.W == ggWeapon(k-1) && now.Sub(p.lvAt) < 2*time.Second) {
+				return "qurol poygasida boshqa qurol"
+			}
+		}
+	}
 	if ok && spec.nade && v.bot != nil {
 		// granata zararini botlarga otgan o'yinchining brauzeri hisoblaydi (odam o'zinikini o'zi)
 		limit, win := 100.0, 4*time.Second
@@ -530,6 +561,9 @@ func (r *room) checkDeathLocked(c *client, f map[string]json.RawMessage, now tim
 	if !c.deSeen {
 		return // ulanishning birinchi xabaridagi eski o'lim
 	}
+	if c.ps.alive {
+		c.ps.deadAt = now
+	}
 	c.ps.alive = false
 	c.ps.dueAt = time.Time{}
 	killer := r.clients[d.By]
@@ -539,10 +573,13 @@ func (r *room) checkDeathLocked(c *client, f map[string]json.RawMessage, now tim
 		f["de"] = jsonMsg(d)
 	}
 	r.tr.death(r, c, killer, d.HS == 1)
+	if killer != nil {
+		r.creditKillLocked(c, killer, now)
+	}
 }
 
 func (r *room) creditOK(k, victim *client, w string, now time.Time) bool {
-	if k == nil || k == victim || k.info.Sq == "" || k.info.Sq == victim.info.Sq {
+	if !r.foes(k, victim) {
 		return false
 	}
 	if t, ok := k.ps.dealt[victim.id]; ok && now.Sub(t) < 6*time.Second {
@@ -658,6 +695,10 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 	}
 	r.forceDeathsLocked(now)
 	prev := g.Ph
+	if g.respawns() {
+		r.tickModeLocked(dt, nA, nB)
+		return r.tr.phase(r, prev, now)
+	}
 	if g.Ph != "warmup" && g.Ph != "over" && (nA == 0 || nB == 0) {
 		g.reset()
 	}
@@ -736,9 +777,12 @@ func (r *room) forceDeathsLocked(now time.Time) {
 		}
 		if age > 1500*time.Millisecond {
 			c.warnLocked("server o'ldirganini qabul qilmadi", now)
-			p.alive, p.forced, p.dueAt = false, true, time.Time{}
+			p.alive, p.forced, p.dueAt, p.deadAt = false, true, time.Time{}, now
 			killer := r.clients[p.dueBy]
 			r.tr.death(r, c, killer, p.dueHS)
+			if killer != nil {
+				r.creditKillLocked(c, killer, now)
+			}
 			// boshqalarga: o'lik va kim o'ldirgani
 			var f map[string]json.RawMessage
 			if json.Unmarshal(c.pres, &f) == nil {
@@ -801,7 +845,7 @@ func (r *room) gm() *gameMap { return mapByID(r.gs.M) }
 
 // reset: yangi o'yin (xarita saqlanadi).
 func (g *gameState) reset() {
-	m := g.M
+	m, md := g.M, g.Md
 	*g = *newGameState()
-	g.M = m
+	g.M, g.Md = m, md
 }

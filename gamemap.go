@@ -40,6 +40,7 @@ type gameMap struct {
 	mapDef
 	grid              [gridW * gridH]uint8
 	tCenter, ctCenter vec3
+	open              [][2]int // yashik yonida bo'lmagan ochiq kataklar (deathmatch'da tug'ilish, botlar aylanishi)
 }
 
 var cellOfChar = map[byte]uint8{'#': cWall, '.': cFloor, 'c': cCrate, 's': cStack, 'A': cSiteA, 'B': cSiteB, 't': cTSpawn, 'k': cCTSpawn}
@@ -58,6 +59,19 @@ var gameMaps = func() map[string]*gameMap {
 			}
 		}
 		m.tCenter, m.ctCenter = m.zoneCenter(cTSpawn), m.zoneCenter(cCTSpawn)
+		for z := 0; z < gridH; z++ {
+			for x := 0; x < gridW; x++ {
+				ok := !m.botSolid(x, z)
+				for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+					if t := m.cellType(x+d[0], z+d[1]); t == cCrate || t == cStack {
+						ok = false
+					}
+				}
+				if ok {
+					m.open = append(m.open, [2]int{x, z})
+				}
+			}
+		}
 		out[d.id] = m
 	}
 	return out

@@ -37,6 +37,8 @@ type client struct {
 	accJSON json.RawMessage // boshqalarga ko'rsatiladigan hisob ma'lumoti (nom, reyting, daraja)
 	info    presInfo
 	deSeen  bool
+	chatAt  time.Time // chat: oxirgi xabar va "chelak" (spamga qarshi)
+	chatTok float64
 	ps      *pstate   // server hakamining shu o'yinchi haqidagi ma'lumoti
 	bot     *botBrain // nil — odam; aks holda server boshqaradigan bot
 	prefFm  int       // o'yinchi sozlamasidagi format (8/12)
@@ -261,6 +263,13 @@ func (h *hub) reader(c *client) {
 				}
 				r.mu.Unlock()
 			}
+			continue
+		}
+		if m.T == "chat" { // matnli chat: hammaga yoki faqat jamoaga
+			r := c.room
+			r.mu.Lock()
+			r.chatLocked(c, m.D, now)
+			r.mu.Unlock()
 			continue
 		}
 		if m.T == "adm" { // xona egasining buyrug'i

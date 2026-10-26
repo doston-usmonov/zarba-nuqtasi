@@ -151,6 +151,10 @@ Bosh sahifada **ochiq o'yinlar ro'yxati** bor (har 5 soniyada yangilanadi, `GET 
 
 Botlar serverda ishlaydi: yo'l topadi, himoyachilar o'z joylarini qo'riqlaydi, hujumchilar nuqtaga borib bomba qo'yadi, himoyachilar uni zararsizlantiradi, raqibni ko'rsa otadi. Ular boshqa o'yinchilar kabi server hakami orqali o'ynaydi. Bot qatnashgan o'yin reytingga yozilmaydi. `MAX_PLAYERS` (standart 64) — bitta xonadagi o'yinchilar va botlar uchun umumiy yuqori chegara.
 
+## Matnli chat
+
+Onlayn o'yinda CS'dagidek yoziladi: **Y** — hammaga (ikkala jamoa ham ko'radi), **U** — faqat o'z jamoasiga. Enter yuboradi, Esc bekor qiladi, telefonda yuqoridagi «Chat» tugmasi bor. O'lgan o'yinchi xabari `*O'LIK*` belgisi bilan chiqadi. Saytda xabar server orqali o'tadi. Jamoa xabari faqat jamoadoshlarga yuboriladi, ismni server qo'yadi, ketma-ket ko'p yozishga chek bor.
+
 ## Ovozli chat
 
 Onlayn xonada o'yinchilar bir-biri bilan gaplashadi (faqat o'yinning o'z saytida; Claude ichidagi versiyada o'chiq). Sozlamalarda tanlanadi:

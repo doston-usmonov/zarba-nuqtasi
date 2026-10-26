@@ -41,7 +41,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - [ ] O'yin oldidan xarita tanlash uchun ovoz berish
 
 ## 6. Ijtimoiy
-- [ ] Xona ichida matnli chat (jamoa / hamma)
+- ✅ Xona ichida matnli chat (Y — hamma, U — jamoa)
 - ✅ Ovozli chat (WebRTC): jamoa yoki hamma, K bosib gapirish yoki doim ochiq mikrofon, TURN (coturn)
 - [ ] Do'stlar ro'yxati, profil sahifasi, batafsil statistika (qurollar bo'yicha, xaritalar bo'yicha)
 - [ ] Telegram orqali kirish, parolni tiklash

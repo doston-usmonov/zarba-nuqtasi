@@ -87,6 +87,18 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 #prog div{height:6px;background:rgba(243,239,230,.2);border-radius:3px;margin-top:6px;overflow:hidden}
 #progBar{display:block;height:100%;width:0;background:var(--atk)}
 
+#chat{position:absolute;left:max(16px, env(safe-area-inset-left,0px));bottom:calc(112px + env(safe-area-inset-bottom,0px));width:min(440px,56vw);display:flex;flex-direction:column;gap:6px;pointer-events:none;font-size:14px;line-height:1.3}
+#chatLog{display:flex;flex-direction:column;gap:2px;max-height:190px;overflow:hidden;justify-content:flex-end}
+#chatLog div{background:rgba(14,13,11,.42);padding:2px 8px;border-radius:4px;align-self:flex-start;max-width:100%;overflow-wrap:anywhere;transition:opacity .6s}
+#chatLog div.old{opacity:0}
+#chatLog.open div.old{opacity:1}
+#chatLog .a{color:var(--atk);font-weight:600} #chatLog .d{color:var(--def);font-weight:600} #chatLog .tag{color:var(--dim);font-size:12px;margin-right:4px}
+#chatBox{display:flex;align-items:center;gap:8px;background:rgba(14,13,11,.78);border:1px solid var(--atk);border-radius:6px;padding:4px 8px;pointer-events:auto}
+#chatBox span{font-size:13px;color:var(--atk);white-space:nowrap;font-weight:600}
+#chatBox input{flex:1;min-width:0;background:transparent;border:0;color:var(--ink);font-family:var(--f-body);font-size:15px;outline:none;padding:4px 0}
+#chatBox button{background:var(--atk);color:#1a1712;border:0;border-radius:4px;font-weight:700;padding:5px 10px}
+.touch #chat{bottom:auto;top:calc(150px + env(safe-area-inset-top,0px));width:min(360px,46vw);font-size:12px}
+.touch #chatLog{max-height:110px}
 #bl{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:max(16px, env(safe-area-inset-left,0px));display:flex;gap:18px;align-items:flex-end}
 .vital{display:flex;align-items:center;gap:8px;background:var(--shade);padding:6px 14px 6px 10px;border-radius:6px}
 .vital svg{flex:none}
@@ -370,6 +382,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
   <div id="msg"><div id="msgT"></div><div id="msgS"></div></div>
   <div id="prog" hidden><span id="progLbl">Bomba o'rnatilmoqda</span><div><i id="progBar"></i></div></div>
   <div id="hintline" hidden></div>
+  <div id="chat"><div id="chatLog" aria-live="polite"></div><div id="chatBox" hidden><span id="chatMode">Hammaga:</span><input id="chatIn" maxlength="120" autocomplete="off" enterkeyhint="send" aria-label="Xabar"><button type="button" id="chatSend" class="touch-only">Yuborish</button></div></div>
   <div id="bl">
     <div class="vital" id="hpBox"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M8 1h6v7h7v6h-7v7H8v-7H1V8h7z" fill="#f3efe6"/></svg><div><b id="hp">100</b><div class="bar"><i id="hpBar" style="width:100%"></i></div></div></div>
     <div class="vital" id="arBox"><svg width="20" height="22" viewBox="0 0 20 22" aria-hidden="true"><path d="M10 1 19 4v7c0 5-4 9-9 10C5 20 1 16 1 11V4z" fill="none" stroke="#f3efe6" stroke-width="2"/><path id="helmMark" d="M6 11h8" stroke="#f3efe6" stroke-width="2"/></svg><div><b id="ar">0</b><div class="bar"><i id="arBar" style="width:0%"></i></div></div></div>
@@ -389,6 +402,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
     <button class="tb sm" type="button" data-t="buy" id="tBuy">$ Xarid</button>
     <button class="tb sm" type="button" data-t="team" id="tTeam">Jamoa</button>
     <button class="tb sm" type="button" data-t="drop" id="tDrop">Tashlash</button>
+    <button class="tb sm" type="button" data-t="chat" id="tChat">Chat</button>
     <button class="tb sm" type="button" data-t="board">Hisob</button>
     <button class="tb sm" type="button" data-t="pause" aria-label="Pauza">II</button>
   </div>
@@ -506,6 +520,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <dt>Granata bilan</dt><dd>Chap tugma — uzoqqa, o'ng tugma — yaqinga otish (qo'yib yuborganda uchadi)</dd>
           <dt><kbd>Tab</kbd></dt><dd>Hisob jadvali</dd>
           <dt><kbd>M</kbd></dt><dd>Jamoani almashtirish (onlayn)</dd>
+          <dt><kbd>Y</kbd> / <kbd>U</kbd></dt><dd>Chat: hammaga / faqat jamoaga (onlayn)</dd>
           <dt><kbd class="pttKey">K</kbd> bosib turing</dt><dd>Ovozli chatda gapirish (onlayn, sozlamalarda o'zgartiriladi)</dd>
           <dt><kbd>Esc</kbd></dt><dd>Pauza</dd>
         </dl>
@@ -598,7 +613,7 @@ const IN_ARTIFACT = !!(window.claude && typeof window.claude.use === 'function')
 let KBLOCK = false;
 // as its own site: go full screen and lock only the game's keys, so Ctrl+W/T/N can't close the tab while
 // Alt+Tab, the Windows key and Esc still reach the system (Esc leaves full screen at once)
-const LOCK_KEYS = ['KeyG','KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','KeyR','KeyT','KeyN','KeyF','KeyC','KeyB','KeyM','KeyH','KeyP','KeyL','KeyO','KeyU','KeyI','KeyJ','KeyK','Digit1','Digit2','Digit3','Digit4','Digit5','Space','ControlLeft','ControlRight']
+const LOCK_KEYS = ['KeyY','KeyG','KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','KeyR','KeyT','KeyN','KeyF','KeyC','KeyB','KeyM','KeyH','KeyP','KeyL','KeyO','KeyU','KeyI','KeyJ','KeyK','Digit1','Digit2','Digit3','Digit4','Digit5','Space','ControlLeft','ControlRight']
 function goFullscreen(){
   if (IN_ARTIFACT || window.top !== window || document.fullscreenElement || !document.documentElement.requestFullscreen) return;
   document.documentElement.requestFullscreen({ navigationUI:'hide' })
@@ -2283,7 +2298,7 @@ function requestLock(){
 function lockFailed(){ lockFails++; if (lockFails >= 4){ noLock = true; hint("Sichqoncha qulflanmadi — oddiy rejimda o'ynaysiz", 3000); } else if (inGame()) hint('Sichqonchani ulash uchun ekranni bosing', 2500); }
 document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === canvas; if (locked) lockFails = 0;
-  if (!locked && inGame() && !S.buyOpen && !S.paused && !noLock) pauseGame();
+  if (!locked && inGame() && !S.buyOpen && !S.paused && !noLock && !CHAT.open) pauseGame();
 });
 document.addEventListener('pointerlockerror', lockFailed);
 document.addEventListener('keydown', e => {
@@ -2306,6 +2321,8 @@ document.addEventListener('keydown', e => {
     case 'Space': if (!e.repeat) jumpQ = true; break;
     case 'Tab': showBoard(true); break;
     case 'KeyM': if (MODE === 'online') switchTeam(); break;
+    case 'KeyY': if (!e.repeat){ e.preventDefault(); chatOpen(false); } break;
+    case 'KeyU': if (!e.repeat){ e.preventDefault(); chatOpen(true); } break;
   }
 });
 document.addEventListener('keyup', e => { keys[e.code] = false; if (e.code === 'Tab') showBoard(false); if (e.code === SET.ptt) voicePTT(false); });
@@ -2495,6 +2512,7 @@ function wsJoin(name, opts){
       signal(to, d){ if (ws && ws.readyState === 1){ try { ws.send(JSON.stringify({ t:'sig', to, d })); } catch(e){} } },
       ref:true,   // the server referees: round clock, hits, movement
       admin(d){ if (ws && ws.readyState === 1){ try { ws.send(JSON.stringify({ t:'adm', d })); } catch(e){} } },
+      chat(m, team){ if (ws && ws.readyState === 1){ try { ws.send(JSON.stringify({ t:'chat', d:{ m, tm:team ? 1 : 0 } })); } catch(e){} } },
     };
     setInterval(() => { if (!closed && ws && ws.readyState === 1){ try { ws.send(JSON.stringify({ t:'ping', c:performance.now() })); } catch(e){} } }, 2000);
     const open = () => {
@@ -2512,6 +2530,7 @@ function wsJoin(name, opts){
         else if (m.t === 'pong'){ const rtt = performance.now() - num(m.c); if (rtt >= 0 && rtt < 10000) NET.ping = NET.ping ? NET.ping*.7 + rtt*.3 : rtt; }
         else if (m.t === 'room'){ netRoomInfo(m); }
         else if (m.t === 'note'){ hint(String(m.msg || '').slice(0, 120), 3000); }
+        else if (m.t === 'chat'){ chatShow(cleanName(m.nm), m.side === 'CT' ? 'CT' : 'T', !!m.dead, m.tm === 1, String(m.m || '').slice(0, 120), false); }
         else if (m.t === 'err' && !settled){ settled = true; closed = true; reject({ code:m.code || 'refused' }); }
         else if (m.t === 'err' && m.code === 'kicked'){ closed = true; netKicked(); } };
       ws.onclose = () => { conn = false; others.clear(); dirty = true;
@@ -2522,6 +2541,57 @@ function wsJoin(name, opts){
     open();
   });
 }
+/* ================= TEXT CHAT =================
+   Y — everyone, U — own team only (as in CS). On the game server the message goes through the
+   server, which sends team messages only to that team; in the Claude version it rides on the presence. */
+const CHAT = { open:false, team:false, lastSend:0, burst:0 };
+function chatOpen(team){
+  if (MODE !== 'online' || !inGame() || S.buyOpen) return;
+  CHAT.open = true; CHAT.team = team;
+  for (const k in keys) keys[k] = false; mouseL = mouseR = false; firePressed = false; voicePTT(false);
+  $('chatMode').textContent = team ? 'Jamoaga:' : 'Hammaga:'; $('chatBox').style.borderColor = team ? 'var(--def)' : '';
+  $('chatBox').hidden = false; $('chatLog').classList.add('open');
+  const i = $('chatIn'); i.value = ''; setTimeout(() => i.focus({ preventScroll:true }), 0);
+}
+function chatClose(){
+  CHAT.open = false; $('chatBox').hidden = true; $('chatLog').classList.remove('open'); $('chatIn').blur();
+  if (inGame() && !S.paused && !locked && !noLock) requestLock();
+}
+function chatSend(){
+  const text = $('chatIn').value.replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 120);
+  chatClose(); if (!text || MODE !== 'online') return;
+  const now = performance.now(); CHAT.burst = Math.max(0, CHAT.burst - (now - CHAT.lastSend)/1500);
+  if (CHAT.burst >= 4){ hint('Juda tez yozyapsiz — biroz kuting', 1800); return; }
+  CHAT.burst++; CHAT.lastSend = now;
+  if (NET.room && NET.room.chat) NET.room.chat(text, CHAT.team);
+  else { NET.chats.push({ n:++NET.chatN, m:text, tm:CHAT.team ? 1 : 0 }); if (NET.chats.length > 4) NET.chats.shift(); }
+  chatShow(NET.name, player.team, !player.alive, CHAT.team, text, true);
+}
+function chatShow(name, team, dead, teamOnly, text, mine){
+  const log = $('chatLog'), d = document.createElement('div');
+  if (dead){ const t = document.createElement('span'); t.className = 'tag'; t.textContent = "*O'LIK*"; d.append(t); }
+  if (teamOnly){ const t = document.createElement('span'); t.className = 'tag'; t.textContent = '(Jamoa)'; d.append(t); }
+  const n = document.createElement('span'); n.className = team === 'CT' ? 'd' : 'a'; n.textContent = name + ': ';
+  d.append(n, document.createTextNode(String(text).slice(0, 120)));
+  log.append(d); while (log.children.length > 12) log.firstChild.remove();
+  setTimeout(() => d.classList.add('old'), 12000);
+  if (!mine) toneHit({ g:1, pan:0, lp:20000 }, 1500, .05, .05, 'sine');
+}
+$('chatIn').addEventListener('keydown', e => {
+  e.stopPropagation();   // typing never moves or shoots
+  if (e.key === 'Enter'){ e.preventDefault(); chatSend(); }
+  else if (e.key === 'Escape'){ e.preventDefault(); chatClose(); }
+});
+$('chatIn').addEventListener('keyup', e => e.stopPropagation());
+$('chatSend').addEventListener('click', chatSend);
+$('chatIn').addEventListener('blur', () => { if (CHAT.open) setTimeout(() => { if (CHAT.open && document.activeElement !== $('chatIn') && !isTouch) chatClose(); }, 150); });
+function chatFromPresence(r, pr){
+  if (!Array.isArray(pr.ch)) return;
+  for (const e of pr.ch){ if (!e || typeof e !== 'object') continue; const n = num(e.n); if (n <= r.chatN) continue; r.chatN = n;
+    if (e.tm === 1 && r.team !== player.team) continue;
+    chatShow(r.name, r.team, !r.alive, e.tm === 1, String(e.m || '').slice(0, 120), false); }
+}
+
 /* ================= VOICE CHAT =================
    Browsers send their voice straight to each other (WebRTC); the game server only relays the
    connection messages and hands out STUN/TURN. Who hears whom, as in CS: "Jamoa" — only your
@@ -2630,7 +2700,7 @@ if (!voiceAvailable()){ $('voiceNote').textContent = "Ovozli chat o'yinning o'z 
 else if (isTouch) $('voiceNote').querySelector('.desk-txt').textContent = 'Gapirish: mikrofon tugmasini bosib turing.';
 
 /* push-to-talk binding: any key or an extra mouse button (middle, side buttons 4 and 5), like CS */
-const PTT_TAKEN = ['KeyG','KeyW','KeyA','KeyS','KeyD','KeyE','KeyR','KeyQ','KeyB','KeyC','KeyM','Space','Tab','Escape','ShiftLeft','ShiftRight','ControlLeft','ControlRight','Digit1','Digit2','Digit3','Digit4','Digit5','ArrowUp','ArrowDown','F11'];
+const PTT_TAKEN = ['KeyY','KeyU','KeyG','KeyW','KeyA','KeyS','KeyD','KeyE','KeyR','KeyQ','KeyB','KeyC','KeyM','Space','Tab','Escape','ShiftLeft','ShiftRight','ControlLeft','ControlRight','Digit1','Digit2','Digit3','Digit4','Digit5','ArrowUp','ArrowDown','F11'];
 function pttLabel(c){
   const m = /^Mouse(\d)$/.exec(c || ''); if (m) return { 3:"G'ildirak tugmasi", 4:'Sichqoncha 4 (yon)', 5:'Sichqoncha 5 (yon)' }[m[1]] || 'Sichqoncha ' + m[1];
   if (/^Key[A-Z]$/.test(c)) return c.slice(3); if (/^Digit\d$/.test(c)) return c.slice(5);
@@ -2657,7 +2727,7 @@ document.addEventListener('mousedown', e => pttMouse(e, true));
 document.addEventListener('mouseup', e => pttMouse(e, false));
 document.addEventListener('auxclick', e => { if (inGame() && e.button !== 0) e.preventDefault(); });
 
-const NET = { room:null, me:null, name:'', code:'umumiy', sq:null, drops:[], dropN:0, picks:[], pickN:0, host:false, g:null, gSrc:null, hitSeq:0, hits:[], shot:null, shotN:0, death:null, deathN:0, nade:null, nadeN:0, plant:null, plantN:0, def:null, defN:0,
+const NET = { room:null, me:null, name:'', code:'umumiy', sq:null, chats:[], chatN:0, drops:[], dropN:0, picks:[], pickN:0, host:false, g:null, gSrc:null, hitSeq:0, hits:[], shot:null, shotN:0, death:null, deathN:0, nade:null, nadeN:0, plant:null, plantN:0, def:null, defN:0,
   seen:{}, remotes:new Map(), inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, tickLast:0, joinT:0, cdShown:-1, beepT:0 };
 if (!IN_ARTIFACT) $('onlineNote').textContent = "Ochiq o'yinga qo'shiling yoki o'zingiz yarating. Yopiq o'yinga do'stlaringiz kod bilan kiradi. Jamoalar avtomatik teng bo'linadi, xona egasi bot qo'sha oladi (Esc menyusida).";
 const DEFAULT_NOTE = $('onlineNote').textContent;
@@ -2682,7 +2752,7 @@ function nameTag(text, team){
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:new THREE.CanvasTexture(c), transparent:true, depthWrite:false })); s.scale.set(1.6,.4,1); s.position.y = 2.2; return s;
 }
 function makeRemote(p){ const pr = p.presence; return { peer:p.peer, team:null, name:'', m:null, tag:null, pos:new V3(num(pr.x), num(pr.y), num(pr.z)), tpos:new V3(), yaw:0, tyaw:0, kneel:0, cr:0, alive:false, hp:100, w:'pistol', mv:false, k:0, d:0, lastPres:null,
-  shotN: pr.sh ? num(pr.sh.n) : 0, deathN: pr.de ? num(pr.de.n) : 0, nadeN: pr.gn ? num(pr.gn.n) : 0, dropN:0, pickN:0, stepT:0, deadT:1, spotT:-99, walk:0, flashT:0, moving:false }; }
+  shotN: pr.sh ? num(pr.sh.n) : 0, deathN: pr.de ? num(pr.de.n) : 0, nadeN: pr.gn ? num(pr.gn.n) : 0, dropN:0, pickN:0, chatN: Array.isArray(pr.ch) ? Math.max(0, ...pr.ch.map(e => num(e && e.n))) : 0, stepT:0, deadT:1, spotT:-99, walk:0, flashT:0, moving:false }; }
 function dressRemote(r){ if (r.m) scene.remove(r.m.g); r.m = buildBot(r.team === 'CT' ? PAL_CT : PAL_T); r.tag = nameTag(r.name, r.team); r.m.g.add(r.tag); scene.add(r.m.g); }
 function removeRemote(r){ if (r.m) scene.remove(r.m.g); }
 function hitMark(kill){ H.hit.className = ''; void H.hit.offsetWidth; H.hit.style.opacity = 1; H.hit.className = kill ? 'kill' : ''; hitFade = .18; }
@@ -2714,6 +2784,7 @@ function updateRemote(r, pr, dt){
     if (gn && typeof gn === 'object'){ const n = num(gn.n); if (n > r.nadeN){ r.nadeN = n; const k = String(gn.k);
       if (W[k] && W[k].kind === 'nade') spawnNade(k, new V3(clamp(num(gn.x), 0, MAPW), clamp(num(gn.y), 0, 8), clamp(num(gn.z), 0, MAPH)), new V3(clamp(num(gn.vx), -30, 30), clamp(num(gn.vy), -30, 30), clamp(num(gn.vz), -30, 30)), r, r.team); } }
     netDropEvents(r, pr);
+    chatFromPresence(r, pr);
     // their hits on me
     if (Array.isArray(pr.hi) && NET.me){ const s0 = NET.seen[r.peer] || 0; let mx = s0;
       for (const h of pr.hi){ if (!h || typeof h !== 'object' || h.t !== NET.me) continue; const i = num(h.i); if (i > s0){ mx = Math.max(mx, i); netApplyHit(r, h); } }
@@ -2775,7 +2846,7 @@ function buildPres(){
   const it = curItem();
   return { v:1, hc:1, nm:NET.name, sq:NET.sq, tm:player.team, x:r2(player.pos.x), y:r2(player.pos.y), z:r2(player.pos.z), yw:r2(player.yaw), pt:r2(player.pitch), cr:r2(player.crouch),
     al:player.alive ? 1 : 0, hp:Math.max(0, Math.round(player.hp)), w:it ? it.id : 'knife', mv:(player.alive && player.ground && Math.hypot(player.vel.x, player.vel.z) > 3.1) ? 1 : 0,
-    k:player.kills, d:player.deaths, in:NET.inRound, sh:NET.shot, hi:NET.hits.length ? NET.hits : null, ar:Math.round(player.armor), hm:player.helmet ? 1 : 0, kt:player.kit ? 1 : 0, pf:fmtH(), de:NET.death, gn:NET.nade, dr:NET.drops.length ? NET.drops : null, pk:NET.picks.length ? NET.picks : null, pl:NET.plant, df:NET.def, vo:voiceMode(), vt:VOICE.talking ? 1 : 0, g: NET.host ? gOut(NET.g) : null };
+    k:player.kills, d:player.deaths, in:NET.inRound, sh:NET.shot, hi:NET.hits.length ? NET.hits : null, ar:Math.round(player.armor), hm:player.helmet ? 1 : 0, kt:player.kit ? 1 : 0, pf:fmtH(), ch:NET.chats.length && !(NET.room && NET.room.chat) ? NET.chats : null, de:NET.death, gn:NET.nade, dr:NET.drops.length ? NET.drops : null, pk:NET.picks.length ? NET.picks : null, pl:NET.plant, df:NET.def, vo:voiceMode(), vt:VOICE.talking ? 1 : 0, g: NET.host ? gOut(NET.g) : null };
 }
 
 function gSideScore(g, side){ if (!g || !g.r) return 0; return sideOfSquad('A', g.r, g.fm) === side ? g.sA : g.sB; }
@@ -3014,7 +3085,7 @@ function goOnline(named){
   goFullscreen(); requestLock(); canvas.focus({ preventScroll:true });
 }
 function leaveOnline(){
-  voiceStop(); NET.roomInfo = null; $('adminPanel').hidden = true;
+  voiceStop(); if (CHAT.open) chatClose(); $('chatLog').innerHTML = ''; NET.chats = []; NET.roomInfo = null; $('adminPanel').hidden = true;
   if (NET.room){ const r = NET.room; NET.room = null; r.leave().catch(() => {}); }
   NET.remotes.forEach(removeRemote); NET.remotes.clear(); NET.g = null;
   MODE = 'bots'; player.team = 'T'; bots.forEach(b => b.m.g.visible = true); $('teamTag').hidden = true; bomb.mesh.visible = false; bomb.planted = false;
@@ -3185,6 +3256,7 @@ const TOUCH = { mx:0, my:0, mag:0, crouch:false };
       if (S.paused) return;
       if (t === 'buy'){ if (S.buyOpen) closeBuy(); else if (canBuy()) openBuy(); else hint("Xarid faqat o'z bazangizda va raund boshida mumkin"); return; }
       if (t === 'team'){ if (MODE === 'online') switchTeam(); return; }
+      if (t === 'chat'){ if (CHAT.open) chatClose(); else chatOpen(false); return; }
       if (t === 'mic'){ voicePTT(true); return; }
       if (!player.alive){ cycleSpec(); return; }
       switch (t){
@@ -3217,7 +3289,7 @@ function touchFrame(){
   if (rot !== rotShown){ rotShown = rot; $('rotate').hidden = !rot; }
   if (!show) return;
   $('tBuy').hidden = !canBuy() && !S.buyOpen;
-  $('tTeam').hidden = MODE !== 'online';
+  $('tTeam').hidden = MODE !== 'online'; $('tChat').hidden = MODE !== 'online';
   $('tMic').hidden = !voiceMode() || SET.mic === 'open'; $('tMic').classList.toggle('on', VOICE.ptt);
   $('tScope').hidden = !player.alive || (curW().kind !== 'sniper' && curW().kind !== 'nade');
   const site = player.alive && ((player.team === 'T' && player.bomb) || (player.team === 'CT' && bomb.planted));

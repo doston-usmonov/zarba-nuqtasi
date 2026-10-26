@@ -802,3 +802,36 @@ func TestBots(t *testing.T) {
 		t.Fatal("bot chiqarilmadi")
 	}
 }
+
+func TestChat(t *testing.T) {
+	r, a, b := newRefRoom()
+	mate := &client{id: "m", room: r, send: make(chan []byte, 64), ps: newPState(), joined: time.Now()}
+	r.clients["m"] = mate
+	for c, sq := range map[*client]string{a: "A", b: "B", mate: "A"} {
+		refPres(r, c, map[string]any{"v": 1, "sq": sq, "tm": map[string]string{"A": "T", "B": "CT"}[sq], "nm": "O'yinchi " + c.id, "in": 0, "al": 1, "x": 43, "y": 0, "z": 75})
+		drain(c)
+	}
+	now := time.Now()
+	r.chatLocked(a, json.RawMessage(`{"m":"  salom\nhammaga  ","tm":0}`), now)
+	if ms := drain(b); len(ms) != 1 || ms[0]["m"] != "salom hammaga" || ms[0]["nm"] != "O'yinchi a" || ms[0]["side"] != "T" {
+		t.Fatalf("hammaga xabar: %v", ms)
+	}
+	drain(mate)
+	if len(drain(a)) != 0 {
+		t.Fatal("o'ziga qaytib keldi")
+	}
+	r.chatLocked(a, json.RawMessage(`{"m":"B ga boramiz","tm":1}`), now)
+	if len(drain(b)) != 0 {
+		t.Fatal("jamoa xabari raqibga yetib bordi")
+	}
+	if ms := drain(mate); len(ms) != 1 || ms[0]["tm"].(float64) != 1 {
+		t.Fatalf("jamoadoshga: %v", ms)
+	}
+	// spam: ketma-ket ko'p xabar — ortig'i rad etiladi
+	for i := 0; i < 10; i++ {
+		r.chatLocked(a, json.RawMessage(`{"m":"spam","tm":0}`), now)
+	}
+	if n := len(drain(b)); n > 3 {
+		t.Fatalf("spam cheklanmadi: %d", n)
+	}
+}

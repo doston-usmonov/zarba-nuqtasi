@@ -123,6 +123,9 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 	}
 	if r == nil {
 		r = &room{name: roomName, clients: map[string]*client{}, gs: newGameState(), stop: make(chan struct{}), pub: opts.pub, max: opts.max, bans: map[string]time.Time{}}
+		if opts.gmap != "" {
+			r.gs.M = opts.gmap
+		}
 		h.rooms[roomName] = r
 		go r.run(h)
 	}

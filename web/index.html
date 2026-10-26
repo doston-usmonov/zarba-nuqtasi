@@ -214,8 +214,8 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 #roomList .rm small{grid-column:1;color:var(--dim);font-size:12px}
 #roomList .rm button{grid-row:1/3;grid-column:2}
 .joinrow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
-.createrow{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end}
-@media (max-width:460px){ .createrow{grid-template-columns:1fr 1fr} .createrow .field:first-child{grid-column:1/-1} }
+.createrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end}
+
 #admList{width:100%;border-collapse:collapse;font-size:14px}
 #admList td{padding:5px 4px;border-top:1px solid var(--line)}
 #admList td.r{text-align:right}
@@ -464,6 +464,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <button type="button" data-d="normal">O'rta<small>Muvozanatli</small></button>
           <button type="button" data-d="hard">Qiyin<small>Tez va aniq</small></button>
         </div>
+        <label class="field" for="mapSel"><span>Xarita</span><select id="mapSel"><option value="qumtepa">Qumtepa — Klassik: uzun yo'lak, o'rta va tunnel</option><option value="bozor">Bozor — Ixcham: rastalar, tor o'rta, ko'prikcha</option><option value="karvon">Karvonsaroy — Ixcham: markazda hovli, ikki qanot</option></select></label>
         <button class="cta" id="startBtn" type="button">Botlar bilan o'ynash</button>
       </div>
       <div class="panel" id="onlinePanel">
@@ -480,6 +481,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <div class="srv-only createrow">
           <label class="field" for="newCode"><span>Kod</span><input id="newCode" maxlength="40" autocomplete="off"></label>
           <label class="field" for="newPub"><span>Kimga</span><select id="newPub"><option value="1">Ommaviy</option><option value="0">Yopiq (kod bilan)</option></select></label>
+          <label class="field" for="newMap"><span>Xarita</span><select id="newMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option></select></label>
           <label class="field" for="newMax"><span>Maks. o'yinchi</span><select id="newMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select></label>
         </div>
         <button class="ghost srv-only" id="createBtn" type="button">O'yin yaratish</button>
@@ -559,6 +561,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <div class="row"><button class="ghost sm" type="button" data-adm="botT">+ Bot hujumga</button><button class="ghost sm" type="button" data-adm="botCT">+ Bot himoyaga</button></div>
           <div class="set"><span>Bot darajasi</span><div class="seg" data-set="botLv"><button type="button" data-v="easy">Oson</button><button type="button" data-v="normal">O'rta</button><button type="button" data-v="hard">Qiyin</button></div><span></span></div>
           <div class="set"><span>Xona turi</span><div class="seg" id="admPub"><button type="button" data-v="1">Ommaviy</button><button type="button" data-v="0">Yopiq</button></div><span></span></div>
+          <label class="set" for="admMap">Xarita <select id="admMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option></select><span></span></label>
           <label class="set" for="admMax">Maks. o'yinchi <select id="admMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select><span></span></label>
         </div>
         <table id="admList"></table>
@@ -627,7 +630,7 @@ const KB = (desk, touch) => isTouch ? touch : desk;
 
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
-const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal' }, loadSet());
+const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa' }, loadSet());
 function saveSet(){ try { localStorage.setItem('zn-set', JSON.stringify(SET)); } catch(e){} }
 const DIFFS = {
   easy:   { react:.85, acc:.18, hs:.07, turn:4.0, defuse:10 },
@@ -641,19 +644,166 @@ const CELL = 2, GW = 44, GH = 44;
 const FLOOR=0, WALL=1, CRATE=2, STACK=3, SITEA=4, SITEB=5, TSP=6, CTSP=7;
 const CH = [0, 7, 1.0, 2.3, 0, 0, 0, 0];
 const grid = new Uint8Array(GW*GH).fill(WALL);
-function carve(x0,y0,x1,y1,t){ for (let y=y0;y<=y1;y++) for (let x=x0;x<=x1;x++) grid[y*GW+x] = t || FLOOR; }
-function put(list,t){ list.forEach(([x,y]) => grid[y*GW+x] = t); }
-carve(14,35,29,40,TSP); carve(16,2,27,7,CTSP);
-carve(3,3,13,13,SITEA); carve(30,3,40,13,SITEB);
-carve(3,14,6,33); carve(3,33,13,37);           // long A + bend to spawn
-carve(19,8,24,34);                              // mid
-carve(9,15,18,17); carve(9,14,11,14);           // short A
-carve(14,4,15,6); carve(28,4,29,6);             // CT connectors
-carve(36,14,39,34); carve(30,33,39,37);         // B tunnels + bend
-carve(25,21,35,23);                             // mid to B
-put([[19,12],[20,12],[23,12],[24,12]], WALL);   // mid doors
-put([[6,6],[7,6],[6,7],[7,7],[34,7],[35,7],[34,8],[35,8],[3,26],[4,26],[21,39],[22,39],[21,33],[22,33]], STACK);
-put([[11,9],[11,10],[4,11],[9,4],[31,5],[38,11],[39,11],[32,11],[21,22],[23,28],[20,30],[5,20],[17,36],[26,38],[18,3],[25,5],[38,26],[37,18],[30,22],[9,35]], CRATE);
+// Maps: '#' wall, '.' floor, 'c' crate (1 m), 's' stack (2.3 m), 'A'/'B' bomb sites, 't' attacker spawn, 'k' defender spawn.
+// The game server keeps the same rows (mapsdata.go); a server test checks they match this file.
+const MAPS = {
+  qumtepa:{ name:"Qumtepa", desc:"Klassik: uzun yo'lak, o'rta va tunnel", theme:{ wall:0xffffff, floor:0xffffff },
+    holds:{"A":[[[8,9],[5,14]],[[12,6],[10,14]],[[4,4],[5,14]],[[10,11],[10,15]]],"B":[[[32,9],[37,14]],[[38,5],[37,14]],[[31,12],[37,14]],[[39,9],[37,16]]],"M":[[[21,9],[21,30]],[[23,10],[21,30]],[[17,5],[21,16]]]},
+    plan:{"A":{"stages":[[5,24],[14,16],[5,22]],"spots":[[9,8],[5,9],[10,12],[7,11]],"looks":[[14,5],[10,14],[5,14]]},"B":{"stages":[[37,24],[29,22],[38,22]],"spots":[[36,10],[32,8],[38,6],[33,11]],"looks":[[29,5],[37,14],[36,14]]}},
+    signs:[[16,34,"S","← A",2.1],[26,34,"S","B →",2.1],[8,2,"S","A",3,2.6],[35,2,"S","B",3,2.6],[8,32,"S","A ↑",2.1],[35,32,"S","B ↑",2.1],[18,33,"E","O'RTA",2.2,1.4],[18,18,"E","A →",2,1.3],[25,20,"W","B →",2,1.3]],
+    cables:[[38,23,50,23],[38,55,50,55],[38,63,50,63],[6,37,14,37],[6,59,14,59],[72,35,80,35],[72,57,80,57]],
+    rows:[
+    '############################################',
+    '############################################',
+    '################kkkkkkkkkkkk################',
+    '###AAAAAAAAAAA##kkckkkkkkkkk##BBBBBBBBBBB###',
+    '###AAAAAAcAAAA..kkkkkkkkkkkk..BBBBBBBBBBB###',
+    '###AAAAAAAAAAA..kkkkkkkkkckk..BcBBBBBBBBB###',
+    '###AAAssAAAAAA..kkkkkkkkkkkk..BBBBBBBBBBB###',
+    '###AAAssAAAAAA##kkkkkkkkkkkk##BBBBssBBBBB###',
+    '###AAAAAAAAAAA#####......#####BBBBssBBBBB###',
+    '###AAAAAAAAcAA#####......#####BBBBBBBBBBB###',
+    '###AAAAAAAAcAA#####......#####BBBBBBBBBBB###',
+    '###AcAAAAAAAAA#####......#####BBcBBBBBccB###',
+    '###AAAAAAAAAAA#######..#######BBBBBBBBBBB###',
+    '###AAAAAAAAAAA#####......#####BBBBBBBBBBB###',
+    '###....##...#######......###########....####',
+    '###....##................###########....####',
+    '###....##................###########....####',
+    '###....##................###########....####',
+    '###....############......###########.c..####',
+    '###....############......###########....####',
+    '###..c.############......###########....####',
+    '###....############.....................####',
+    '###....############..c........c.........####',
+    '###....############.....................####',
+    '###....############......###########....####',
+    '###....############......###########....####',
+    '###ss..############......###########..c.####',
+    '###....############......###########....####',
+    '###....############....c.###########....####',
+    '###....############......###########....####',
+    '###....############.c....###########....####',
+    '###....############......###########....####',
+    '###....############......###########....####',
+    '###...........#####..ss..#####..........####',
+    '###...........#####......#####..........####',
+    '###......c....tttttttttttttttt..........####',
+    '###...........tttctttttttttttt..........####',
+    '###...........tttttttttttttttt..........####',
+    '##############ttttttttttttcttt##############',
+    '##############tttttttssttttttt##############',
+    '##############tttttttttttttttt##############',
+    '############################################',
+    '############################################',
+    '############################################'] },
+  bozor:{ name:"Bozor", desc:"Ixcham: rastalar, tor o'rta, ko'prikcha", theme:{ wall:0xfff6ea, floor:0xeee3d0 },
+    holds:{"A":[[[11,9],[9,16]],[[14,12],[17,17]],[[9,9],[9,20]],[[15,9],[13,16]]],"B":[[[30,9],[34,16]],[[34,9],[34,20]],[[29,13],[29,21]],[[33,11],[33,18]]],"M":[[[21,11],[21,30]],[[22,12],[22,30]],[[17,9],[21,20]]]},
+    plan:{"A":{"stages":[[9,24],[19,17],[9,26]],"spots":[[11,12],[9,9],[13,14],[14,10]],"looks":[[16,9],[13,17],[9,17]]},"B":{"stages":[[34,24],[26,21],[34,27]],"spots":[[31,10],[33,9],[29,14],[34,14]],"looks":[[27,9],[34,17],[29,21]]}},
+    signs:[[17,32,"S","← A",2.1],[26,32,"S","B →",2.1],[19,30,"E","O'RTA",2.2,1.4],[12,7,"S","A",3,2.6],[31,7,"S","B",3,2.6],[19,16,"E","← A",2,1.3],[24,20,"W","B →",2,1.3]],
+    cables:[[40,41,48,41],[40,57,48,57],[16,45,22,45],[66,49,72,49]],
+    rows:[
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '#################kkkkkkkkkk#################',
+    '########AAAAAAAA.kckkkkkkkk.BBBBBBBB########',
+    '########AAAAcAAA.kkkkkkkkck.BBBBBBBB########',
+    '########AAAAAAAA.kkkkkkkkkk.BBcBBBBB########',
+    '########AAssAAAA####....####BBBBBBBB########',
+    '########AAAAAAAA####....####BBBssBBB########',
+    '########AcAAAAAA####....####BBBBBBcB########',
+    '########AAAAAAAA#####..#####BBBBBBBB########',
+    '########AAAAAAAA####....####BBBBBBBB########',
+    '########...##..#####....#########...########',
+    '########...##...c.......#########...########',
+    '########...##...........#########...########',
+    '########...#########....#########...########',
+    '########...#########....#########..c########',
+    '########...#########........c.......########',
+    '########.c.#########................########',
+    '########...#########....#########...########',
+    '########...#########c...#########...########',
+    '########...#########....#########...########',
+    '########...#########....#########s..########',
+    '########..s#########....#########...########',
+    '########...#########...c#########...########',
+    '########...#########....#########...########',
+    '########...#########....#########...########',
+    '########........####....####........########',
+    '########........####....####........########',
+    '########........tttttttttttt........########',
+    '################ttcttttttttt################',
+    '################tttttttttctt################',
+    '################tttttttttttt################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################'] },
+  karvon:{ name:"Karvonsaroy", desc:"Ixcham: markazda hovli, ikki qanot", theme:{ wall:0xe9bf98, floor:0xdcc6a6 },
+    holds:{"A":[[[8,15],[10,24]],[[13,16],[16,18]],[[11,20],[10,25]],[[7,19],[15,19]]],"B":[[[35,15],[33,24]],[[30,16],[27,18]],[[32,20],[33,26]],[[36,19],[28,19]]],"M":[[[21,11],[21,30]],[[22,12],[22,30]],[[20,15],[21,28]]]},
+    plan:{"A":{"stages":[[10,27],[18,25],[10,29]],"spots":[[9,15],[11,19],[8,20],[12,16]],"looks":[[10,12],[15,18],[10,23]]},"B":{"stages":[[33,28],[25,25],[33,29]],"spots":[[34,15],[32,19],[35,20],[31,16]],"looks":[[33,12],[28,18],[33,23]]}},
+    signs:[[18,33,"S","← A",2.1],[25,33,"S","B →",2.1],[19,30,"E","HOVLI",2.2,1.4],[12,9,"N","A",3,2.6],[31,9,"N","B",3,2.6],[16,17,"S","A",2.6,1.6],[27,17,"S","B",2.6,1.6]],
+    cables:[[18,55,24,55],[64,55,70,55],[40,23,48,23]],
+    rows:[
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '##################kkkkkkkk##################',
+    '#########.........kkkkkckk.........#########',
+    '#########.........kkckkkkk.........#########',
+    '#########...######kkkkkkkk######...#########',
+    '#########...########....########...#########',
+    '#########...########....########...#########',
+    '#########...########....########...#########',
+    '#########...########....########...#########',
+    '######AAAAAAAA######....######BBBBBBBB######',
+    '######AcAAAAAA###..........###BBBBBBcB######',
+    '######AAAAAAAA###..........###BBBBBBBB######',
+    '######AAAssAAA###..........###BBBBBBBB######',
+    '######AAAAAAAA.....s....s.....BBBssBBB######',
+    '######AAAAAAAA................BBBBBBBB######',
+    '######AAAAAAcA###....cc....###BcBBBBBB######',
+    '######AAAAAAAA###....cc....###BBBBBBBB######',
+    '#########...#####..........#####...#########',
+    '#########...#####..s....s..#####...#########',
+    '#########...#####..........#####...#########',
+    '#########...#####..........#####...#########',
+    '#########.c.#####..........#####...#########',
+    '#########...########....########.c.#########',
+    '#########...########....########...#########',
+    '#########...########....########...#########',
+    '#########...########....########...#########',
+    '#########...########....########...#########',
+    '#########........###....###........#########',
+    '#########........###....###........#########',
+    '#########........tttttttttt........#########',
+    '#################tttttttctt#################',
+    '#################ttcttttttt#################',
+    '#################tttttttttt#################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################'] }
+};
+const MAP_CH = { '#':WALL, '.':FLOOR, 'c':CRATE, 's':STACK, 'A':SITEA, 'B':SITEB, 't':TSP, 'k':CTSP };
+let MAP_ID = 'qumtepa', MAP = MAPS.qumtepa;
+function loadGrid(id){ MAP_ID = MAPS[id] ? id : 'qumtepa'; MAP = MAPS[MAP_ID]; MAP.rows.forEach((row, z) => { for (let x=0;x<GW;x++) grid[z*GW+x] = MAP_CH[row[x]] ?? WALL; }); }
+loadGrid('qumtepa');
+function cellsOf(t){ const out = []; for (let z=0;z<GH;z++) for (let x=0;x<GW;x++) if (grid[z*GW+x] === t) out.push([x,z]); return out; }
+function boxOf(t){ const c = cellsOf(t); if (!c.length) return null; const xs = c.map(p => p[0]), zs = c.map(p => p[1]); return [Math.min(...xs), Math.min(...zs), Math.max(...xs), Math.max(...zs)]; }
 
 function cellT(cx,cz){ return (cx<0||cz<0||cx>=GW||cz>=GH) ? WALL : grid[cz*GW+cx]; }
 function cellH(cx,cz){ return CH[cellT(cx,cz)]; }
@@ -864,6 +1014,8 @@ const CRATE_T = pixelTex(512, 256, (x, y, u, v) => {         // 2 m × 1 m crate
 function scaleSideUV(geo, su, sv){ const uv = geo.attributes.uv; for (const f of [0,1,4,5]) for (let k=0;k<4;k++){ const i = f*4 + k; uv.setXY(i, uv.getX(i)*su, uv.getY(i)*sv); } uv.needsUpdate = true; return geo; }
 
 // floor
+const WG = new THREE.Group(); scene.add(WG);   // everything that depends on the map
+const SHARED_TEX = new Set([WALL_T.map, WALL_T.normal, FLOOR_T.map, FLOOR_T.normal, CRATE_T.map, CRATE_T.normal]);
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(MAPW, MAPH), new THREE.MeshStandardMaterial({ map:FLOOR_T.map, normalMap:FLOOR_T.normal, normalScale:new THREE.Vector2(.9, .9), roughness:.93, envMapIntensity:.35 }));
 floor.rotation.x = -Math.PI/2; floor.position.set(MAPW/2, 0, MAPH/2); floor.receiveShadow = true; scene.add(floor);
 (function(){ const t = FLOOR_T.map.clone(); t.needsUpdate = true; t.repeat.set(60, 60); const outside = new THREE.Mesh(new THREE.PlaneGeometry(1200, 1200), new THREE.MeshStandardMaterial({ map:t, color:lin(0xe0cfae), roughness:1, envMapIntensity:.3 })); outside.rotation.x = -Math.PI/2; outside.position.set(MAPW/2, -.05, MAPH/2); outside.receiveShadow = true; scene.add(outside); })();
@@ -877,19 +1029,25 @@ function sitePaint(letter, x0,z0,x1,z1){
     g.globalCompositeOperation = 'destination-out'; for (let i=0;i<5000;i++){ g.fillStyle = `rgba(0,0,0,${rand()*.6})`; g.fillRect(rand()*W, rand()*H, 2+rand()*6, 2+rand()*6); }
   });
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w,h), new THREE.MeshStandardMaterial({ map:tex, transparent:true, roughness:1, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-3, envMapIntensity:.3 }));
-  m.rotation.x = -Math.PI/2; m.position.set(x0*CELL + w/2, .012, z0*CELL + h/2); m.receiveShadow = true; scene.add(m);
+  m.rotation.x = -Math.PI/2; m.position.set(x0*CELL + w/2, .012, z0*CELL + h/2); m.receiveShadow = true; WG.add(m);
 }
 
 const tmpO = new THREE.Object3D(), tmpC = new THREE.Color();
-const SIGNS = [[16,34,'S','← A',2.1],[26,34,'S','B →',2.1],[8,2,'S','A',3,2.6],[35,2,'S','B',3,2.6],[8,32,'S','A ↑',2.1],[35,32,'S','B ↑',2.1],[18,33,'E',"O'RTA",2.2,1.4],[18,18,'E','A →',2,1.3],[25,20,'W','B →',2,1.3]];
-(function buildWorld(){
+function clearWorld(){
+  WG.traverse(o => { if (o.geometry) o.geometry.dispose(); const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+    ms.forEach(m => { ['map','normalMap'].forEach(k => { if (m[k] && !SHARED_TEX.has(m[k])) m[k].dispose(); }); m.dispose(); }); });
+  while (WG.children.length) WG.remove(WG.children[0]);
+}
+function buildWorld(){
+  const SIGNS = MAP.signs || [];
+  floor.material.color = lin(MAP.theme.floor);
   const walls = [], crates = [], stacks = [];
   for (let z=0;z<GH;z++) for (let x=0;x<GW;x++){
     const t = grid[z*GW+x];
     if (t === WALL){ let exposed = false; for (let dz=-1;dz<=1;dz++) for (let dx=-1;dx<=1;dx++){ if (cellT(x+dx,z+dz) !== WALL) exposed = true; } if (exposed) walls.push([x,z]); }
     else if (t === CRATE) crates.push([x,z]); else if (t === STACK) stacks.push([x,z]);
   }
-  const wallMat = new THREE.MeshStandardMaterial({ map:WALL_T.map, normalMap:WALL_T.normal, normalScale:new THREE.Vector2(1.1, 1.1), roughness:.95, envMapIntensity:.4 });
+  const wallMat = new THREE.MeshStandardMaterial({ map:WALL_T.map, normalMap:WALL_T.normal, normalScale:new THREE.Vector2(1.1, 1.1), roughness:.95, envMapIntensity:.4, color:lin(MAP.theme.wall) });
   const wm = new THREE.InstancedMesh(scaleSideUV(new THREE.BoxGeometry(CELL, CH[WALL], CELL), 1, CH[WALL]/CELL), wallMat, walls.length);
   const cm2 = new THREE.InstancedMesh(new THREE.BoxGeometry(CELL + .18, .24, CELL + .18), new THREE.MeshStandardMaterial({ map:WALL_T.map, normalMap:WALL_T.normal, color:lin(0xd8c6a4), roughness:.95, envMapIntensity:.4 }), walls.length);
   walls.forEach(([x,z],i) => {
@@ -897,15 +1055,15 @@ const SIGNS = [[16,34,'S','← A',2.1],[26,34,'S','B →',2.1],[8,2,'S','A',3,2.
     const v = .9 + h2(Math.floor(x/3), Math.floor(z/3))*.12; tmpC.setRGB(v, v*.985, v*.955); wm.setColorAt(i, tmpC);
     tmpO.position.set(cw(x), CH[WALL] + .08, cw(z)); tmpO.updateMatrix(); cm2.setMatrixAt(i, tmpO.matrix);
   });
-  wm.castShadow = wm.receiveShadow = true; cm2.castShadow = cm2.receiveShadow = true; scene.add(wm); scene.add(cm2);
+  wm.castShadow = wm.receiveShadow = true; cm2.castShadow = cm2.receiveShadow = true; WG.add(wm); WG.add(cm2);
   const crateMat = new THREE.MeshStandardMaterial({ map:CRATE_T.map, normalMap:CRATE_T.normal, roughness:.85, envMapIntensity:.4 });
   const cm = new THREE.InstancedMesh(new THREE.BoxGeometry(CELL-.04, CH[CRATE], CELL-.04), crateMat, crates.length);
   crates.forEach(([x,z],i) => { tmpO.position.set(cw(x), CH[CRATE]/2, cw(z)); tmpO.rotation.set(0, h2(x,z) < .5 ? 0 : Math.PI, 0); tmpO.updateMatrix(); cm.setMatrixAt(i, tmpO.matrix); });
-  cm.castShadow = cm.receiveShadow = true; scene.add(cm);
+  cm.castShadow = cm.receiveShadow = true; WG.add(cm);
   const sm = new THREE.InstancedMesh(scaleSideUV(new THREE.BoxGeometry(CELL-.04, CH[STACK], CELL-.04), 1, CH[STACK]), crateMat, stacks.length);
   stacks.forEach(([x,z],i) => { tmpO.position.set(cw(x), CH[STACK]/2, cw(z)); tmpO.rotation.set(0,0,0); tmpO.updateMatrix(); sm.setMatrixAt(i, tmpO.matrix); });
-  sm.castShadow = sm.receiveShadow = true; scene.add(sm);
-  sitePaint('A', 3,3,13,13); sitePaint('B', 30,3,40,13);
+  sm.castShadow = sm.receiveShadow = true; WG.add(sm);
+  for (const [L, t] of [['A', SITEA], ['B', SITEB]]){ const b = boxOf(t); if (b) sitePaint(L, ...b); }
 
   // contact shadows + drifted sand along walls and crates, baked once from the grid
   (function(){
@@ -926,7 +1084,7 @@ const SIGNS = [[16,34,'S','← A',2.1],[26,34,'S','B →',2.1],[8,2,'S','A',3,2.
     g.putImageData(img, 0, 0);
     const tex = texOf(c, null, true); tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
     const m = new THREE.Mesh(new THREE.PlaneGeometry(MAPW, MAPH), new THREE.MeshStandardMaterial({ map:tex, transparent:true, depthWrite:false, roughness:1, polygonOffset:true, polygonOffsetFactor:-1, envMapIntensity:.3 }));
-    m.rotation.x = -Math.PI/2; m.position.set(MAPW/2, .006, MAPH/2); m.receiveShadow = true; scene.add(m);
+    m.rotation.x = -Math.PI/2; m.position.set(MAPW/2, .006, MAPH/2); m.receiveShadow = true; WG.add(m);
   })();
 
   // ---- architecture details on wall faces ----
@@ -936,7 +1094,7 @@ const SIGNS = [[16,34,'S','← A',2.1],[26,34,'S','B →',2.1],[8,2,'S','A',3,2.
   walls.forEach(([x,z]) => { Object.entries(DIRS).forEach(([k, [dx,dz,rot]], di) => {
     const t = cellT(x+dx, z+dz); if (t === WALL) return;
     faces.push({ x, z, dx, dz, rot, px:cw(x) + dx*CELL/2, pz:cw(z) + dz*CELL/2, open:t !== CRATE && t !== STACK, sign:signSet.has(x + ',' + z + ',' + k), h:h2(x*3.1 + di*17.3, z*5.7 + di*3.9) }); }); });
-  const place = (im, list, y, out, extra) => { list.forEach((f, i) => { tmpO.position.set(f.px + f.dx*out, y, f.pz + f.dz*out); tmpO.rotation.set(0, f.rot, 0); tmpO.scale.set(1,1,1); if (extra) extra(f, tmpO, i); tmpO.updateMatrix(); im.setMatrixAt(i, tmpO.matrix); }); im.receiveShadow = true; scene.add(im); return im; };
+  const place = (im, list, y, out, extra) => { list.forEach((f, i) => { tmpO.position.set(f.px + f.dx*out, y, f.pz + f.dz*out); tmpO.rotation.set(0, f.rot, 0); tmpO.scale.set(1,1,1); if (extra) extra(f, tmpO, i); tmpO.updateMatrix(); im.setMatrixAt(i, tmpO.matrix); }); im.receiveShadow = true; WG.add(im); return im; };
   const overlayMat = (tex, o) => new THREE.MeshStandardMaterial(Object.assign({ map:tex, transparent:true, depthWrite:false, roughness:.95, polygonOffset:true, polygonOffsetFactor:-2, envMapIntensity:.35 }, o||{}));
   // grime at the foot of every wall
   const GRIME = canvasTex(256, 192, (g, w, h) => { const gr = g.createLinearGradient(0, h, 0, 0); gr.addColorStop(0, 'rgba(66,48,28,.62)'); gr.addColorStop(.3, 'rgba(84,64,38,.3)'); gr.addColorStop(1, 'rgba(84,64,38,0)'); g.fillStyle = gr; g.fillRect(0,0,w,h);
@@ -972,7 +1130,7 @@ const SIGNS = [[16,34,'S','← A',2.1],[26,34,'S','B →',2.1],[8,2,'S','A',3,2.
   // roof beams sticking out of the wall
   const beamF = faces.filter(f => f.h >= .22 && f.h < .31), beams = new THREE.InstancedMesh((() => { const g = new THREE.CylinderGeometry(.085, .095, .6, 8); g.rotateX(Math.PI/2); return g; })(), new THREE.MeshStandardMaterial({ color:lin(0x6b4a2c), roughness:.9 }), beamF.length*3);
   beamF.forEach((f, i) => { for (let k=0;k<3;k++){ const o = (k - 1)*.62; tmpO.position.set(f.px + f.dx*.28 - f.dz*o, 6.15, f.pz + f.dz*.28 + f.dx*o); tmpO.rotation.set(0, f.rot, 0); tmpO.updateMatrix(); beams.setMatrixAt(i*3 + k, tmpO.matrix); } });
-  beams.castShadow = beams.receiveShadow = true; scene.add(beams);
+  beams.castShadow = beams.receiveShadow = true; WG.add(beams);
   // striped canvas awnings
   const AWN = canvasTex(256, 160, (g, w, h) => { for (let i=0;i<8;i++){ g.fillStyle = i % 2 ? '#e6d9bd' : '#9c3726'; g.fillRect(i*w/8, 0, w/8, h); }
     const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(0,0,0,.25)'); gr.addColorStop(.5, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.3)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); speckle(g, w, h, 1200, ['rgba(80,60,40,.2)']); });
@@ -984,20 +1142,21 @@ const SIGNS = [[16,34,'S','← A',2.1],[26,34,'S','B →',2.1],[8,2,'S','A',3,2.
   place(new THREE.InstancedMesh(new THREE.BoxGeometry(.05, .05, .34), new THREE.MeshStandardMaterial({ color:lin(0x232220), metalness:.5, roughness:.5 }), lampF.length), lampF, 3.9, .17);
   place(new THREE.InstancedMesh(new THREE.SphereGeometry(.085, 12, 8), new THREE.MeshStandardMaterial({ color:lin(0xffe2a8), emissive:lin(0xffc66b), emissiveIntensity:2.2 }), lampF.length), lampF, 3.78, .34);
   const lampGlow = canvasTex(64, 64, (g) => { const gr = g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0, 'rgba(255,220,160,1)'); gr.addColorStop(1, 'rgba(255,200,120,0)'); g.fillStyle = gr; g.fillRect(0,0,64,64); });
-  lampF.forEach(f => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:lampGlow, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:.5 })); s.position.set(f.px + f.dx*.34, 3.78, f.pz + f.dz*.34); s.scale.set(1.1, 1.1, 1); scene.add(s); });
+  lampF.forEach(f => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:lampGlow, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:.5 })); s.position.set(f.px + f.dx*.34, 3.78, f.pz + f.dz*.34); s.scale.set(1.1, 1.1, 1); WG.add(s); });
   // sagging cables across the streets
   const cableMat = new THREE.MeshStandardMaterial({ color:lin(0x1c1b1a), roughness:.7 });
-  [[38,cw(11),50,cw(11)],[38,cw(27),50,cw(27)],[38,cw(31),50,cw(31)],[6,cw(18),14,cw(18)],[6,cw(29),14,cw(29)],[72,cw(17),80,cw(17)],[72,cw(28),80,cw(28)]].forEach(([x0,z0,x1,z1], i) => {
+  (MAP.cables || []).forEach(([x0,z0,x1,z1], i) => {
     const pts = []; for (let k=0;k<=12;k++){ const t = k/12; pts.push(new V3(x0 + (x1-x0)*t, 6.1 - Math.sin(t*Math.PI)*(1.0 + (i%3)*.25), z0 + (z1-z0)*t)); }
-    const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, .014, 5), cableMat); m.castShadow = true; scene.add(m); });
+    const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, .014, 5), cableMat); m.castShadow = true; WG.add(m); });
   // town skyline beyond the walls, and far hills
   const r = mulberry(5), skyMat = new THREE.MeshStandardMaterial({ map:WALL_T.map, color:lin(0xcdb894), roughness:1, envMapIntensity:.3 }), domeMat = new THREE.MeshStandardMaterial({ color:lin(0x3f8a9e), roughness:.45, metalness:.1 });
   for (let i=0;i<54;i++){ const a = i/54*Math.PI*2 + r()*.06, d = 82 + r()*60, w = 8 + r()*16, h = 10 + r()*18, dd = 8 + r()*14;
-    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, dd), skyMat); b.position.set(MAPW/2 + Math.cos(a)*d, h/2 - .5, MAPH/2 + Math.sin(a)*d); b.rotation.y = r()*Math.PI; b.receiveShadow = true; scene.add(b);
-    if (r() < .2){ const dm = new THREE.Mesh(new THREE.SphereGeometry(Math.min(w, dd)*.42, 20, 10, 0, Math.PI*2, 0, Math.PI/2), domeMat); dm.position.set(b.position.x, h - .5, b.position.z); scene.add(dm); } }
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, dd), skyMat); b.position.set(MAPW/2 + Math.cos(a)*d, h/2 - .5, MAPH/2 + Math.sin(a)*d); b.rotation.y = r()*Math.PI; b.receiveShadow = true; WG.add(b);
+    if (r() < .2){ const dm = new THREE.Mesh(new THREE.SphereGeometry(Math.min(w, dd)*.42, 20, 10, 0, Math.PI*2, 0, Math.PI/2), domeMat); dm.position.set(b.position.x, h - .5, b.position.z); WG.add(dm); } }
   const hillMat = new THREE.MeshBasicMaterial({ color:lin(0xb8a998), fog:false });
-  for (let i=0;i<16;i++){ const a = i/16*Math.PI*2 + r()*.2, d = 520 + r()*120, h = 50 + r()*90; const c = new THREE.Mesh(new THREE.ConeGeometry(120 + r()*120, h, 7), hillMat); c.position.set(MAPW/2 + Math.cos(a)*d, h/2 - 6, MAPH/2 + Math.sin(a)*d); scene.add(c); }
-})();
+  for (let i=0;i<16;i++){ const a = i/16*Math.PI*2 + r()*.2, d = 520 + r()*120, h = 50 + r()*90; const c = new THREE.Mesh(new THREE.ConeGeometry(120 + r()*120, h, 7), hillMat); c.position.set(MAPW/2 + Math.cos(a)*d, h/2 - 6, MAPH/2 + Math.sin(a)*d); WG.add(c); }
+  SIGNS.forEach(s => sign(...s));
+}
 
 // painted wall signs
 function sign(cx, cz, side, text, y, size){
@@ -1010,9 +1169,9 @@ function sign(cx, cz, side, text, y, size){
   if (side === 'N'){ m.position.set(x, y, z-off); m.rotation.y = Math.PI; }
   if (side === 'E'){ m.position.set(x+off, y, z); m.rotation.y = Math.PI/2; }
   if (side === 'W'){ m.position.set(x-off, y, z); m.rotation.y = -Math.PI/2; }
-  m.receiveShadow = true; scene.add(m);
+  m.receiveShadow = true; WG.add(m);
 }
-SIGNS.forEach(s => sign(...s));
+buildWorld();
 
 /* ================= FX POOLS ================= */
 const GLOW = canvasTex(64, 64, (g) => { const gr = g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.35,'rgba(255,255,255,.5)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0,0,64,64); });
@@ -1337,8 +1496,7 @@ function poseSoldier(m, walk, moving, kneel){
 }
 
 /* ================= PLAYER ================= */
-const T_SPAWN = new V3(cw(21), 0, cw(37));
-const player = { team:'T', pos:T_SPAWN.clone(), vel:new V3(), yaw:0, pitch:0, ground:true, crouch:0, hp:100, armor:0, helmet:false, money:800, alive:true,
+const player = { team:'T', pos:new V3(cw(21), 0, cw(37)), vel:new V3(), yaw:0, pitch:0, ground:true, crouch:0, hp:100, armor:0, helmet:false, money:800, alive:true,
   inv:{ 1:null, 2:{ id:'pistol', mag:20, res:120 }, 3:{ id:'knife' } }, bomb:true, slot:2, lastSlot:3, fireCd:0, reloadT:0, drawT:0, recoil:0, lastShot:-9,
   scope:0, kills:0, deaths:0, hs:0, dmg:0, stepT:0, planting:0, punchY:0, punchX:0, knifeT:0, kick:0, bobT:0, killer:null, deathPos:new V3(), hitT:-9, tagT:0,
   nades:{ he:0, flash:0, smoke:0, molly:0 }, nadeSel:null, nadeHold:null, nadeT:0, nadeNext:false, kit:false };
@@ -1380,12 +1538,7 @@ const bomb = { planted:false, pos:new V3(), timer:40, beepT:0, mesh:null, led:nu
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map:GLOW, color:0xff3020, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending })); glow.scale.set(.5,.5,1); glow.position.copy(led.position); g.add(glow);
   g.visible = false; scene.add(g); bomb.mesh = g; bomb.led = glow; })();
 
-const CT_SPAWNS = [[19,3],[21,3],[23,3],[20,5],[22,5]];
-const HOLDS = {
-  A:[ [[8,9],[5,14]], [[12,6],[10,14]], [[4,4],[5,14]], [[10,11],[10,15]] ],
-  B:[ [[32,9],[37,14]], [[38,5],[37,14]], [[31,12],[37,14]], [[39,9],[37,16]] ],
-  M:[ [[21,9],[21,30]], [[23,10],[21,30]], [[17,5],[21,16]] ],
-};
+// defender holds and attacker plans come from the map (MAPS[...].holds / .plan)
 const shuffle = a => { for (let i=a.length-1;i>0;i--){ const j = (rand()*(i+1))|0; [a[i],a[j]] = [a[j],a[i]]; } return a; };
 
 function botWeaponFor(round, i){
@@ -1442,9 +1595,12 @@ function updateHUD(){
 /* radar */
 const radar = $('radar'), rctx = radar.getContext('2d');
 const mapImg = document.createElement('canvas'); const RS = 4; mapImg.width = MAPW*RS; mapImg.height = MAPH*RS;
-(function(){ const g = mapImg.getContext('2d'); const col = { 0:'#9b8a6c', 1:'#2c271f', 2:'#6b583b', 3:'#4d3f2a', 4:'#b2925a', 5:'#b2925a', 6:'#a99569', 7:'#8f9aa3' };
+function drawMapImg(){ const g = mapImg.getContext('2d'); const col = { 0:'#9b8a6c', 1:'#2c271f', 2:'#6b583b', 3:'#4d3f2a', 4:'#b2925a', 5:'#b2925a', 6:'#a99569', 7:'#8f9aa3' };
+  g.clearRect(0, 0, mapImg.width, mapImg.height);
   for (let z=0;z<GH;z++) for (let x=0;x<GW;x++){ g.fillStyle = col[grid[z*GW+x]]; g.fillRect(x*CELL*RS, z*CELL*RS, CELL*RS+.5, CELL*RS+.5); }
-  g.fillStyle = 'rgba(255,240,210,.85)'; g.font = `700 ${12*RS}px "Chakra Petch", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('A', cw(8)*RS, cw(8)*RS); g.fillText('B', cw(35)*RS, cw(8)*RS); })();
+  g.fillStyle = 'rgba(255,240,210,.85)'; g.font = `700 ${12*RS}px "Chakra Petch", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const [L, t] of [['A', SITEA], ['B', SITEB]]){ const b = boxOf(t); if (b) g.fillText(L, (b[0] + b[2] + 1)/2*CELL*RS, (b[1] + b[3] + 1)/2*CELL*RS); } }
+drawMapImg();
 function drawRadar(){
   const W2 = radar.width, sc = 3.1*RS/4*2;  // pixels per metre on the radar canvas
   rctx.clearRect(0,0,W2,W2); rctx.save(); rctx.beginPath(); rctx.arc(W2/2,W2/2,W2/2-2,0,7); rctx.clip();
@@ -1493,10 +1649,7 @@ function setBotsPal(side){
     if (b.m !== b[key]){ scene.remove(b.m.g); b.m = b[key]; scene.add(b.m.g); }
     b.side = side; }
 }
-const T_PLAN = {
-  A:{ stages:[[5,24],[14,16],[5,22]], spots:[[9,8],[5,9],[10,12],[7,11]], looks:[[14,5],[10,14],[5,14]] },
-  B:{ stages:[[37,24],[29,22],[38,22]], spots:[[36,10],[32,8],[38,6],[33,11]], looks:[[29,5],[37,14],[36,14]] },
-};
+
 
 function startRound(){
   S.round++; const HH = S.H, newHalf = halfStart(S.round, HH), rih = isOT(S.round, HH) ? 3 : roundInHalf(S.round, HH);
@@ -1514,10 +1667,10 @@ function startRound(){
   [1,2].forEach(k => { const it = player.inv[k]; if (it){ it.mag = W[it.id].mag; it.res = W[it.id].res; } });
   drawWeapon();
   const side = botsSide(); setBotsPal(side);
-  const holds = { A:shuffle(HOLDS.A.slice()), B:shuffle(HOLDS.B.slice()), M:shuffle(HOLDS.M.slice()) };
+  const HOLDS = MAP.holds, holds = { A:shuffle(HOLDS.A.slice()), B:shuffle(HOLDS.B.slice()), M:shuffle(HOLDS.M.slice()) };
   const roles = shuffle(['A','A','B','B','M']);
-  const spawns = shuffle(CT_SPAWNS.slice()), tsp = shuffle(SPAWNS.T.slice());
-  const site = rand() < .5 ? 'A' : 'B', plan = T_PLAN[site], carrier = (rand()*bots.length)|0;
+  const spawns = shuffle(SPAWNS.CT.slice()), tsp = shuffle(SPAWNS.T.slice());
+  const site = rand() < .5 ? 'A' : 'B', plan = MAP.plan[site], carrier = (rand()*bots.length)|0;
   S.tSite = site; S.execT = 20 + rand()*22;
   bots.forEach((b, i) => {
     b.alive = true; b.hp = 100; b.armor = rih > 1 ? 100 : (rand() < .3 ? 100 : 0); b.helmet = rih > 2 || (rih === 2 && rand() < .4);
@@ -1576,7 +1729,7 @@ function checkRoundEnd(){
 
 function startMatch(){
   MODE = 'bots'; player.team = 'T'; H.progBar.style.background = ''; bots.forEach(b => b.m.g.visible = true);
-  DIFF = DIFFS[SET.diff] || DIFFS.normal;
+  DIFF = DIFFS[SET.diff] || DIFFS.normal; setMap(SET.map);
   Object.assign(S, { round:0, sA:0, sB:0, H:fmtH(), loss:0, paused:false });
   Object.assign(player, { money:800, kills:0, deaths:0, hs:0, dmg:0, alive:false }); resetInv();
   bots.forEach(b => { b.kills = 0; b.deaths = 0; });
@@ -1920,7 +2073,7 @@ function assignPicker(except){
 }
 function pickBomb(b){
   bomb.dropped = false; bomb.picker = null; bomb.mesh.visible = false; b.hasBomb = true; bomb.carrier = b; b.mode = 'exec'; b.path = null;
-  if (!siteAt(b.spot)){ const plan = T_PLAN[S.tSite], sp = plan.spots[0]; b.spot = new V3(cw(sp[0]), 0, cw(sp[1])); }
+  if (!siteAt(b.spot)){ const plan = MAP.plan[S.tSite], sp = plan.spots[0]; b.spot = new V3(cw(sp[0]), 0, cw(sp[1])); }
 }
 function botPlant(b){
   b.planting = 0; b.hasBomb = false; bomb.carrier = null;
@@ -2353,9 +2506,13 @@ function pauseGame(){ S.paused = true; mouseL = mouseR = false; $('pause').hidde
 function resumeGame(){ S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); requestLock(); canvas.focus({ preventScroll:true }); }
 $('resumeBtn').addEventListener('click', () => { goFullscreen(); resumeGame(); });
 $('quitBtn').addEventListener('click', () => { S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); toMenu(); });
-function toMenu(){ if (MODE === 'online') leaveOnline(); clearNades(); clearDrops(); S.phase = 'menu'; $('hud').hidden = true; $('dead').hidden = true; $('over').hidden = true; $('menu').hidden = false; showBoard(false); if (document.pointerLockElement) document.exitPointerLock(); bots.forEach(b => { b.m.g.visible = true; }); }
+function toMenu(){ if (MODE === 'online') leaveOnline(); clearNades(); clearDrops(); setTimeout(() => { if (S.phase === 'menu'){ setMap(SET.map); placeBackdrop(); } }, 0); S.phase = 'menu'; $('hud').hidden = true; $('dead').hidden = true; $('over').hidden = true; $('menu').hidden = false; showBoard(false); if (document.pointerLockElement) document.exitPointerLock(); bots.forEach(b => { b.m.g.visible = true; }); }
 $('onlineBtn').addEventListener('click', () => { joinOnline(false); });
 $('createBtn').addEventListener('click', () => { joinOnline(true); });
+$('mapSel').value = SET.map; $('newMap').value = SET.map;
+$('mapSel').addEventListener('change', () => { SET.map = $('mapSel').value; saveSet(); setMap(SET.map); });
+$('newMap').addEventListener('change', () => { SET.map = $('newMap').value; saveSet(); $('mapSel').value = SET.map; setMap(SET.map); });
+$('admMap').addEventListener('change', () => { if (isOwner() && $('admMap').value !== (NET.g && NET.g.m)){ NET.room.admin({ a:'map', m:$('admMap').value }); hint("Xarita almashtirilmoqda — o'yin isinishdan qayta boshlanadi", 3000); } });
 $('newCode').value = 'xona-' + Math.floor(1000 + Math.random()*9000);
 /* public games on the home screen (server version) */
 let roomsT = 0;
@@ -2368,7 +2525,7 @@ async function loadRooms(){
     el.innerHTML = list.map(r => {
       const code = String(r.code || ''), ph = { warmup:'isinish', freeze:r.round + '-raund', live:r.round + '-raund', post:r.round + '-raund', over:"o'yin tugadi" }[r.phase] || '';
       const people = (r.humans|0) + " o'yinchi" + (r.bots ? ' + ' + (r.bots|0) + ' bot' : '') + ' / ' + (r.max ? r.max|0 : '∞');
-      return `<div class="rm"><b>${escH(code)}</b><small>${escH(r.owner || '')} · ${people} · ${ph}${r.round ? ' · ' + (r.sA|0) + ':' + (r.sB|0) : ''}</small><button class="ghost sm" type="button" data-room="${escH(code)}"${r.max && (r.humans + r.bots) >= r.max ? ' disabled' : ''}>Kirish</button></div>`;
+      return `<div class="rm"><b>${escH(code)}</b><small>${escH((MAPS[r.map] || MAPS.qumtepa).name)} · ${escH(r.owner || '')} · ${people} · ${ph}${r.round ? ' · ' + (r.sA|0) + ':' + (r.sB|0) : ''}</small><button class="ghost sm" type="button" data-room="${escH(code)}"${r.max && (r.humans + r.bots) >= r.max ? ' disabled' : ''}>Kirish</button></div>`;
     }).join('');
   } catch(e){ $('roomList').innerHTML = `<p class="note">Ro'yxatni yuklab bo'lmadi.</p>`; }
 }
@@ -2389,7 +2546,7 @@ function renderAdmin(){
   $('admInfo').textContent = 'Kod: ' + NET.code + ' · ' + (ri.pub ? 'ommaviy' : 'yopiq') + ' · ' + (ri.max ? 'ko\'pi bilan ' + ri.max : 'cheksiz') + ' · egasi: ' + (own ? 'siz' : ownerR ? ownerR.name : '—') + (own ? '' : '. Botlarni va o\'yinchilarni faqat xona egasi boshqaradi.');
   $('admCtl').hidden = !own;
   $('admPub').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === (ri.pub ? '1' : '0'))));
-  $('admMax').value = String(ri.max || 0);
+  $('admMax').value = String(ri.max || 0); if (NET.g && NET.g.m) $('admMap').value = NET.g.m;
   const rows = [...NET.remotes.values()].filter(r => r.team).sort((a, b) => (a.team > b.team ? 1 : -1) || (a.bot - b.bot));
   $('admList').innerHTML = `<tr><td class="${player.team === 'CT' ? 'ct' : 't'}">${escH(NET.name)} <small>siz${own ? ', egasi' : ''}</small></td><td class="r"></td></tr>` +
     rows.map(r => `<tr><td class="${r.team === 'CT' ? 'ct' : 't'}">${escH(r.name)}${r.bot ? ' <small>bot · ' + ({ easy:'oson', normal:"o'rta", hard:'qiyin' }[r.lv] || '') + '</small>' : r.peer === ri.owner ? ' <small>egasi</small>' : ''}</td><td class="r">${own ? `<button class="ghost sm" type="button" data-kick="${escH(r.peer)}">${kickSure(r.peer) ? 'Tasdiqlash' : 'Chiqarish'}</button>` : ''}</td></tr>`).join('');
@@ -2501,7 +2658,7 @@ function wsJoin(name, opts){
   return new Promise((resolve, reject) => {
     opts = opts || {};
     const url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?room=' + encodeURIComponent(name) +
-      (opts.create ? '&create=1&pub=' + (opts.pub ? 1 : 0) + '&max=' + (opts.max|0) : '');
+      (opts.create ? '&create=1&pub=' + (opts.pub ? 1 : 0) + '&max=' + (opts.max|0) + '&map=' + encodeURIComponent(opts.map || 'qumtepa') : '');
     const others = new Map(); let ws = null, me = null, conn = false, closed = false, mine = {}, snap = [], dirty = true, settled = false, tries = 0;
     const api = {
       peers(){ if (dirty){ dirty = false; const a = []; if (me) a.push({ peer:me, presence:mine, sameTab:true, isMe:true, kind:'viewer', guest:false, by:null });
@@ -2737,7 +2894,10 @@ function cleanCode(s){ const t = String(s || '').toLowerCase().replace(/[^a-z0-9
 function segDist(p, a, b){ const ab = _tmp.copy(b).sub(a), l2 = ab.lengthSq(); if (l2 < 1e-6) return p.distanceTo(a); const t = clamp(_tmp2.copy(p).sub(a).dot(ab)/l2, 0, 1); return _tmp2.copy(a).addScaledVector(ab, t).distanceTo(p); }
 
 const SPAWNS = { T:[], CT:[] };
-for (let z=0;z<GH;z++) for (let x=0;x<GW;x++){ const t = grid[z*GW+x]; if (t === TSP && z >= 36 && z <= 39) SPAWNS.T.push([x,z]); if (t === CTSP && z >= 3 && z <= 6) SPAWNS.CT.push([x,z]); }
+// spawn points: base cells that have no crate around them
+function recomputeSpawns(){ const free = ([x,z]) => [[1,0],[-1,0],[0,1],[0,-1]].every(([dx,dz]) => !botSolid(x+dx, z+dz) || cellT(x+dx, z+dz) === WALL);
+  SPAWNS.T = cellsOf(TSP).filter(free); SPAWNS.CT = cellsOf(CTSP).filter(free); if (!SPAWNS.T.length) SPAWNS.T = cellsOf(TSP); if (!SPAWNS.CT.length) SPAWNS.CT = cellsOf(CTSP); }
+recomputeSpawns();
 function spawnAt(team){ const list = SPAWNS[team] || SPAWNS.T, c = list[(rand()*list.length)|0]; player.pos.set(cw(c[0]) + (rand()-.5)*.6, 0, cw(c[1]) + (rand()-.5)*.6); player.vel.set(0,0,0); player.yaw = team === 'CT' ? Math.PI : 0; player.pitch = 0; }
 function resetInv(){ player.inv = { 1:null, 2:{ id:'pistol', mag:20, res:120 }, 3:{ id:'knife' } }; player.slot = 2; player.armor = 0; player.helmet = false;
   player.nades = { he:0, flash:0, smoke:0, molly:0 }; player.nadeSel = null; player.nadeHold = null; player.nadeT = 0; player.nadeNext = false; player.kit = false; }
@@ -2840,8 +3000,8 @@ function netHit(r, w, part, dist, pos, flat){
 
 const PHS = ['warmup','freeze','live','post','over'];
 function sanitizeG(g){ const b = g.b && typeof g.b === 'object' ? { x:num(g.b.x), z:num(g.b.z), s:g.b.s === 'B' ? 'B' : 'A', t:num(g.b.t) } : 0;
-  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
-function gOut(g){ return g ? { r:g.r, ph:g.ph, t:r2(g.t), sA:g.sA, sB:g.sB, fm:g.fm, b: g.b ? { x:g.b.x, z:g.b.z, s:g.b.s, t:r2(g.b.t) } : 0, w:g.w, y:g.y, bm:g.bm, e:g.e, cd:r2(g.cd) } : null; }
+  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', m:MAPS[g.m] ? g.m : 'qumtepa', t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
+function gOut(g){ return g ? { r:g.r, ph:g.ph, m:g.m, t:r2(g.t), sA:g.sA, sB:g.sB, fm:g.fm, b: g.b ? { x:g.b.x, z:g.b.z, s:g.b.s, t:r2(g.b.t) } : 0, w:g.w, y:g.y, bm:g.bm, e:g.e, cd:r2(g.cd) } : null; }
 function buildPres(){
   const it = curItem();
   return { v:1, hc:1, nm:NET.name, sq:NET.sq, tm:player.team, x:r2(player.pos.x), y:r2(player.pos.y), z:r2(player.pos.z), yw:r2(player.yaw), pt:r2(player.pitch), cr:r2(player.crouch),
@@ -2852,14 +3012,14 @@ function buildPres(){
 function gSideScore(g, side){ if (!g || !g.r) return 0; return sideOfSquad('A', g.r, g.fm) === side ? g.sA : g.sB; }
 function hostEnd(g, w, y){ g.ph = 'post'; g.t = 6; g.w = w; g.y = y; if (sideOfSquad('A', g.r, g.fm) === w) g.sA++; else g.sB++; }
 function hostStep(dt, valid){
-  let g = NET.g; if (!g) g = NET.g = { r:0, ph:'warmup', t:0, sA:0, sB:0, fm:fmtH(), b:0, w:'', y:'', bm:-1, e:'', cd:6 };
+  let g = NET.g; if (!g) g = NET.g = { r:0, ph:'warmup', m:SET.map, t:0, sA:0, sB:0, fm:fmtH(), b:0, w:'', y:'', bm:-1, e:'', cd:6 };
   const all = valid.map(p => p.presence); all.push(buildPres());
   const nT = all.filter(p => p.sq === 'A').length, nCT = all.filter(p => p.sq === 'B').length;   // squads, so the half-time swap never looks like an empty side
   const part = tm => all.filter(p => p.tm === tm && p.in === g.r), alive = tm => part(tm).filter(p => p.al === 1).length;
   if (g.ph !== 'warmup' && g.ph !== 'over' && (!nT || !nCT)){ g.ph = 'warmup'; g.r = 0; g.cd = 6; g.t = 0; g.b = 0; return; }
   switch (g.ph){
     case 'warmup':
-      g.fm = fmtH();
+      g.fm = fmtH(); g.m = MAPS[SET.map] ? SET.map : 'qumtepa';
       if (nT && nCT){ g.cd -= dt; g.t = Math.max(0, g.cd); if (g.cd <= 0){ g.r = 1; g.ph = 'freeze'; g.t = 6; g.sA = g.sB = 0; g.b = 0; g.bm = -1; g.e = Math.random().toString(36).slice(2, 8); } }
       else { g.cd = 6; g.t = 0; }
       break;
@@ -2912,6 +3072,10 @@ function netBoom(){
 }
 function clientPhase(dt){
   const g = NET.g; if (!g || !player.team) return;
+  if (g.m && g.m !== MAP_ID && setMap(g.m)){   // the room switched maps: rebuild and stand on the new map
+    hint('Xarita: ' + MAP.name, 2500);
+    if (g.ph === 'warmup') respawnWarm(); else if (player.alive) spawnAt(player.team); else { spawnAt(player.team); player.deathPos.set(player.pos.x, 3, player.pos.z); }
+  }
   const ph = g.ph; S.phase = ph === 'over' ? 'mover' : ph;
   const key = g.e + ':' + g.r;
   if (ph === 'warmup'){
@@ -3053,7 +3217,7 @@ async function joinOnline(create, codeOverride){
   NET.name = cleanName($('nick').value); NET.code = cleanCode(raw); $('nick').value = NET.name; SET.nick = NET.name;
   if (create) $('newCode').value = NET.code; else { $('roomCode').value = NET.code; SET.room = NET.code; }
   saveSet();
-  const opts = create ? { create:true, pub:$('newPub').value === '1', max:+$('newMax').value || 0 } : null;
+  const opts = create ? { create:true, pub:$('newPub').value === '1', max:+$('newMax').value || 0, map:$('newMap').value } : null;
   btn.disabled = true; note.textContent = 'Ulanmoqda…';
   const room = await roomP;
   if (!room){ btn.disabled = false; note.textContent = "Onlayn rejim bu ko'rinishda ishlamaydi. Sahifani claude.ai'da hisobingizga kirib oching; do'stlaringiz ham artifakt ulashilgan hisob bilan kirishi kerak."; return; }
@@ -3297,7 +3461,20 @@ function touchFrame(){
   $('tDrop').hidden = !player.alive || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot];
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+
+/* ================= MAP SWITCHING ================= */
+function setMap(id){
+  if (!MAPS[id]) id = 'qumtepa';
+  if (id === MAP_ID && WG.children.length) return false;
+  loadGrid(id); clearWorld(); buildWorld(); drawMapImg(); recomputeSpawns();
+  clearNades(); clearDrops(); bomb.planted = false; bomb.mesh.visible = false; bomb.dropped = false;
+  renderer.shadowMap.needsUpdate = true; placeBackdrop();
+  return true;
+}
+// menu backdrop: bots standing on their sites so the scene looks alive
+function placeBackdrop(){ if (S.phase !== 'menu') return; const H = MAP.holds;
+  bots.forEach((b, i) => { const h = [H.A[0], H.B[0], H.M[0], H.A[1], H.B[1]][i]; b.pos.set(cw(h[0][0]), 0, cw(h[0][1])); b.yaw = Math.atan2(cw(h[1][0]) - b.pos.x, cw(h[1][1]) - b.pos.z); b.m.g.position.copy(b.pos); b.m.g.rotation.set(0, b.yaw, 0); b.m.g.visible = true; }); }
 
 /* ================= GRAPHICS QUALITY & PERFORMANCE ================= */
 // Most stutter on weak or integrated GPUs comes from the pixel count, the full-map sun shadow redrawn
@@ -3565,8 +3742,7 @@ function resize(){
 }
 window.addEventListener('resize', resize); resize(); applyQuality();
 
-// menu backdrop: place bots on their sites so the scene looks alive
-bots.forEach((b, i) => { const h = [HOLDS.A[0], HOLDS.B[0], HOLDS.M[0], HOLDS.A[1], HOLDS.B[1]][i]; b.pos.set(cw(h[0][0]), 0, cw(h[0][1])); b.yaw = Math.atan2(cw(h[1][0]) - b.pos.x, cw(h[1][1]) - b.pos.z); b.m.g.position.copy(b.pos); b.m.g.rotation.y = b.yaw; });
+setMap(SET.map); placeBackdrop();
 drawRadar();
 requestAnimationFrame(n => { last = n; frame(n); });
 })();

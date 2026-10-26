@@ -611,7 +611,9 @@ func TestReferee(t *testing.T) {
 	*r.gs = gameState{R: 1, Ph: "live", Fm: 12, E: "x", Bm: -1, T: 100, liveAt: time.Now()}
 	// yangi hayot faqat bazada: B yarim xaritadan "tug'ilsa", server uni bazaga qaytaradi
 	f := base(b, "B", "CT", 43, 40, nil)
-	if string(f["z"]) != "9" {
+	fx, _ := num(f["x"])
+	fz, _ := num(f["z"])
+	if !mapByID("").inSpawn(vec3{fx, 0, fz}, "CT") {
 		t.Fatalf("bazadan tashqarida tug'ilish qabul qilindi: z=%s", f["z"])
 	}
 	base(a, "A", "T", 43, 75, nil)
@@ -730,16 +732,17 @@ func TestRefereeDefuse(t *testing.T) {
 
 func TestAStar(t *testing.T) {
 	// T bazasidan A nuqtaga yo'l bor va har bir qadam bo'sh katakda
-	p := astar(vec3{43, 0, 75}, cellCenter([2]int{9, 8}))
+	gm := mapByID("qumtepa")
+	p := gm.astar(vec3{43, 0, 75}, cellCenter([2]int{9, 8}))
 	if len(p) < 10 {
 		t.Fatalf("yo'l topilmadi: %d", len(p))
 	}
 	for _, s := range p {
-		if botSolid(cellOf(s)) {
+		if gm.botSolid(cellOf(s)) {
 			t.Fatalf("yo'l devordan o'tadi: %+v", s)
 		}
 	}
-	if astar(vec3{43, 0, 75}, vec3{1, 0, 1}) != nil {
+	if gm.astar(vec3{43, 0, 75}, vec3{1, 0, 1}) != nil {
 		t.Fatal("devor ichiga yo'l topildi")
 	}
 }
@@ -771,7 +774,7 @@ func TestBots(t *testing.T) {
 	// isinish: bot o'z bazasida tug'iladi
 	now := time.Now()
 	r.botStepLocked(bot, now, .05)
-	if !bot.ps.alive || !inSpawn(bot.ps.pos, "CT") {
+	if !bot.ps.alive || !mapByID("").inSpawn(bot.ps.pos, "CT") {
 		t.Fatalf("bot tug'ilmadi: %+v", bot.ps.pos)
 	}
 	// odam bot ko'radigan joyda turadi: bot otadi va server hisobida jon kamayadi

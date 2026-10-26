@@ -37,7 +37,8 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - [ ] O'yinni tashlab ketganlik uchun jazo (vaqtincha navbat taqiqi)
 
 ## 5. Xaritalar
-- [ ] 2–3 ta yangi xarita (o'zbek me'morchiligi ruhida: bozor, karvonsaroy, zavod)
+- ✅ Ikki yangi ixcham xarita: Bozor va Karvonsaroy (Qumtepa bilan birga 3 ta); xona yaratishda va xona egasi o'yin davomida tanlaydi
+- [ ] Yana bitta xarita (zavod)
 - [ ] O'yin oldidan xarita tanlash uchun ovoz berish
 
 ## 6. Ijtimoiy

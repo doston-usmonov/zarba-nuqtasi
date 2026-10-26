@@ -31,15 +31,6 @@ var weaponFall = map[string]float64{"pistol": .85, "deagle": .81, "smg": .85, "c
 var weaponMag = map[string]int{"pistol": 20, "deagle": 7, "smg": 30, "carbine": 25, "rifle": 30, "sniper": 5}
 var weaponAcc = map[string]float64{"pistol": .85, "deagle": .85, "smg": .8, "carbine": 1, "rifle": 1, "sniper": 1.6}
 
-// himoyachilar turadigan joylar va hujumchilar bomba qo'yadigan joylar (panjara kataklari)
-var ctHolds = [][2][2]int{
-	{{8, 9}, {5, 14}}, {{12, 6}, {10, 14}}, {{4, 4}, {5, 14}}, {{10, 11}, {10, 15}},
-	{{32, 9}, {37, 14}}, {{38, 5}, {37, 14}}, {{31, 12}, {37, 14}}, {{39, 9}, {37, 16}},
-	{{21, 9}, {21, 30}}, {{23, 10}, {21, 30}}, {{17, 5}, {21, 16}},
-}
-var tSpots = map[string][][2]int{"A": {{9, 8}, {5, 9}, {10, 12}, {7, 11}}, "B": {{36, 10}, {32, 8}, {38, 6}, {33, 11}}}
-var tLooks = map[string][][2]int{"A": {{14, 5}, {10, 14}, {5, 14}}, "B": {{29, 5}, {37, 14}, {36, 14}}}
-
 func cellCenter(c [2]int) vec3 {
 	return vec3{(float64(c[0]) + .5) * cellSize, 0, (float64(c[1]) + .5) * cellSize}
 }
@@ -167,11 +158,11 @@ func pickBotWeapon(rih int) string {
 	return "smg"
 }
 
-func randomCellIn(t uint8) vec3 {
+func (m *gameMap) randomCellIn(t uint8) vec3 {
 	var cells [][2]int
 	for z := 0; z < gridH; z++ {
 		for x := 0; x < gridW; x++ {
-			if grid[z*gridW+x] == t {
+			if m.grid[z*gridW+x] == t {
 				cells = append(cells, [2]int{x, z})
 			}
 		}
@@ -187,7 +178,7 @@ func (r *room) spawnBotLocked(c *client, now time.Time) {
 	if c.info.Tm == "CT" {
 		zone = cCTSpawn
 	}
-	pos := randomCellIn(zone)
+	pos := r.gm().randomCellIn(zone)
 	rih := 1
 	if g.Ph == "warmup" || g.R <= 0 {
 		b.life, c.info.In, rih = -1, 0, 3
@@ -212,15 +203,16 @@ func (r *room) spawnBotLocked(c *client, now time.Time) {
 	if c.info.Tm == "T" {
 		b.yaw = 0
 		b.site = []string{"A", "B"}[rand.IntN(2)]
-		spots := tSpots[b.site]
+		spots := r.gm().spots[b.site]
 		b.goal = cellCenter(spots[rand.IntN(len(spots))])
-		looks := tLooks[b.site]
+		looks := r.gm().looks[b.site]
 		b.look = cellCenter(looks[rand.IntN(len(looks))])
 		b.mode = "wait"
 		b.execAt = now.Add(time.Duration(6+rand.IntN(14)) * time.Second)
 	} else {
 		b.yaw = math.Pi
-		h := ctHolds[rand.IntN(len(ctHolds))]
+		hs := r.gm().holds
+		h := hs[rand.IntN(len(hs))]
 		b.goal, b.look = cellCenter(h[0]), cellCenter(h[1])
 		b.goal.X += (rand.Float64() - .5) * 1.2
 		b.goal.Z += (rand.Float64() - .5) * 1.2
@@ -250,8 +242,8 @@ func (r *room) botDieLocked(v, killer *client, w string, hs bool, now time.Time)
 
 // ---- yo'l topish (A*) ----
 
-func botSolid(cx, cz int) bool {
-	t := cellType(cx, cz)
+func (m *gameMap) botSolid(cx, cz int) bool {
+	t := m.cellType(cx, cz)
 	return t == cWall || t == cCrate || t == cStack
 }
 
@@ -275,10 +267,10 @@ func octile(ax, az, bx, bz int) float64 {
 	return math.Max(dx, dz) + (math.Sqrt2-1)*math.Min(dx, dz)
 }
 
-func astar(from, to vec3) []vec3 {
+func (m *gameMap) astar(from, to vec3) []vec3 {
 	sx, sz := cellOf(from)
 	gx, gz := cellOf(to)
-	if botSolid(gx, gz) {
+	if m.botSolid(gx, gz) {
 		return nil
 	}
 	const n = gridW * gridH
@@ -318,10 +310,10 @@ func astar(from, to vec3) []vec3 {
 					continue
 				}
 				nx, nz := cx+dx, cz+dz
-				if nx < 0 || nz < 0 || nx >= gridW || nz >= gridH || botSolid(nx, nz) {
+				if nx < 0 || nz < 0 || nx >= gridW || nz >= gridH || m.botSolid(nx, nz) {
 					continue
 				}
-				if dx != 0 && dz != 0 && (botSolid(cx+dx, cz) || botSolid(cx, cz+dz)) {
+				if dx != 0 && dz != 0 && (m.botSolid(cx+dx, cz) || m.botSolid(cx, cz+dz)) {
 					continue // burchakni kesib o'tmaslik
 				}
 				step := 1.0
@@ -364,7 +356,7 @@ func (b *botBrain) turn(target, rate, dt float64) float64 {
 func (r *room) botGo(c *client, goal vec3, speed, dt float64, now time.Time) bool {
 	b, p := c.bot, c.ps
 	if b.path == nil || now.After(b.planAt) || b.pathGoal.flat(goal) > 1.2 {
-		b.path, b.pi, b.pathGoal, b.planAt = astar(p.pos, goal), 0, goal, now.Add(3*time.Second)
+		b.path, b.pi, b.pathGoal, b.planAt = r.gm().astar(p.pos, goal), 0, goal, now.Add(3*time.Second)
 		if b.path == nil {
 			return false
 		}
@@ -406,7 +398,7 @@ func (r *room) botSees(c *client, now time.Time) (*client, float64) {
 		}
 		head := vec3{o.ps.pos.X, o.ps.pos.Y + 1.5, o.ps.pos.Z}
 		chest := vec3{o.ps.pos.X, o.ps.pos.Y + 1.05, o.ps.pos.Z}
-		if lineOfSight(eyeP, chest) || lineOfSight(eyeP, head) {
+		if r.gm().lineOfSight(eyeP, chest) || r.gm().lineOfSight(eyeP, head) {
 			best, bd = o, d
 		}
 	}
@@ -550,7 +542,7 @@ func (r *room) botObjectiveLocked(c *client, now time.Time, dt float64) {
 			b.mode = "guard"
 			a := rand.Float64() * 2 * math.Pi
 			b.goal = vec3{bomb.X + math.Sin(a)*4, 0, bomb.Z + math.Cos(a)*4}
-			if botSolid(cellOf(b.goal)) {
+			if r.gm().botSolid(cellOf(b.goal)) {
 				b.goal = bomb
 			}
 		}
@@ -581,11 +573,11 @@ func (r *room) botObjectiveLocked(c *client, now time.Time, dt float64) {
 			r.botGo(c, b.goal, 4.2, dt, now)
 			return
 		}
-		if siteAt(p.pos.X, p.pos.Z) != "" && g.Ph == "live" {
+		if r.gm().siteAt(p.pos.X, p.pos.Z) != "" && g.Ph == "live" {
 			b.mode = "plant"
 			b.actT += dt
 			if b.actT >= 3.2 && g.B == nil {
-				g.B = &bombState{X: math.Round(p.pos.X*100) / 100, Z: math.Round(p.pos.Z*100) / 100, S: siteAt(p.pos.X, p.pos.Z), T: 40}
+				g.B = &bombState{X: math.Round(p.pos.X*100) / 100, Z: math.Round(p.pos.Z*100) / 100, S: r.gm().siteAt(p.pos.X, p.pos.Z), T: 40}
 				b.actT = 0
 				b.mode = "guard"
 			}

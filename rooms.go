@@ -22,7 +22,8 @@ const kickBan = 10 * time.Minute
 type roomOpts struct {
 	create bool // "yaratish" tugmasi: bunday xona bor bo'lsa — xato
 	pub    bool
-	max    int // 0 — cheksiz
+	max    int    // 0 — cheksiz
+	gmap   string // xarita
 }
 
 func parseRoomOpts(q map[string][]string) roomOpts {
@@ -32,7 +33,10 @@ func parseRoomOpts(q map[string][]string) roomOpts {
 		}
 		return ""
 	}
-	o := roomOpts{create: get("create") == "1", pub: get("pub") != "0"}
+	o := roomOpts{create: get("create") == "1", pub: get("pub") != "0", gmap: defaultMap}
+	if validMap(get("map")) {
+		o.gmap = get("map")
+	}
 	if m, err := strconv.Atoi(get("max")); err == nil && m >= 2 && m <= 64 {
 		o.max = m
 	}
@@ -95,6 +99,7 @@ func (h *hub) adminLocked(r *room, c *client, d json.RawMessage, now time.Time) 
 		Lv  string `json:"lv"`
 		Pub *bool  `json:"pub"`
 		Max *int   `json:"max"`
+		M   string `json:"m"`
 	}
 	if json.Unmarshal(d, &m) != nil {
 		return
@@ -121,6 +126,12 @@ func (h *hub) adminLocked(r *room, c *client, d json.RawMessage, now time.Time) 
 		}
 		t.trySend(jsonMsg(map[string]string{"t": "err", "code": "kicked"}))
 		go func(t *client) { time.Sleep(200 * time.Millisecond); t.ws.close() }(t)
+	case "map":
+		if !validMap(m.M) || m.M == r.gs.M {
+			return
+		}
+		r.changeMapLocked(m.M, now)
+		r.broadcast(jsonMsg(map[string]string{"t": "note", "msg": "Xarita: " + mapByID(m.M).name + " — o'yin isinishdan qayta boshlanadi"}), "")
 	case "set":
 		if m.Pub != nil {
 			r.pub = *m.Pub
@@ -134,12 +145,30 @@ func (h *hub) adminLocked(r *room, c *client, d json.RawMessage, now time.Time) 
 	r.broadcast(r.infoMsgLocked(), "")
 }
 
+// changeMapLocked: xona boshqa xaritaga o'tadi — o'yin isinishdan boshlanadi, hamma yangi bazasida tug'iladi.
+func (r *room) changeMapLocked(id string, now time.Time) {
+	g := r.gs
+	g.M = id
+	g.reset()
+	for _, c := range r.clients {
+		if c.ps == nil {
+			continue
+		}
+		if c.bot != nil {
+			r.spawnBotLocked(c, now)
+			continue
+		}
+		c.ps.posOK, c.ps.badSpawnAt = false, time.Time{}
+	}
+}
+
 type roomListing struct {
 	Code   string `json:"code"`
 	Owner  string `json:"owner"`
 	Humans int    `json:"humans"`
 	Bots   int    `json:"bots"`
 	Max    int    `json:"max"`
+	Map    string `json:"map"`
 	Phase  string `json:"phase"`
 	Round  int    `json:"round"`
 	SA     int    `json:"sA"`
@@ -165,7 +194,7 @@ func (h *hub) publicRooms() []roomListing {
 				owner = cleanGuestName(o.info.Nm)
 			}
 			if humans > 0 {
-				out = append(out, roomListing{Code: strings.TrimPrefix(r.name, "zn-"), Owner: owner, Humans: humans, Bots: bots, Max: r.max,
+				out = append(out, roomListing{Code: strings.TrimPrefix(r.name, "zn-"), Owner: owner, Humans: humans, Bots: bots, Max: r.max, Map: r.gs.M,
 					Phase: r.gs.Ph, Round: r.gs.R, SA: r.gs.SA, SB: r.gs.SB, Fm: r.gs.Fm})
 			}
 		}

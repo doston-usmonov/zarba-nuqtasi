@@ -65,6 +65,7 @@ type bombState struct {
 type gameState struct {
 	R  int        `json:"r"`
 	Ph string     `json:"ph"`
+	M  string     `json:"m"` // xarita
 	T  float64    `json:"t"`
 	SA int        `json:"sA"`
 	SB int        `json:"sB"`
@@ -79,7 +80,7 @@ type gameState struct {
 	liveAt time.Time // jonli faza boshlangan vaqt (xarid vaqtini bilish uchun)
 }
 
-func newGameState() *gameState { return &gameState{Ph: "warmup", Fm: 12, Bm: -1, Cd: 6} }
+func newGameState() *gameState { return &gameState{Ph: "warmup", M: defaultMap, Fm: 12, Bm: -1, Cd: 6} }
 
 func randEpoch() string {
 	var b [3]byte
@@ -301,17 +302,17 @@ func (r *room) refereeLocked(c *client, f map[string]json.RawMessage, info presI
 			if p.posOK {
 				lim := 8*math.Min(dt, 3) + 1.6
 				// isinishda va raund boshida o'z bazasi ichida joy almashish (qayta tug'ilish) mumkin
-				respawn := (g.Ph == "warmup" || g.Ph == "freeze") && info.Tm != "" && inSpawn(np, info.Tm)
-				if (np.flat(p.pos) > lim && !respawn) || insideSolid(np) || (np.Y-p.pos.Y > 2.8 && !respawn) || np.X < 0 || np.Z < 0 || np.X > gridW*cellSize || np.Z > gridH*cellSize {
+				respawn := (g.Ph == "warmup" || g.Ph == "freeze") && info.Tm != "" && r.gm().inSpawn(np, info.Tm)
+				if (np.flat(p.pos) > lim && !respawn) || r.gm().insideSolid(np) || (np.Y-p.pos.Y > 2.8 && !respawn) || np.X < 0 || np.Z < 0 || np.X > gridW*cellSize || np.Z > gridH*cellSize {
 					ok = false
 				}
-			} else if insideSolid(np) || (info.Tm != "" && !inSpawn(np, info.Tm)) {
+			} else if r.gm().insideSolid(np) || (info.Tm != "" && !r.gm().inSpawn(np, info.Tm)) {
 				// yangi hayot faqat o'z bazasida boshlanadi (mijoz bazaga o'tguncha biroz kutamiz)
 				ok = false
 				if p.badSpawnAt.IsZero() {
 					p.badSpawnAt = now
 				}
-				p.pos = spawnCenter(info.Tm)
+				p.pos = r.gm().spawnCenter(info.Tm)
 				if now.Sub(p.badSpawnAt) > 1200*time.Millisecond {
 					p.posOK, p.moveAt = true, now
 				}
@@ -478,7 +479,7 @@ func (r *room) validHitLocked(c *client, h hitClaim, now time.Time) string {
 			px, pz := -dz/l*.24, dx/l*.24
 			for _, hgt := range []float64{1.55 - t.cr*.45, 1.1 - t.cr*.4, .45} {
 				for _, k := range []float64{0, 1, -1} {
-					if lineOfSight(e, vec3{t.p.X + px*k, t.p.Y + hgt, t.p.Z + pz*k}) {
+					if r.gm().lineOfSight(e, vec3{t.p.X + px*k, t.p.Y + hgt, t.p.Z + pz*k}) {
 						return ""
 					}
 				}
@@ -568,8 +569,8 @@ func (r *room) checkPlantLocked(c *client, f map[string]json.RawMessage, now tim
 			p.plN = pl.N
 			if g.Ph == "live" && g.B == nil && pl.R == g.R && c.info.Tm == "T" && p.alive && c.info.In == g.R {
 				at := vec3{pl.X, 0, pl.Z}
-				site := siteAt(pl.X, pl.Z)
-				if site != "" && site == pl.S && at.flat(p.pos) < 2.5 && r.stoodLocked(p, now, 2.6, func(s sample) bool { return siteAt(s.p.X, s.p.Z) == site && s.p.flat(at) < 2.5 }) {
+				site := r.gm().siteAt(pl.X, pl.Z)
+				if site != "" && site == pl.S && at.flat(p.pos) < 2.5 && r.stoodLocked(p, now, 2.6, func(s sample) bool { return r.gm().siteAt(s.p.X, s.p.Z) == site && s.p.flat(at) < 2.5 }) {
 					g.B = &bombState{X: pl.X, Z: pl.Z, S: site, T: 40}
 				} else {
 					c.warnLocked("noto'g'ri bomba o'rnatish", now)
@@ -658,8 +659,7 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 	r.forceDeathsLocked(now)
 	prev := g.Ph
 	if g.Ph != "warmup" && g.Ph != "over" && (nA == 0 || nB == 0) {
-		*g = *newGameState()
-		g.Fm = 12
+		g.reset()
 	}
 	switch g.Ph {
 	case "warmup":
@@ -715,7 +715,7 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 	case "over":
 		g.T -= dt
 		if g.T <= 0 {
-			*g = *newGameState()
+			g.reset()
 		}
 	}
 	return r.tr.phase(r, prev, now)
@@ -789,9 +789,19 @@ func (r *room) run(h *hub) {
 	}
 }
 
-func spawnCenter(side string) vec3 {
+func (m *gameMap) spawnCenter(side string) vec3 {
 	if side == "CT" {
-		return vec3{43, 0, 9}
+		return m.ctCenter
 	}
-	return vec3{43, 0, 75}
+	return m.tCenter
+}
+
+// gm: xonaning hozirgi xaritasi.
+func (r *room) gm() *gameMap { return mapByID(r.gs.M) }
+
+// reset: yangi o'yin (xarita saqlanadi).
+func (g *gameState) reset() {
+	m := g.M
+	*g = *newGameState()
+	g.M = m
 }

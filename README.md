@@ -13,6 +13,8 @@ zarba-server/
 ├── legacy.go          oldingi fayl bazasidan bir martalik import
 ├── api.go             /api: ro'yxatdan o'tish, kirish, reyting jadvali, profil
 ├── ws.go              WebSocket (RFC 6455) — serverga kerakli qismi
+├── gamemap.go         xaritalar panjarasi: ko'rinish, devorlar, bazalar, nuqtalar
+├── mapsdata.go        xaritalar (web/index.html dagi MAPS dan tools/genmaps.py yasaydi)
 ├── server_test.go     testlar (go test ./...)
 ├── web/index.html     o'yinning o'zi
 ├── web/vendor/        three.js r128 (CDN'ga bog'liq emas)

@@ -192,6 +192,23 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dim);min-width:0}
 .field input{background:rgba(243,239,230,.06);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-family:var(--f-body);font-size:16px;min-width:0;user-select:text;-webkit-user-select:text}
 .field input:focus{border-color:var(--atk);outline:none}
+.field select,.set select{background:#1b1915;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:9px 10px;font-family:var(--f-body);font-size:15px;min-width:0}
+.ghost.sm{padding:7px 12px;font-size:13px}
+.subh{font-family:var(--f-display);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:2px 0 -4px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.subh button{background:none;border:0;color:var(--dim);font-size:12px;cursor:pointer;padding:0;letter-spacing:.05em;text-transform:none}
+#roomList{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto}
+#roomList .rm{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;background:rgba(243,239,230,.05);border:1px solid var(--line);border-radius:7px;padding:8px 10px}
+#roomList .rm b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#roomList .rm small{grid-column:1;color:var(--dim);font-size:12px}
+#roomList .rm button{grid-row:1/3;grid-column:2}
+.joinrow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+.createrow{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end}
+@media (max-width:460px){ .createrow{grid-template-columns:1fr 1fr} .createrow .field:first-child{grid-column:1/-1} }
+#admList{width:100%;border-collapse:collapse;font-size:14px}
+#admList td{padding:5px 4px;border-top:1px solid var(--line)}
+#admList td.r{text-align:right}
+#admList .t{color:var(--atk)} #admList .ct{color:var(--def)}
+#admList small{color:var(--dim);margin-left:6px}
 .cta:disabled{opacity:.5;cursor:wait}
 #teamTag{font-size:13px;font-weight:600;max-width:240px}
 #perf{position:absolute;top:calc(74px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-family:var(--f-display);font-size:12px;font-weight:600;color:var(--ink);background:rgba(14,13,11,.45);padding:2px 8px;border-radius:4px;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -437,11 +454,21 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
       </div>
       <div class="panel" id="onlinePanel">
         <h3>Onlayn o'yin</h3>
-        <div class="fields">
-          <label class="field" for="nick"><span>Ismingiz</span><input id="nick" maxlength="16" autocomplete="nickname" placeholder="Masalan, Lochin"></label>
-          <label class="field" for="roomCode"><span>Xona kodi</span><input id="roomCode" maxlength="40" autocomplete="off" placeholder="umumiy"></label>
+        <label class="field" for="nick"><span>Ismingiz</span><input id="nick" maxlength="16" autocomplete="nickname" placeholder="Masalan, Lochin"></label>
+        <div class="srv-only subh"><span>Ochiq o'yinlar</span><button type="button" id="roomsRefresh">Yangilash</button></div>
+        <div class="srv-only" id="roomList"><p class="note">Yuklanmoqda…</p></div>
+        <div class="srv-only subh"><span>Kod bilan kirish</span></div>
+        <div class="joinrow">
+          <label class="field" for="roomCode"><span class="art-only">Xona kodi</span><input id="roomCode" maxlength="40" autocomplete="off" placeholder="umumiy" aria-label="Xona kodi"></label>
+          <button class="cta" id="onlineBtn" type="button">Kirish</button>
         </div>
-        <button class="cta" id="onlineBtn" type="button">Onlayn o'ynash</button>
+        <div class="srv-only subh"><span>Yangi o'yin yaratish</span></div>
+        <div class="srv-only createrow">
+          <label class="field" for="newCode"><span>Kod</span><input id="newCode" maxlength="40" autocomplete="off"></label>
+          <label class="field" for="newPub"><span>Kimga</span><select id="newPub"><option value="1">Ommaviy</option><option value="0">Yopiq (kod bilan)</option></select></label>
+          <label class="field" for="newMax"><span>Maks. o'yinchi</span><select id="newMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select></label>
+        </div>
+        <button class="ghost srv-only" id="createBtn" type="button">O'yin yaratish</button>
         <p class="note" id="onlineNote">Do'stlaringiz shu sahifani ochib, bir xil xona kodini kiritsa, birga o'ynaysiz. Jamoalar avtomatik teng bo'linadi.</p>
       </div>
       </div>
@@ -510,6 +537,17 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
       <h2>O'yin to'xtatildi</h2>
       <p class="note">Davom etish uchun tugmani bosing — sichqoncha yana o'yinga ulanadi.</p>
       <div class="row"><button class="cta" id="resumeBtn" type="button">Davom etish</button><button class="ghost" id="quitBtn" type="button">Bosh menyu</button></div>
+      <div class="panel" id="adminPanel" hidden>
+        <h3>Xona</h3>
+        <p class="note" id="admInfo"></p>
+        <div id="admCtl" style="display:flex;flex-direction:column;gap:10px">
+          <div class="row"><button class="ghost sm" type="button" data-adm="botT">+ Bot hujumga</button><button class="ghost sm" type="button" data-adm="botCT">+ Bot himoyaga</button></div>
+          <div class="set"><span>Bot darajasi</span><div class="seg" data-set="botLv"><button type="button" data-v="easy">Oson</button><button type="button" data-v="normal">O'rta</button><button type="button" data-v="hard">Qiyin</button></div><span></span></div>
+          <div class="set"><span>Xona turi</span><div class="seg" id="admPub"><button type="button" data-v="1">Ommaviy</button><button type="button" data-v="0">Yopiq</button></div><span></span></div>
+          <label class="set" for="admMax">Maks. o'yinchi <select id="admMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select><span></span></label>
+        </div>
+        <table id="admList"></table>
+      </div>
       <div class="panel" id="pauseSettings"><h3>Sozlamalar</h3></div>
     </div>
   </div>
@@ -574,7 +612,7 @@ const KB = (desk, touch) => isTouch ? touch : desk;
 
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
-const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off' }, loadSet());
+const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal' }, loadSet());
 function saveSet(){ try { localStorage.setItem('zn-set', JSON.stringify(SET)); } catch(e){} }
 const DIFFS = {
   easy:   { react:.85, acc:.18, hs:.07, turn:4.0, defuse:10 },
@@ -2031,6 +2069,8 @@ function explodeHE(n){
     let dmg = Math.max(dmgAt(_nb), dmgAt(camera.position));
     if (dmg > 1){ if (player.armor > 0){ const a = dmg*.43; player.armor = Math.max(0, player.armor - a*.5); dmg -= a; } nadeHurt(n, dmg, W.he); }
   }
+  if (MODE === 'online' && n.owner === null) NET.remotes.forEach(r => { if (!r.bot || !r.alive || r.team === player.team) return;
+    _nb.copy(r.pos); _nb.y += 1.1; const dmg = dmgAt(_nb); if (dmg >= 1) netNadeHit(r, dmg, 'he'); });
   if (MODE !== 'online' && n.owner === null) for (const b of bots){ if (!b.alive) continue;
     _nb.copy(b.pos); _nb.y += 1.1 - b.kneel*.4; let dmg = dmgAt(_nb); if (dmg < 1) continue;
     if (b.armor > 0){ const a = dmg*.43; b.armor = Math.max(0, b.armor - a*.5); dmg -= a; }
@@ -2118,6 +2158,7 @@ function fireTick(f){
   const dmg = 9;   // 36 per second
   if (player.alive && canHurtMe(f) && inFire(f, player.pos)){ player.hp -= dmg*(player.armor > 0 ? .9 : 1); hurtFX(f.p, 'legs'); if (player.hp <= 0) playerDie(f.owner, W.molly, false); }
   if (MODE !== 'online' && f.owner === null) for (const b of bots){ if (b.alive && inFire(f, b.pos)) nadeHitBot(b, dmg, W.molly, f.p); }
+  if (MODE === 'online' && f.owner === null) NET.remotes.forEach(r => { if (r.bot && r.alive && r.team !== player.team && inFire(f, r.pos)) netNadeHit(r, dmg, 'molly'); });
 }
 // bots step out of the flames
 function fireRepel(pos, dt){ for (const f of fires){ if (!inFire(f, pos)) continue; const dx = pos.x - f.p.x, dz = pos.z - f.p.z, d = Math.hypot(dx, dz) || 1; moveEntity(pos, dx/d*4*dt, dz/d*4*dt, .34, true); } }
@@ -2291,12 +2332,63 @@ canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('wheel', e => { if (!inGame() || S.paused || S.buyOpen) return; e.preventDefault(); const order = [1,2,3,4,5].filter(s => s === 5 ? player.bomb : s === 4 ? nadeTotal() > 0 : !!player.inv[s]); let i = order.indexOf(player.slot); i = (i + (e.deltaY > 0 ? 1 : -1) + order.length) % order.length; switchSlot(order[i]); }, { passive:false });
 
 /* ================= MENUS ================= */
-function pauseGame(){ S.paused = true; mouseL = mouseR = false; $('pause').hidden = false; $('pauseSettings').appendChild($('settingsPanelInner')); }
+function pauseGame(){ S.paused = true; mouseL = mouseR = false; $('pause').hidden = false; $('pauseSettings').appendChild($('settingsPanelInner')); renderAdmin(); }
 function resumeGame(){ S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); requestLock(); canvas.focus({ preventScroll:true }); }
 $('resumeBtn').addEventListener('click', () => { goFullscreen(); resumeGame(); });
 $('quitBtn').addEventListener('click', () => { S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); toMenu(); });
 function toMenu(){ if (MODE === 'online') leaveOnline(); clearNades(); clearDrops(); S.phase = 'menu'; $('hud').hidden = true; $('dead').hidden = true; $('over').hidden = true; $('menu').hidden = false; showBoard(false); if (document.pointerLockElement) document.exitPointerLock(); bots.forEach(b => { b.m.g.visible = true; }); }
-$('onlineBtn').addEventListener('click', () => { joinOnline(); });
+$('onlineBtn').addEventListener('click', () => { joinOnline(false); });
+$('createBtn').addEventListener('click', () => { joinOnline(true); });
+$('newCode').value = 'xona-' + Math.floor(1000 + Math.random()*9000);
+/* public games on the home screen (server version) */
+let roomsT = 0;
+async function loadRooms(){
+  if (IN_ARTIFACT || !/^https?:$/.test(location.protocol)) return;
+  try {
+    const res = await fetch('/api/rooms', { cache:'no-store' }); const data = await res.json(); const list = Array.isArray(data.rooms) ? data.rooms : [];
+    const el = $('roomList');
+    if (!list.length){ el.innerHTML = `<p class="note">Hozircha ochiq o'yin yo'q — pastda o'zingiz yarating.</p>`; return; }
+    el.innerHTML = list.map(r => {
+      const code = String(r.code || ''), ph = { warmup:'isinish', freeze:r.round + '-raund', live:r.round + '-raund', post:r.round + '-raund', over:"o'yin tugadi" }[r.phase] || '';
+      const people = (r.humans|0) + " o'yinchi" + (r.bots ? ' + ' + (r.bots|0) + ' bot' : '') + ' / ' + (r.max ? r.max|0 : '∞');
+      return `<div class="rm"><b>${escH(code)}</b><small>${escH(r.owner || '')} · ${people} · ${ph}${r.round ? ' · ' + (r.sA|0) + ':' + (r.sB|0) : ''}</small><button class="ghost sm" type="button" data-room="${escH(code)}"${r.max && (r.humans + r.bots) >= r.max ? ' disabled' : ''}>Kirish</button></div>`;
+    }).join('');
+  } catch(e){ $('roomList').innerHTML = `<p class="note">Ro'yxatni yuklab bo'lmadi.</p>`; }
+}
+$('roomList').addEventListener('click', e => { const b = e.target.closest('[data-room]'); if (b){ $('roomCode').value = b.dataset.room; joinOnline(false, b.dataset.room); } });
+$('roomsRefresh').addEventListener('click', loadRooms);
+setInterval(() => { if (S.phase === 'menu' && !document.hidden) loadRooms(); }, 5000);
+if (IN_ARTIFACT || !/^https?:$/.test(location.protocol)) document.querySelectorAll('.srv-only').forEach(e => e.hidden = true);
+else { document.querySelectorAll('.art-only').forEach(e => e.hidden = true); loadRooms(); }
+/* room owner tools (pause menu) */
+function netRoomInfo(m){ NET.roomInfo = { owner:String(m.owner || ''), pub:!!m.pub, max:num(m.max)|0, bots:num(m.bots)|0, humans:num(m.humans)|0 }; renderAdmin(); }
+function isOwner(){ return MODE === 'online' && !!NET.roomInfo && !!NET.me && NET.roomInfo.owner === NET.me; }
+function netKicked(){ if (MODE !== 'online') return; toMenu(); const n = $('onlineNote'); n.textContent = 'Xona egasi sizni o\'yindan chiqarib yubordi.'; hint("Siz xonadan chiqarildingiz", 4000); }
+function renderAdmin(){
+  const panel = $('adminPanel'), ri = NET.roomInfo;
+  panel.hidden = MODE !== 'online' || !ri || !NET.room || !NET.room.admin;
+  if (panel.hidden) return;
+  const own = isOwner(), ownerR = NET.remotes.get(ri.owner);
+  $('admInfo').textContent = 'Kod: ' + NET.code + ' · ' + (ri.pub ? 'ommaviy' : 'yopiq') + ' · ' + (ri.max ? 'ko\'pi bilan ' + ri.max : 'cheksiz') + ' · egasi: ' + (own ? 'siz' : ownerR ? ownerR.name : '—') + (own ? '' : '. Botlarni va o\'yinchilarni faqat xona egasi boshqaradi.');
+  $('admCtl').hidden = !own;
+  $('admPub').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === (ri.pub ? '1' : '0'))));
+  $('admMax').value = String(ri.max || 0);
+  const rows = [...NET.remotes.values()].filter(r => r.team).sort((a, b) => (a.team > b.team ? 1 : -1) || (a.bot - b.bot));
+  $('admList').innerHTML = `<tr><td class="${player.team === 'CT' ? 'ct' : 't'}">${escH(NET.name)} <small>siz${own ? ', egasi' : ''}</small></td><td class="r"></td></tr>` +
+    rows.map(r => `<tr><td class="${r.team === 'CT' ? 'ct' : 't'}">${escH(r.name)}${r.bot ? ' <small>bot · ' + ({ easy:'oson', normal:"o'rta", hard:'qiyin' }[r.lv] || '') + '</small>' : r.peer === ri.owner ? ' <small>egasi</small>' : ''}</td><td class="r">${own ? `<button class="ghost sm" type="button" data-kick="${escH(r.peer)}">${kickSure(r.peer) ? 'Tasdiqlash' : 'Chiqarish'}</button>` : ''}</td></tr>`).join('');
+}
+$('adminPanel').addEventListener('click', e => {
+  if (!isOwner()) return;
+  const k = e.target.closest('[data-kick]'), a = e.target.closest('[data-adm]'), p = e.target.closest('#admPub button');
+  if (k){ const r = NET.remotes.get(k.dataset.kick); if (r && (r.bot || confirmKick(k, r))) NET.room.admin({ a:'kick', id:k.dataset.kick }); }
+  if (a){ const side = a.dataset.adm === 'botT' ? 'T' : 'CT', g = NET.g, H = g ? g.fm : fmtH(); const sq = (g && g.r > 0 && g.ph !== 'warmup' ? sideOfSquad('A', g.r, H) : 'T') === side ? 'A' : 'B'; NET.room.admin({ a:'bot', sq, lv:SET.botLv }); }
+  if (p) NET.room.admin({ a:'set', pub:p.dataset.v === '1' });
+});
+// a second click confirms kicking a person (no browser dialogs during the game)
+let kickAsk = null;
+function kickSure(id){ return kickAsk && kickAsk.id === id && performance.now() < kickAsk.until; }
+function confirmKick(btn, r){ if (kickSure(r.peer)){ kickAsk = null; return true; } kickAsk = { id:r.peer, until:performance.now() + 3000 }; btn.textContent = 'Tasdiqlash'; setTimeout(renderAdmin, 3100); return false; }
+$('admMax').addEventListener('change', () => { if (isOwner()) NET.room.admin({ a:'set', max:+$('admMax').value || 0 }); });
 $('nick').value = SET.nick || ''; $('roomCode').value = SET.room || 'umumiy';
 $('startBtn').addEventListener('click', () => { initAudio(); goFullscreen(); startMatch(); requestLock(); canvas.focus({ preventScroll:true }); });
 $('againBtn').addEventListener('click', () => { initAudio(); goFullscreen(); startMatch(); requestLock(); });
@@ -2388,9 +2480,11 @@ const TEAM_NAME = { T:'Hujum', CT:'Himoya' };
 const roomP = IN_ARTIFACT ? Promise.resolve().then(() => window.claude.use('room')).catch(() => null)
   : Promise.resolve(/^https?:$/.test(location.protocol) ? { join: wsJoin } : null);
 // Same interface as the artifact room (peers / presence / connected / leave), carried over the game server's /ws endpoint.
-function wsJoin(name){
+function wsJoin(name, opts){
   return new Promise((resolve, reject) => {
-    const url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?room=' + encodeURIComponent(name);
+    opts = opts || {};
+    const url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?room=' + encodeURIComponent(name) +
+      (opts.create ? '&create=1&pub=' + (opts.pub ? 1 : 0) + '&max=' + (opts.max|0) : '');
     const others = new Map(); let ws = null, me = null, conn = false, closed = false, mine = {}, snap = [], dirty = true, settled = false, tries = 0;
     const api = {
       peers(){ if (dirty){ dirty = false; const a = []; if (me) a.push({ peer:me, presence:mine, sameTab:true, isMe:true, kind:'viewer', guest:false, by:null });
@@ -2400,6 +2494,7 @@ function wsJoin(name){
       leave(){ closed = true; try { ws && ws.close(); } catch(e){} return Promise.resolve(); },
       signal(to, d){ if (ws && ws.readyState === 1){ try { ws.send(JSON.stringify({ t:'sig', to, d })); } catch(e){} } },
       ref:true,   // the server referees: round clock, hits, movement
+      admin(d){ if (ws && ws.readyState === 1){ try { ws.send(JSON.stringify({ t:'adm', d })); } catch(e){} } },
     };
     setInterval(() => { if (!closed && ws && ws.readyState === 1){ try { ws.send(JSON.stringify({ t:'ping', c:performance.now() })); } catch(e){} } }, 2000);
     const open = () => {
@@ -2415,7 +2510,10 @@ function wsJoin(name){
         else if (m.t === 'kill'){ netServerKill(m); }
         else if (m.t === 'fix'){ if (player.alive){ player.pos.set(num(m.x), num(m.y), num(m.z)); player.vel.set(0, 0, 0); } }
         else if (m.t === 'pong'){ const rtt = performance.now() - num(m.c); if (rtt >= 0 && rtt < 10000) NET.ping = NET.ping ? NET.ping*.7 + rtt*.3 : rtt; }
-        else if (m.t === 'err' && !settled){ settled = true; closed = true; reject({ code:m.code || 'refused' }); } };
+        else if (m.t === 'room'){ netRoomInfo(m); }
+        else if (m.t === 'note'){ hint(String(m.msg || '').slice(0, 120), 3000); }
+        else if (m.t === 'err' && !settled){ settled = true; closed = true; reject({ code:m.code || 'refused' }); }
+        else if (m.t === 'err' && m.code === 'kicked'){ closed = true; netKicked(); } };
       ws.onclose = () => { conn = false; others.clear(); dirty = true;
         if (!settled){ settled = true; reject({ code:'upstream_error' }); return; }
         if (!closed) setTimeout(open, Math.min(4000, 400*(++tries))); };
@@ -2561,7 +2659,7 @@ document.addEventListener('auxclick', e => { if (inGame() && e.button !== 0) e.p
 
 const NET = { room:null, me:null, name:'', code:'umumiy', sq:null, drops:[], dropN:0, picks:[], pickN:0, host:false, g:null, gSrc:null, hitSeq:0, hits:[], shot:null, shotN:0, death:null, deathN:0, nade:null, nadeN:0, plant:null, plantN:0, def:null, defN:0,
   seen:{}, remotes:new Map(), inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, tickLast:0, joinT:0, cdShown:-1, beepT:0 };
-if (!IN_ARTIFACT) $('onlineNote').textContent = "Do'stlaringizga shu sahifa havolasini yuboring va bir xil xona kodini kiriting. Jamoalar avtomatik teng bo'linadi.";
+if (!IN_ARTIFACT) $('onlineNote').textContent = "Ochiq o'yinga qo'shiling yoki o'zingiz yarating. Yopiq o'yinga do'stlaringiz kod bilan kiradi. Jamoalar avtomatik teng bo'linadi, xona egasi bot qo'sha oladi (Esc menyusida).";
 const DEFAULT_NOTE = $('onlineNote').textContent;
 
 function cleanName(s){ const t = String(s || '').replace(/[^\p{L}\p{N} _.'-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 16); return t || "O'yinchi"; }
@@ -2592,7 +2690,7 @@ function hitMark(kill){ H.hit.className = ''; void H.hit.offsetWidth; H.hit.styl
 function updateRemote(r, pr, dt){
   if (pr !== r.lastPres){
     r.lastPres = pr;
-    const team = pr.tm === 'CT' ? 'CT' : 'T', name = cleanName(pr.nm); r.sq = pr.sq === 'B' ? 'B' : 'A'; r.vo = pr.vo === 2 ? 2 : pr.vo === 1 ? 1 : 0; r.vt = pr.vt === 1;
+    const team = pr.tm === 'CT' ? 'CT' : 'T', name = cleanName(pr.nm); r.sq = pr.sq === 'B' ? 'B' : 'A'; r.bot = pr.bot === 1; r.lv = String(pr.lv || ''); r.vo = pr.vo === 2 ? 2 : pr.vo === 1 ? 1 : 0; r.vt = pr.vt === 1;
     const a = pr.acc;
     r.acc = a && typeof a === 'object' && typeof a.u === 'string' ? { r:num(a.r)|0, rk:String(a.rk || '').slice(0, 24), rc:safeColor(a.rc), cal:!!a.cal } : null;
     if (team !== r.team || !r.m){ r.team = team; r.name = name; dressRemote(r); }
@@ -2659,6 +2757,7 @@ function netApplyHit(r, h){
   hurtFX(r.pos, part);
   if (player.hp <= 0) playerDie(r, W[h.w] || W[r.w] || W.pistol, part === 'head');
 }
+function netNadeHit(r, dmg, w){ NET.hits.push({ i:++NET.hitSeq, t:r.peer, d:Math.round(dmg), pn:1, p:'c', w }); if (NET.hits.length > 8) NET.hits.shift(); player.dmg += Math.min(dmg, r.hp); hitMark(false); }
 function netHit(r, w, part, dist, pos, flat){
   const dmg = flat ? w.dmg : w.dmg * MULT[part] * Math.pow(w.fall, dist/10);
   NET.hits.push({ i:++NET.hitSeq, t:r.peer, d:Math.round(dmg), pn:w.pen, p:part[0], w:w.id || 'knife' }); if (NET.hits.length > 8) NET.hits.shift();
@@ -2859,6 +2958,7 @@ function voiceHUD(){
 }
 function netHUD(){
   voiceHUD();
+  if (!$('pause').hidden){ NET.admT = (NET.admT || 0) + 1; if (NET.admT % 6 === 0) renderAdmin(); }
   const g = NET.g; H.scT.textContent = gSideScore(g, 'T'); H.scCT.textContent = gSideScore(g, 'CT'); netPips();
   const tt = $('teamTag'); tt.hidden = false;
   tt.textContent = (player.team ? 'Jamoa: ' + TEAM_NAME[player.team] : 'Jamoa tanlanmoqda…') + ' · Xona: ' + NET.code + ' · ' + (NET.remotes.size + 1) + " o'yinchi" + (NET.room && !NET.room.connected() ? ' · aloqa uzildi' : '');
@@ -2866,30 +2966,34 @@ function netHUD(){
 }
 function netBoardHTML(){
   const g = NET.g || { r:0, sA:0, sB:0, fm:12 }, esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
-  const rows = [...NET.remotes.values()].filter(r => r.team).map(r => ({ name:r.name, team:r.team, k:r.k, d:r.d, alive:r.alive, me:false, acc:r.acc }));
+  const rows = [...NET.remotes.values()].filter(r => r.team).map(r => ({ name:r.name, team:r.team, k:r.k, d:r.d, alive:r.alive, me:false, acc:r.acc, bot:r.bot }));
   const meAcc = ACC.me ? { r:ACC.me.rating, rk:ACC.me.rank.calibrating ? 'Kalibrlash' : ACC.me.rank.name, rc:safeColor(ACC.me.rank.color) } : null;
   if (player.team) rows.push({ name:NET.name + ' (siz)', team:player.team, k:player.kills, d:player.deaths, alive:player.alive, me:true, acc:meAcc });
-  const who = r => (r.acc ? `<span class="rk" style="--c:${r.acc.rc}" title="${esc(r.acc.rk)}"><i></i></span>` : '') + esc(r.name) + (r.acc ? `<small>${r.acc.r}</small>` : '<small>mehmon</small>');
+  const who = r => (r.acc ? `<span class="rk" style="--c:${r.acc.rc}" title="${esc(r.acc.rk)}"><i></i></span>` : '') + esc(r.name) + (r.acc ? `<small>${r.acc.r}</small>` : r.bot ? '<small>bot</small>' : '<small>mehmon</small>');
   const sec = t => { const col = t === 'T' ? 'var(--atk)' : 'var(--def)', list = rows.filter(r => r.team === t).sort((a,b) => b.k - a.k);
     return `<tr><th colspan="4" style="color:${col};padding-top:10px">${TEAM_NAME[t].toUpperCase()} · ${gSideScore(g, t)}</th></tr>` +
       (list.length ? list.map(r => `<tr class="${r.alive ? '' : 'dead'}"><td><span class="tag" style="background:${col}"></span>${who(r)}</td><td class="r">${r.k}</td><td class="r">${r.d}</td><td class="r">${r.me ? '$' + player.money : (r.alive ? 'tirik' : '—')}</td></tr>`).join('')
         : `<tr><td colspan="4" style="color:var(--dim)">Hali hech kim yo'q</td></tr>`); };
   return `<h3>Xona: ${esc(NET.code)} · ${g.r ? g.r + '-raund · ' + fmtLabel(g.fm) + (g.r > 2*g.fm ? " · qo'shimcha vaqt" : '') : 'Isinish'}</h3><table><tr><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">PUL / HOLAT</th></tr>` + sec('T') + sec('CT') + '</table>';
 }
-async function joinOnline(){
-  const btn = $('onlineBtn'), note = $('onlineNote'); initAudio();
-  NET.name = cleanName($('nick').value); NET.code = cleanCode($('roomCode').value); $('nick').value = NET.name; $('roomCode').value = NET.code; SET.nick = NET.name; SET.room = NET.code; saveSet();
+async function joinOnline(create, codeOverride){
+  const btn = create ? $('createBtn') : $('onlineBtn'), note = $('onlineNote'); initAudio();
+  const raw = codeOverride || (create ? $('newCode').value : $('roomCode').value);
+  NET.name = cleanName($('nick').value); NET.code = cleanCode(raw); $('nick').value = NET.name; SET.nick = NET.name;
+  if (create) $('newCode').value = NET.code; else { $('roomCode').value = NET.code; SET.room = NET.code; }
+  saveSet();
+  const opts = create ? { create:true, pub:$('newPub').value === '1', max:+$('newMax').value || 0 } : null;
   btn.disabled = true; note.textContent = 'Ulanmoqda…';
   const room = await roomP;
   if (!room){ btn.disabled = false; note.textContent = "Onlayn rejim bu ko'rinishda ishlamaydi. Sahifani claude.ai'da hisobingizga kirib oching; do'stlaringiz ham artifakt ulashilgan hisob bilan kirishi kerak."; return; }
   let named;
-  try { named = await room.join('zn-' + NET.code); }
+  try { named = await room.join('zn-' + NET.code, opts); }
   catch(e){
     if (e && e.code === 'not_permitted'){ // named rooms not offered here: play in the shared lobby instead
       named = { peers:() => room.peers(), presence:p => room.presence(p), connected:() => room.connected(), leave:() => room.presence({ v:null }) };
       NET.code = 'umumiy'; $('roomCode').value = 'umumiy';
     } else {
-      const why = { room_full:"Xona to'la (ko'pi bilan 16 o'yinchi). Boshqa xona kodini kiriting.", already_in_room:"Bu hisob bilan siz allaqachon shu xonadasiz (boshqa oyna yoki qurilmada).", too_many_connections:"Bu manzildan juda ko'p ulanish bor." }[e && e.code];
+      const why = { room_exists:"Bu kodli o'yin allaqachon bor. Boshqa kod tanlang yoki unga «Kirish» orqali qo'shiling.", kicked:"Xona egasi sizni chiqarib yuborgan — 10 daqiqadan keyin qayta urinib ko'ring.", room_full:"Xona to'la. Boshqa o'yinni tanlang yoki yangisini yarating.", already_in_room:"Bu hisob bilan siz allaqachon shu xonadasiz (boshqa oyna yoki qurilmada).", too_many_connections:"Bu manzildan juda ko'p ulanish bor." }[e && e.code];
       btn.disabled = false; note.textContent = why || ("Xonaga ulanib bo'lmadi (" + ((e && e.code) || 'xato') + "). Birozdan keyin qayta urinib ko'ring."); return; }
   }
   btn.disabled = false; note.textContent = DEFAULT_NOTE;
@@ -2910,7 +3014,7 @@ function goOnline(named){
   goFullscreen(); requestLock(); canvas.focus({ preventScroll:true });
 }
 function leaveOnline(){
-  voiceStop();
+  voiceStop(); NET.roomInfo = null; $('adminPanel').hidden = true;
   if (NET.room){ const r = NET.room; NET.room = null; r.leave().catch(() => {}); }
   NET.remotes.forEach(removeRemote); NET.remotes.clear(); NET.g = null;
   MODE = 'bots'; player.team = 'T'; bots.forEach(b => b.m.g.visible = true); $('teamTag').hidden = true; bomb.mesh.visible = false; bomb.planted = false;
@@ -3121,7 +3225,7 @@ function touchFrame(){
   $('tDrop').hidden = !player.alive || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot];
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= GRAPHICS QUALITY & PERFORMANCE ================= */
 // Most stutter on weak or integrated GPUs comes from the pixel count, the full-map sun shadow redrawn

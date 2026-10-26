@@ -54,7 +54,7 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
     environment:
-      MAX_PLAYERS: "16"      # bitta xonadagi o'yinchilar chegarasi
+      MAX_PLAYERS: "64"      # bitta xonadagi o'yinchilar (botlar bilan) yuqori chegarasi; xona egasi kamroq qo'yishi mumkin
       ALLOWED_ORIGINS: ""    # bo'sh — faqat o'z domeningiz; "*" — hamma joydan
       DATABASE_URL: postgres://zarba:${ZARBA_DB_PASSWORD}@db:5432/zarba?sslmode=disable
       DATA_DIR: /data        # oldingi versiyaning fayl bazasi: birinchi ishga tushishda Postgres'ga import qilinadi

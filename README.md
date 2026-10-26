@@ -138,6 +138,19 @@ API: `POST /api/register`, `POST /api/login`, `POST /api/logout`, `GET /api/me`,
 
 Bitta IP manzildan bir vaqtda ko'pi bilan 8 ta ulanish qabul qilinadi. Bir o'yinchidan soniyasiga 60 tadan ortiq xabar kelsa, ortiqchasi tashlanadi. Bitta xabar 8 KB dan oshmaydi.
 
+## Xonalar va botlar
+
+Bosh sahifada **ochiq o'yinlar ro'yxati** bor (har 5 soniyada yangilanadi, `GET /api/rooms`): kod, egasi, o'yinchilar va botlar soni, chegara, raund va hisob. «Kirish» tugmasi bilan qo'shilasiz.
+
+**O'yin yaratish:** kod, kimga (ommaviy yoki yopiq) va maksimal o'yinchilar soni (standart: ommaviy, cheksiz). Yopiq o'yin ro'yxatda ko'rinmaydi, unga faqat kodni bilganlar kiradi. Bunday kodli o'yin allaqachon bo'lsa, yaratib bo'lmaydi. Kod bilan kirganda o'yin hali bo'lmasa, standart sozlamalar bilan yaratiladi.
+
+**Xona egasi** — o'yinni yaratgan o'yinchi. U chiqib ketsa, egalik eng oldin kirgan keyingi o'yinchiga o'tadi. Ega o'yin ichida Esc (telefonda «II») menyusidagi «Xona» bo'limida:
+- bot qo'shadi: hujumga yoki himoyaga, oson / o'rta / qiyin (xonada ko'pi bilan 10 ta bot);
+- bot yoki o'yinchini chiqaradi. O'yinchi uchun tugmani ikki marta bosish kerak. Chiqarilgan o'yinchi shu xonaga 10 daqiqa kira olmaydi;
+- xonani ommaviy yoki yopiq qiladi, chegarani o'zgartiradi.
+
+Botlar serverda ishlaydi: yo'l topadi, himoyachilar o'z joylarini qo'riqlaydi, hujumchilar nuqtaga borib bomba qo'yadi, himoyachilar uni zararsizlantiradi, raqibni ko'rsa otadi. Ular boshqa o'yinchilar kabi server hakami orqali o'ynaydi. Bot qatnashgan o'yin reytingga yozilmaydi. `MAX_PLAYERS` (standart 64) — bitta xonadagi o'yinchilar va botlar uchun umumiy yuqori chegara.
+
 ## Ovozli chat
 
 Onlayn xonada o'yinchilar bir-biri bilan gaplashadi (faqat o'yinning o'z saytida; Claude ichidagi versiyada o'chiq). Sozlamalarda tanlanadi:

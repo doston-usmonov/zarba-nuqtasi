@@ -27,9 +27,10 @@ var roomName = regexp.MustCompile(`^[a-z0-9][a-z0-9_.-]{0,47}$`)
 
 func main() {
 	addr := env("ADDR", ":8080")
-	maxPlayers, _ := strconv.Atoi(env("MAX_PLAYERS", "16"))
+	// bitta xonadagi o'yinchilar (botlar bilan) uchun umumiy yuqori chegara; xona egasi undan pastroq chegara qo'yishi mumkin
+	maxPlayers, _ := strconv.Atoi(env("MAX_PLAYERS", "64"))
 	if maxPlayers < 2 {
-		maxPlayers = 16
+		maxPlayers = 64
 	}
 	allowed := parseOrigins(env("ALLOWED_ORIGINS", ""))
 
@@ -80,9 +81,10 @@ func main() {
 		if err != nil {
 			return
 		}
-		h.serve(ws, room, clientIP(r), r.Host, acct)
+		h.serve(ws, room, clientIP(r), r.Host, acct, parseRoomOpts(r.URL.Query()))
 	})
 	a.routes(mux)
+	mux.HandleFunc("/api/rooms", h.roomsHandler)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		rooms, players := h.stats()
 		w.Header().Set("Content-Type", "application/json")

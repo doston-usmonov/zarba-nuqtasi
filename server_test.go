@@ -183,7 +183,7 @@ func newTestServer(t *testing.T) (*httptest.Server, *Store, *hub) {
 		if err != nil {
 			return
 		}
-		h.serve(ws, r.URL.Query().Get("room"), r.RemoteAddr+newID(), r.Host, acct)
+		h.serve(ws, r.URL.Query().Get("room"), r.RemoteAddr+newID(), r.Host, acct, parseRoomOpts(r.URL.Query()))
 	})
 	return httptest.NewServer(mux), st, h
 }
@@ -725,5 +725,80 @@ func TestRefereeDefuse(t *testing.T) {
 	refPres(r, b, map[string]any{"v": 1, "sq": "B", "tm": "CT", "in": 1, "al": 1, "x": 70.5, "y": 0, "z": 18, "df": map[string]any{"n": 3, "r": 1}})
 	if r.gs.Ph != "post" || r.gs.W != "CT" || r.gs.Y != "defuse" {
 		t.Fatalf("zararsizlantirish qabul qilinmadi: %+v", r.gs)
+	}
+}
+
+func TestAStar(t *testing.T) {
+	// T bazasidan A nuqtaga yo'l bor va har bir qadam bo'sh katakda
+	p := astar(vec3{43, 0, 75}, cellCenter([2]int{9, 8}))
+	if len(p) < 10 {
+		t.Fatalf("yo'l topilmadi: %d", len(p))
+	}
+	for _, s := range p {
+		if botSolid(cellOf(s)) {
+			t.Fatalf("yo'l devordan o'tadi: %+v", s)
+		}
+	}
+	if astar(vec3{43, 0, 75}, vec3{1, 0, 1}) != nil {
+		t.Fatal("devor ichiga yo'l topildi")
+	}
+}
+
+func TestBots(t *testing.T) {
+	r, a, _ := newRefRoom()
+	delete(r.clients, "b")
+	r.owner = a.id
+	r.bans = map[string]time.Time{}
+	h := &hub{maxPlayers: 64}
+	// faqat ega bot qo'sha oladi
+	other := &client{id: "z", room: r, send: make(chan []byte, 64), ps: newPState(), joined: time.Now()}
+	r.clients["z"] = other
+	h.adminLocked(r, other, json.RawMessage(`{"a":"bot","sq":"B"}`), time.Now())
+	if bots, _ := r.botCountLocked(); bots != 0 {
+		t.Fatal("ega bo'lmagan o'yinchi bot qo'shdi")
+	}
+	delete(r.clients, "z")
+	h.adminLocked(r, a, json.RawMessage(`{"a":"bot","sq":"B","lv":"hard"}`), time.Now())
+	var bot *client
+	for _, c := range r.clients {
+		if c.bot != nil {
+			bot = c
+		}
+	}
+	if bot == nil || bot.info.Sq != "B" || bot.bot.lv != "hard" {
+		t.Fatal("bot qo'shilmadi")
+	}
+	// isinish: bot o'z bazasida tug'iladi
+	now := time.Now()
+	r.botStepLocked(bot, now, .05)
+	if !bot.ps.alive || !inSpawn(bot.ps.pos, "CT") {
+		t.Fatalf("bot tug'ilmadi: %+v", bot.ps.pos)
+	}
+	// odam bot ko'radigan joyda turadi: bot otadi va server hisobida jon kamayadi
+	refPres(r, a, map[string]any{"v": 1, "sq": "A", "tm": "T", "in": 0, "al": 1, "x": 43, "y": 0, "z": 75})
+	a.ps.pos = vec3{43, 0, 22}
+	a.ps.push(sample{t: now, p: a.ps.pos})
+	bot.ps.pos = vec3{43, 0, 12}
+	bot.bot.yaw = 0 // shimolga (pastdan yuqoriga) emas: a z=22 da, bot z=12 da — yawTo hisoblaydi
+	bot.bot.yaw = yawTo(bot.ps.pos, a.ps.pos)
+	hp0 := a.ps.hp
+	for i := 0; i < 200 && a.ps.hp == hp0; i++ {
+		now = now.Add(50 * time.Millisecond)
+		bot.ps.pos = vec3{43, 0, 12}
+		r.botStepLocked(bot, now, .05)
+	}
+	if a.ps.hp >= hp0 || len(bot.bot.hits) == 0 || bot.bot.sh == nil {
+		t.Fatalf("bot otmadi: hp=%v hits=%d", a.ps.hp, len(bot.bot.hits))
+	}
+	// odam botni o'ldiradi (tasdiqlangan tegish) — bot o'ladi va o'limi e'lon qilinadi
+	f := refPres(r, a, map[string]any{"v": 1, "sq": "A", "tm": "T", "in": 0, "al": 1, "x": 43, "y": 0, "z": 22, "w": "deagle",
+		"hi": []any{map[string]any{"i": 1, "t": bot.id, "d": 224, "p": "h", "w": "deagle"}}})
+	if string(f["hi"]) == "null" || bot.ps.alive || bot.bot.de == nil || bot.bot.de.By != a.id {
+		t.Fatalf("bot o'lmadi: hi=%s alive=%v de=%+v", f["hi"], bot.ps.alive, bot.bot.de)
+	}
+	// ega botni chiqaradi
+	h.adminLocked(r, a, json.RawMessage(`{"a":"kick","id":"`+bot.id+`"}`), now)
+	if r.clients[bot.id] != nil {
+		t.Fatal("bot chiqarilmadi")
 	}
 }

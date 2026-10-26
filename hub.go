@@ -38,6 +38,7 @@ type client struct {
 	info    presInfo
 	deSeen  bool
 	ps      *pstate   // server hakamining shu o'yinchi haqidagi ma'lumoti
+	bot     *botBrain // nil — odam; aks holda server boshqaradigan bot
 	prefFm  int       // o'yinchi sozlamasidagi format (8/12)
 	joined  time.Time // xonaga kirgan vaqti
 }
@@ -50,6 +51,10 @@ type room struct {
 	gs      *gameState    // server yuritadigan raund holati
 	manual  bool          // testlar uchun: taymer raundni o'zi yuritmaydi
 	stop    chan struct{} // xona yopilganda raund taymeri to'xtaydi
+	owner   string        // xona egasi (bot qo'shadi, chiqaradi)
+	pub     bool          // ommaviy — bosh sahifadagi ro'yxatda ko'rinadi
+	max     int           // o'yinchilar (botlar bilan) chegarasi, 0 — cheksiz
+	bans    map[string]time.Time
 }
 
 type hub struct {
@@ -91,7 +96,7 @@ func accPublic(u User) json.RawMessage {
 }
 
 // serve runs one player's connection until it closes.
-func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account) {
+func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts roomOpts) {
 	defer ws.close()
 	var accJSON json.RawMessage
 	if acct != nil && h.store.Ready() {
@@ -109,15 +114,23 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account) {
 		return
 	}
 	r := h.rooms[roomName]
+	if r != nil && opts.create {
+		h.mu.Unlock()
+		ws.write(opText, jsonMsg(map[string]string{"t": "err", "code": "room_exists"}))
+		return
+	}
 	if r == nil {
-		r = &room{name: roomName, clients: map[string]*client{}, gs: newGameState(), stop: make(chan struct{})}
+		r = &room{name: roomName, clients: map[string]*client{}, gs: newGameState(), stop: make(chan struct{}), pub: opts.pub, max: opts.max, bans: map[string]time.Time{}}
 		h.rooms[roomName] = r
 		go r.run(h)
 	}
 	r.mu.Lock()
 	reject := ""
-	if len(r.clients) >= h.maxPlayers {
+	if n := len(r.clients); n >= h.maxPlayers || (r.max > 0 && n >= r.max) {
 		reject = "room_full"
+	}
+	if r.bannedLocked(ip, acct, time.Now()) {
+		reject = "kicked"
 	}
 	for _, o := range r.clients {
 		if acct != nil && o.acct != nil && o.acct.id == acct.id {
@@ -150,6 +163,10 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account) {
 	}
 	c.send <- jsonMsg(map[string]any{"t": "s", "peers": snap})
 	r.clients[c.id] = c
+	if r.owner == "" {
+		r.owner = c.id
+	}
+	r.broadcast(r.infoMsgLocked(), "")
 	r.mu.Unlock()
 	h.perIP[ip]++
 	h.mu.Unlock()
@@ -166,8 +183,12 @@ func (h *hub) leave(c *client) {
 	h.mu.Lock()
 	r.mu.Lock()
 	delete(r.clients, c.id)
-	empty := len(r.clients) == 0
+	_, humans := r.botCountLocked()
+	empty := humans == 0 // botlar o'zi xonani ushlab turmaydi
 	r.broadcast(jsonMsg(map[string]string{"t": "l", "id": c.id}), "")
+	if !empty && r.pickOwnerLocked() {
+		r.broadcast(r.infoMsgLocked(), "")
+	}
 	r.mu.Unlock()
 	if empty {
 		delete(h.rooms, r.name)
@@ -240,6 +261,13 @@ func (h *hub) reader(c *client) {
 				}
 				r.mu.Unlock()
 			}
+			continue
+		}
+		if m.T == "adm" { // xona egasining buyrug'i
+			r := c.room
+			r.mu.Lock()
+			h.adminLocked(r, c, m.D, now)
+			r.mu.Unlock()
 			continue
 		}
 		if m.T == "sig" { // ovozli chat ulanishi

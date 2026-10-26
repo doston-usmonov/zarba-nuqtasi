@@ -45,10 +45,10 @@ var weaponSpecs = map[string]wspec{
 	"carbine": {dmg: 31, pen: .75, rate: .09},
 	"rifle":   {dmg: 36, pen: .775, rate: .1},
 	"sniper":  {dmg: 115, pen: .97, rate: 1.45},
-	"he":      {nade: true},
+	"he":      {nade: true, pen: .57},
 	"flash":   {nade: true},
 	"smoke":   {nade: true},
-	"molly":   {nade: true},
+	"molly":   {nade: true, pen: 1},
 }
 
 var partMult = map[string]float64{"h": 4, "c": 1, "s": 1.25, "l": .75}
@@ -415,6 +415,17 @@ func (r *room) validHitLocked(c *client, h hitClaim, now time.Time) string {
 	}
 	spec, ok := weaponSpecs[h.W]
 	mult, okp := partMult[h.P]
+	if ok && spec.nade && v.bot != nil {
+		// granata zararini botlarga otgan o'yinchining brauzeri hisoblaydi (odam o'zinikini o'zi)
+		limit, win := 100.0, 4*time.Second
+		if h.W == "molly" {
+			limit, win = 10, 10*time.Second
+		}
+		if h.W == "flash" || h.W == "smoke" || h.D < 0 || h.D > limit || p.nadeAt.IsZero() || now.Sub(p.nadeAt) > win {
+			return "granata zarari noto'g'ri"
+		}
+		return ""
+	}
 	if !ok || spec.nade || !okp {
 		return "noma'lum qurol"
 	}
@@ -491,6 +502,13 @@ func (r *room) applyHitLocked(c *client, h hitClaim, now time.Time) {
 		dmg = red
 	}
 	vp.hp -= dmg
+	if v.bot != nil {
+		v.bot.alertAt = now
+		if vp.hp <= 0 {
+			r.botDieLocked(v, c, h.W, h.P == "h", now)
+		}
+		return
+	}
 	if vp.hp <= 0 && vp.dueAt.IsZero() {
 		vp.dueAt, vp.dueBy, vp.dueW, vp.dueHS = now, c.id, h.W, h.P == "h"
 	}
@@ -738,9 +756,10 @@ func (r *room) forceDeathsLocked(now time.Time) {
 
 // run: xona yashar ekan, soniyasiga 10 marta raundni yuritadi va holatni yuboradi.
 func (r *room) run(h *hub) {
-	t := time.NewTicker(100 * time.Millisecond)
+	t := time.NewTicker(50 * time.Millisecond)
 	defer t.Stop()
 	last := time.Now()
+	n := 0
 	for {
 		select {
 		case <-r.stop:
@@ -753,8 +772,15 @@ func (r *room) run(h *hub) {
 				r.mu.Unlock()
 				continue
 			}
+			for _, c := range r.clients {
+				if c.bot != nil {
+					r.botStepLocked(c, now, dt)
+				}
+			}
 			res := r.tickLocked(now, dt)
-			r.broadcast(jsonMsg(map[string]any{"t": "g", "g": r.gs}), "")
+			if n++; n%2 == 0 { // holat soniyasiga 10 marta
+				r.broadcast(jsonMsg(map[string]any{"t": "g", "g": r.gs}), "")
+			}
 			r.mu.Unlock()
 			if res != nil && h.store.Ready() {
 				go h.finishMatch(r, res)

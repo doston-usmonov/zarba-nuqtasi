@@ -66,6 +66,7 @@ type tracker struct {
 	started time.Time
 	round   int
 	players map[string]*tplayer
+	hasBot  bool
 }
 
 type resultPlayer struct {
@@ -121,6 +122,9 @@ func (t *tracker) presence(c *client, info presInfo) {
 	if !t.active || info.Sq == "" || info.In <= 0 || info.In != t.round {
 		return
 	}
+	if c.bot != nil {
+		t.hasBot = true // botlar qatnashgan o'yin reytingga yozilmaydi
+	}
 	if p := t.player(c); p.last != info.In {
 		p.last = info.In
 		p.rounds[info.Sq]++
@@ -162,7 +166,7 @@ func (t *tracker) phase(r *room, prev string, now time.Time) *matchResult {
 }
 
 func (t *tracker) finish(room string, g *gameState, now time.Time) *matchResult {
-	if !validFinal(g.Fm, g.SA, g.SB) {
+	if t.hasBot || !validFinal(g.Fm, g.SA, g.SB) {
 		return nil
 	}
 	if now.Sub(t.started) < time.Duration(g.SA+g.SB)*5*time.Second {

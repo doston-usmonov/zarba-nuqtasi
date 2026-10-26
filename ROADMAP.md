@@ -29,6 +29,8 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - [ ] Iqtisodni (pul, xaridlar) serverda yuritish
 
 ## 4. Matchmaking
+- ✅ Ochiq o'yinlar ro'yxati, ommaviy/yopiq xonalar, o'yinchilar chegarasi
+- ✅ Xona egasi: bot qo'shish/chiqarish, o'yinchini chiqarish
 - [ ] Reytingga qarab navbat: "O'yin topish" tugmasi
 - [ ] 5v5 (Raqobatli) va 2v2 (Wingman) rejimlari
 - [ ] Partiya: do'stlar bilan birga navbatga turish

@@ -190,6 +190,19 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .item .s{font-size:12px;color:var(--dim)}
 .item.own{border-color:var(--good)}
 
+#kc{position:fixed;left:50%;top:calc(96px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:rgba(14,13,11,.82);border:1px solid rgba(255,91,74,.55);border-radius:6px;padding:8px 14px;pointer-events:none;white-space:nowrap}
+#kc .tag{font-family:var(--f-display);font-size:13px;letter-spacing:.18em;background:var(--bad);color:#1a0d0b;border-radius:3px;padding:2px 6px}
+#kc b{font-family:var(--f-display);font-size:18px} #kc small{color:var(--dim);font-size:14px}
+#kcBar{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 0 3px rgba(255,91,74,.35),inset 0 0 120px rgba(0,0,0,.45)}
+#result{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,94vw);max-height:84vh;overflow:auto;background:rgba(16,14,11,.94);border:1px solid var(--line);border-radius:12px;padding:18px 20px;pointer-events:none}
+#result h3{margin:0;font-family:var(--f-display);font-size:24px} #result .sub{color:var(--dim);font-size:14px;margin:4px 0 12px}
+#result table{width:100%;border-collapse:collapse;font-size:15px} #result th{font-size:11px;letter-spacing:.14em;color:var(--dim);text-align:left;padding:4px 6px;font-weight:600}
+#result td{padding:5px 6px;border-top:1px solid var(--line)} #result .r{text-align:right} #result tr.mine td{background:rgba(242,181,68,.08)}
+#result td:first-child,#result th:first-child{width:26px;color:var(--dim)} #result .tag{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:8px} #result small{color:var(--dim)}
+#result .mvp{display:flex;align-items:center;gap:12px;background:rgba(242,181,68,.1);border:1px solid rgba(242,181,68,.4);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+#result .mvp .star{font-size:26px;color:var(--atk)} #result .mvp b{font-family:var(--f-display);font-size:20px} #result .mvp small{display:block;color:var(--dim);font-size:13px}
+#result .stars{color:var(--atk);letter-spacing:1px}
+.touch #result{font-size:13px;padding:12px}
 #board{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,92vw);background:rgba(16,14,11,.9);border:1px solid var(--line);border-radius:10px;padding:16px 18px;pointer-events:none}
 #board table{width:100%;border-collapse:collapse;font-size:15px}
 #board th{font-size:11px;letter-spacing:.16em;color:var(--dim);text-align:left;padding:4px 6px;font-weight:600}
@@ -400,6 +413,9 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 </div>
 
 <div id="dead" hidden><b id="deadT">Siz halok bo'ldingiz</b><p id="deadS"></p></div>
+<div id="kcBar" hidden></div>
+<div id="kc" hidden><span class="tag">KILLCAM</span><b id="kcName"></b><small id="kcInfo"></small></div>
+<div id="result" hidden></div>
 
 <div id="touch" hidden>
   <div id="tZone"></div>
@@ -543,6 +559,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <label class="set" for="sVol">Ovoz <input type="range" id="sVol" min="0" max="1" step="0.05"><output id="oVol"></output></label>
         <div class="set"><span>Nishon rangi</span><div class="swatches" id="swatches"></div><span></span></div>
         <div class="set"><span>Grafika</span><div class="seg" data-set="gfx"><button type="button" data-v="auto">Avto</button><button type="button" data-v="min">Juda past</button><button type="button" data-v="low">Past</button><button type="button" data-v="mid">O'rta</button><button type="button" data-v="high">Yuqori</button></div><span></span></div>
+        <div class="set"><span>Killcam</span><div class="seg" data-set="kc"><button type="button" data-v="on">Ko'rsatish</button><button type="button" data-v="off">O'chiq</button></div><span></span></div>
         <div class="set"><span>FPS va ping</span><div class="seg" data-set="perf"><button type="button" data-v="off">Yashirish</button><button type="button" data-v="on">Ko'rsatish</button></div><span></span></div>
         <p class="note" id="gpuNote" style="margin:0;font-size:13px" hidden></p>
         <div class="set"><span>Ovozli chat</span><div class="seg" data-set="voice"><button type="button" data-v="off">O'chiq</button><button type="button" data-v="team">Jamoa</button><button type="button" data-v="all">Hamma</button></div><span></span></div>
@@ -606,6 +623,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <div><b id="stD">0</b><span>O'lim</span></div>
         <div><b id="stHS">0%</b><span>Boshga</span></div>
         <div><b id="stDmg">0</b><span>Zarar</span></div>
+        <div id="stMvpBox"><b id="stMvp">0</b><span>MVP</span></div>
       </div>
       <div class="row"><button class="cta" id="againBtn" type="button">Yana o'ynash</button><button class="ghost" id="menuBtn" type="button">Bosh menyu</button></div>
     </div>
@@ -640,7 +658,7 @@ const KB = (desk, touch) => isTouch ? touch : desk;
 
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
-const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa', mode:'comp' }, loadSet());
+const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa', mode:'comp', kc:'on' }, loadSet());
 function saveSet(){ try { localStorage.setItem('zn-set', JSON.stringify(SET)); } catch(e){} }
 const DIFFS = {
   easy:   { react:.85, acc:.18, hs:.07, turn:4.0, defuse:10 },
@@ -1196,7 +1214,7 @@ const puffs = []; for (let i=0;i<48;i++){ const s = new THREE.Sprite(new THREE.S
 function puff(p, color, size, life, grow, additive){ const s = puffs[puffI++ % puffs.length]; s.position.copy(p); s.material.color.setHex(color); s.material.blending = additive ? THREE.AdditiveBlending : THREE.NormalBlending; s.material.opacity = 1; s.scale.set(size,size,1); s.userData = { life, max:life, grow, size }; s.visible = true; }
 
 const tracers = []; for (let i=0;i<24;i++){ const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([0,0,0,0,0,1],3)); const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color:0xffe2a0, transparent:true, opacity:.8, depthWrite:false })); l.visible = false; l.frustumCulled = false; l.userData.life = 0; scene.add(l); tracers.push(l); } let tracerI = 0;
-function tracer(a, b){ const l = tracers[tracerI++ % tracers.length]; const p = l.geometry.attributes.position; const s = a.clone().lerp(b, .08 + rand()*.2); p.setXYZ(0, s.x, s.y, s.z); p.setXYZ(1, b.x, b.y, b.z); p.needsUpdate = true; l.userData.life = .07; l.visible = true; l.material.opacity = .8; }
+function tracer(a, b){ if (!KC.on) recShot(a, b); const l = tracers[tracerI++ % tracers.length]; const p = l.geometry.attributes.position; const s = a.clone().lerp(b, .08 + rand()*.2); p.setXYZ(0, s.x, s.y, s.z); p.setXYZ(1, b.x, b.y, b.z); p.needsUpdate = true; l.userData.life = .07; l.visible = true; l.material.opacity = .8; }
 
 const muzzleLight = new THREE.PointLight(0xffc070, 0, 9, 2); scene.add(muzzleLight);
 const boomLight = new THREE.PointLight(0xffa040, 0, 60, 2); scene.add(boomLight);
@@ -1679,11 +1697,11 @@ function setBotsPal(side){
 function startRound(){
   S.round++; const HH = S.H, newHalf = halfStart(S.round, HH), rih = isOT(S.round, HH) ? 3 : roundInHalf(S.round, HH);
   player.team = sideOfSquad('A', S.round, HH);
-  S.phase = 'freeze'; S.timer = S.round === 1 ? 7 : newHalf ? 9 : 5; S.liveT = 0; S.roundPlanted = false; S.deathT = 0;
+  S.phase = 'freeze'; S.timer = S.round === 1 ? 7 : newHalf ? 9 : 5; S.liveT = 0; S.roundPlanted = false; S.deathT = 0; S.rk = 0; bots.forEach(b => b.rk = 0);
   bomb.planted = false; bomb.mesh.visible = false; bomb.defuser = null; bomb.timer = 40; bomb.dropped = false; bomb.carrier = null; bomb.picker = null;
   if (newHalf){ player.alive = false; S.loss = 0; player.money = isOT(S.round, HH) ? 12500 : 800; }
   if (!player.alive) resetInv();
-  clearNades(); clearDrops();
+  clearNades(); clearDrops(); killcamStop();
   spawnAt(player.team);
   player.alive = true; player.hp = 100; player.bomb = player.team === 'T'; player.planting = 0; player.scope = 0; player.reloadT = 0; player.recoil = 0; player.punchY = player.punchX = 0;
   if (player.slot === 4 && !nadeTotal()) player.slot = 2;
@@ -1729,6 +1747,11 @@ function endRound(winner, reason, how){
   if (S.phase !== 'live') return;
   S.phase = 'post'; S.timer = 6; S.endWinner = winner;
   const won = winner === player.team;
+  // round MVP: you, if your side won; otherwise the bot with the most kills this round
+  let mvp = '';
+  if (won){ if (S.rk > 0 || how === 'bomb' || how === 'defuse'){ S.mvp++; mvp = 'Siz'; } }
+  else { let b = null; for (const o of bots) if (o.rk > 0 && (!b || o.rk > b.rk)) b = o; if (b){ b.mvp = (b.mvp || 0) + 1; mvp = b.name; } }
+  if (mvp) reason += ' · ★ MVP: ' + mvp;
   if (won){ S.sA++; addMoney(how === 'bomb' || how === 'defuse' ? 3500 : 3250, "raund g'alabasi"); S.loss = 0; }
   else { S.sB++; addMoney(1400 + 500*Math.min(S.loss, 4) + (player.team === 'T' && S.roundPlanted ? 800 : 0), "mag'lubiyat"); S.loss++; }
   showMsg(winner === 'T' ? "Hujumchilar g'alaba qozondi" : "Himoyachilar g'alaba qozondi", reason, winner === 'T' ? 'atk' : 'def', 5200);
@@ -1757,7 +1780,7 @@ function startMatch(){
   DIFF = DIFFS[SET.diff] || DIFFS.normal; setMap(SET.map);
   Object.assign(S, { round:0, sA:0, sB:0, H:fmtH(), loss:0, paused:false, md:MODES[SET.mode] ? SET.mode : 'comp' });
   Object.assign(player, { money:800, kills:0, deaths:0, hs:0, dmg:0, alive:false }); resetInv();
-  bots.forEach(b => { b.kills = 0; b.deaths = 0; });
+  bots.forEach(b => { b.kills = 0; b.deaths = 0; b.mvp = 0; b.rk = 0; }); S.mvp = 0; S.rk = 0; recClear();
   H.feed.innerHTML = '';
   decals.forEach(d => d.visible = false);
   ['menu','over','pause'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
@@ -1791,7 +1814,7 @@ function dmSpawnPoint(enemies){
   return new V3(cw(best[0]) + (rand()-.5)*.6, 0, cw(best[1]) + (rand()-.5)*.6);
 }
 function modeEnemies(){ return MODE === 'online' ? [...NET.remotes.values()].filter(r => r.alive && foe(r)).map(r => r.pos) : bots.filter(b => b.alive).map(b => b.pos); }
-function modeSpawn(){
+function modeSpawn(){ killcamStop();
   if (isFFA()){ const p = dmSpawnPoint(modeEnemies()); player.pos.copy(p); player.vel.set(0, 0, 0); player.yaw = rand()*Math.PI*2; player.pitch = 0; }
   else spawnAt(player.team);
   player.alive = true; player.hp = 100; player.planting = 0; player.scope = 0; player.recoil = 0; player.punchX = player.punchY = 0; player.spawnT = S.time;
@@ -1878,6 +1901,72 @@ function modeOverOffline(winner){
   if (!winner) winner = top.me ? 'Siz' : top.name;
   S.endWinner = winner; matchOver();
 }
+
+/* ---------- killcam ----------
+   The last few seconds of everybody's movement and shots are kept in a ring buffer. When a bot or another
+   player kills you, the same seconds are replayed from the killer's eyes (models moved to their recorded
+   places, tracers redrawn), then the usual death camera and spectating carry on. */
+const REC = { frames:[], shots:[], last:-9 }, KC = { on:false };
+const REC_SPAN = 4.5, KC_BACK = 3, KC_AFTER = .7;
+function recShot(a, b){ REC.shots.push({ t:S.time, a:a.clone(), b:b.clone() }); while (REC.shots.length && S.time - REC.shots[0].t > REC_SPAN) REC.shots.shift(); }
+function recEnts(){ return MODE === 'online' ? [...NET.remotes.values()].filter(r => r.m) : bots; }
+function recFrame(){
+  if (KC.on || S.time - REC.last < .033) return; REC.last = S.time;
+  const ents = recEnts().map(e => [e, e.pos.x, e.pos.y, e.pos.z, e.yaw, e.kneel || 0, e.alive ? 1 : 0, e.walk || 0, e.moving ? 1 : 0]);
+  REC.frames.push({ t:S.time, me:[player.pos.x, player.pos.y, player.pos.z, player.yaw, player.crouch, player.alive ? 1 : 0], ents });
+  while (REC.frames.length && S.time - REC.frames[0].t > REC_SPAN) REC.frames.shift();
+}
+function recClear(){ REC.frames.length = 0; REC.shots.length = 0; REC.last = -9; }
+let meModel = null, meTeam = '';
+function killcamStart(killer, w, hs){
+  if (SET.kc === 'off' || respawnMode() || !killer || !killer.m || REC.frames.length < 10) return;
+  if (!meModel || meTeam !== player.team){ if (meModel) scene.remove(meModel.g); meModel = buildSoldier(player.team === 'CT' ? PAL_CT : PAL_T); meTeam = player.team; meModel.g.visible = false; scene.add(meModel.g); }
+  setSoldierWeapon(meModel, (curItem() || { id:'knife' }).id === 'bomb' ? 'knife' : (curItem() || { id:'knife' }).id);
+  Object.assign(KC, { on:true, killer, start:S.time, from:Math.max(REC.frames[0].t, S.time - KC_BACK), death:S.time, shotI:0, prevRt:-1 });
+  KC.dur = (KC.death - KC.from) + KC_AFTER;
+  $('kcName').textContent = killer.name; $('kcInfo').textContent = w.name + (hs ? ' · boshga' : '') + ' · joni ' + Math.max(1, Math.ceil(killer.hp)) + ' qoldi';
+  $('kc').hidden = false; $('kcBar').hidden = false; $('dead').hidden = true;
+}
+function killcamStop(){
+  if (!KC.on) return; KC.on = false; $('kc').hidden = true; $('kcBar').hidden = true;
+  if (meModel) meModel.g.visible = false;
+  const f = REC.frames[REC.frames.length - 1]; if (f) applyRecFrame(f, null);   // put everybody back where they really are
+  if (!player.alive && inGame() && $('result').hidden) $('dead').hidden = false;
+}
+function frameAt(t){ const F = REC.frames; let i = 0; while (i < F.length - 1 && F[i + 1].t <= t) i++; return F[i]; }
+function applyRecFrame(f, hideEnt){
+  for (const [e, x, y, z, yaw, kn, al, walk, mv] of f.ents){ if (!e.m) continue; const g = e.m.g;
+    g.visible = e !== hideEnt; g.position.set(x, y, z);
+    if (al){ g.rotation.set(0, yaw, 0); poseSoldier(e.m, walk, !!mv, kn); } else { g.rotation.set(-Math.PI/2, yaw, 0); poseSoldier(e.m, 0, false, 0); } }
+}
+// called from render(): camera and models for this replay instant
+function killcamRender(){
+  const el = S.time - KC.start; if (el > KC.dur || !inGame()) return killcamStop();
+  const rt = KC.from + el, f = frameAt(Math.min(rt, KC.death)); if (!f) return killcamStop();
+  applyRecFrame(f, KC.killer);
+  const me = f.me; meModel.g.visible = true; meModel.g.position.set(me[0], me[1], me[2]);
+  if (me[5] && rt < KC.death){ meModel.g.rotation.set(0, me[3] + Math.PI, 0); poseSoldier(meModel, 0, false, me[4]); }
+  else { const k = clamp((rt - KC.death)/.45, 0, 1); meModel.g.rotation.set(-k*k*Math.PI/2, me[3] + Math.PI, 0); }
+  const ke = f.ents.find(e => e[0] === KC.killer);
+  if (ke){ camera.position.set(ke[1], ke[2] + 1.62 - ke[5]*.45, ke[3]);
+    _tmp.set(me[0], me[1] + (me[5] ? 1.25 - me[4]*.4 : .3), me[2]); const dx = _tmp.x - camera.position.x, dz = _tmp.z - camera.position.z, dy = _tmp.y - camera.position.y;
+    camera.rotation.set(Math.atan2(dy, Math.hypot(dx, dz)), Math.atan2(-dx, -dz), 0); }
+  for (const sh of REC.shots){ if (sh.t > KC.prevRt && sh.t <= rt){ const l = tracers[tracerI++ % tracers.length]; const p = l.geometry.attributes.position; p.setXYZ(0, sh.a.x, sh.a.y, sh.a.z); p.setXYZ(1, sh.b.x, sh.b.y, sh.b.z); p.needsUpdate = true; l.userData.life = .07; l.visible = true; l.material.opacity = .8; } }
+  KC.prevRt = rt;
+}
+
+/* ---------- round MVP and the end-of-match table ---------- */
+const MVP_WHY = r => r === 'bomb' ? "bombani o'rnatdi" : r === 'defuse' ? 'bombani zararsizlantirdi' : /^k\d+$/.test(r || '') ? r.slice(1) + " ta o'ldirish" : '';
+function resultHTML(title, sub, rows, mvp){
+  const esc = escH, md = curMode();
+  return `<h3>${esc(title)}</h3><p class="sub">${esc(sub)}</p>` +
+    (mvp ? `<div class="mvp"><span class="star">★</span><div><b>${esc(mvp.nm)}</b><small>O'yin MVP · ${mvp.k} o'ldirish · ${mvp.dmg} zarar${mvp.mvp ? ' · ' + mvp.mvp + ' marta raund MVP' : ''}</small></div></div>` : '') +
+    `<table><tr><th>#</th><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">BOSHGA</th><th class="r">ZARAR</th>${md === 'comp' ? '<th class="r">MVP</th>' : ''}</tr>` +
+    rows.map((r, i) => { const col = md === 'dm' ? 'var(--ink)' : r.side === 'CT' ? 'var(--def)' : 'var(--atk)';
+      return `<tr class="${r.me ? 'mine' : ''}"><td>${i + 1}</td><td><span class="tag" style="background:${col}"></span>${esc(r.nm)}${r.me ? ' <small>(siz)</small>' : ''}</td><td class="r">${r.k}</td><td class="r">${r.d}</td><td class="r">${r.k ? Math.round(r.hs/r.k*100) : 0}%</td><td class="r">${r.dmg}</td>${md === 'comp' ? `<td class="r stars">${r.mvp ? '★' + (r.mvp > 1 ? r.mvp : '') : ''}</td>` : ''}</tr>`; }).join('') + '</table>';
+}
+// match MVP: the most round MVPs, then kills, then damage
+function matchMVP(rows){ let b = null; for (const r of rows) if (!b || (r.mvp*3 + r.k + r.dmg/150) > (b.mvp*3 + b.k + b.dmg/150)) b = r; return b && (b.k || b.mvp) ? b : null; }
 
 /* ================= COMBAT ================= */
 function armorCalc(dmg, part, armor, helmet, pen){
@@ -1966,7 +2055,7 @@ function knifeAttack(heavy){
 function botKilled(b, w, hs){
   if (S.md === 'comp') botDropGun(b);
   if (b.hasBomb) dropBomb(b);
-  b.alive = false; if (bomb.picker === b) assignPicker(); b.deadT = 0; b.deadT0 = S.time; b.deaths++; player.kills++; if (hs) player.hs++;
+  b.alive = false; if (bomb.picker === b) assignPicker(); b.deadT = 0; b.deadT0 = S.time; b.deaths++; player.kills++; S.rk = (S.rk || 0) + 1; if (hs) player.hs++;
   if (S.md === 'comp') addMoney(w.kill, '');
   feed('Siz', 'a', w.name, b.name, 'd', hs, true);
   if (bomb.defuser === b) bomb.defuser = null;
@@ -2017,15 +2106,16 @@ function playerDie(bt, w, hs){
   player.alive = false; player.hp = 0; player.deaths++; player.deathPos.copy(camera.position); player.killer = bt; S.deathT = 0;
   if (!respawnMode()) dropOnDeath();
   player.planting = 0; H.prog.hidden = true;
+  killcamStart(bt, w, hs);
   if (MODE === 'online'){ NET.death = { n:++NET.deathN, by: bt ? bt.peer : '', w: w.id || 'pistol', hs: hs ? 1 : 0 }; NET.deadT = 0; if (bt) feed(bt.name, teamCls(bt.team), w.name, 'Siz', teamCls(player.team), hs, true); else if (w.kind === 'nade') feed('Siz', teamCls(player.team), w.name, 'Siz', teamCls(player.team), false, true); else feed('Bomba', 'a', '', 'Siz', teamCls(player.team), false, true); }
-  else if (bt){ bt.kills++; feed(bt.name, 'd', w.name, 'Siz', 'a', hs, true);
+  else if (bt){ bt.kills++; bt.rk = (bt.rk || 0) + 1; feed(bt.name, 'd', w.name, 'Siz', 'a', hs, true);
     if (S.md === 'gg'){ const nw = GG_LADDER[ggLevel(bt.kills)]; if (nw !== bt.weapon){ bt.weapon = nw; bt.mag = W[nw].mag || 0; bt.reloadT = .4; setSoldierWeapon(bt.m, nw); } if (bt.kills >= GG_WIN) setTimeout(() => modeOverOffline(bt.name), 0); } }
   else if (w.kind === 'nade') feed('Siz', 'a', w.name, 'Siz', 'a', false, true);
   $('deadT').textContent = bt ? `${bt.name} sizni o'ldirdi` : "Siz halok bo'ldingiz";
   $('deadS').textContent = bt ? `${w.name}${hs ? ', boshga' : ''} · uning joni ${Math.max(1, Math.ceil(bt.hp))} qoldi` + (bomb.planted ? (' · ' + KB('Chap tugma', 'Ekranga bosing') + ' — kuzatiladigan botni almashtirish') : '') : '';
   if (respawnMode() && S.phase === 'live') $('deadS').textContent += " · " + RESPAWN_T + " soniyadan keyin qayta tug'ilasiz";
   else if (MODE === 'online') $('deadS').textContent += NET.g && NET.g.ph === 'warmup' ? " · 3 soniyadan keyin qayta tug'ilasiz" : (' · ' + KB('Chap tugma', 'Ekranga bosing') + ' — jamoadoshni kuzatish');
-  $('dead').hidden = false; H.scope.hidden = true; H.cross.style.display = 'none';
+  $('dead').hidden = KC.on; H.scope.hidden = true; H.cross.style.display = 'none';
   updatePips(); if (MODE !== 'online' && S.md === 'comp') checkRoundEnd();
 }
 
@@ -3159,7 +3249,8 @@ function netHit(r, w, part, dist, pos, flat){
 
 const PHS = ['warmup','freeze','live','post','over'];
 function sanitizeG(g){ const b = g.b && typeof g.b === 'object' ? { x:num(g.b.x), z:num(g.b.z), s:g.b.s === 'B' ? 'B' : 'A', t:num(g.b.t) } : 0;
-  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', m:MAPS[g.m] ? g.m : 'qumtepa', md:MODES[g.md] ? g.md : 'comp', sc:sanitizeSc(g.sc), wn:String(g.wn || '').slice(0, 40), wnm:cleanName(g.wnm), t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
+  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', m:MAPS[g.m] ? g.m : 'qumtepa', md:MODES[g.md] ? g.md : 'comp', sc:sanitizeSc(g.sc), wn:String(g.wn || '').slice(0, 40), wnm:cleanName(g.wnm), mv:String(g.mv || '').slice(0, 40), mvn:g.mvn ? cleanName(g.mvn) : '', mvr:String(g.mvr || '').slice(0, 8), st:sanitizeSt(g.st), t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
+function sanitizeSt(st){ if (!Array.isArray(st)) return null; return st.slice(0, 32).filter(r => r && typeof r === 'object').map(r => ({ id:String(r.id || '').slice(0, 40), nm:cleanName(r.nm), sq:r.sq === 'B' ? 'B' : 'A', k:Math.max(0, num(r.k)|0), d:Math.max(0, num(r.d)|0), hs:Math.max(0, num(r.hs)|0), dmg:Math.max(0, num(r.dmg)|0), mvp:Math.max(0, num(r.mvp)|0) })); }
 function sanitizeSc(sc){ if (!sc || typeof sc !== 'object') return null; const o = {}; let n = 0; for (const k in sc){ if (++n > 80) break; o[String(k).slice(0, 40)] = Math.max(0, num(sc[k])|0); } return o; }
 function gOut(g){ return g ? { r:g.r, ph:g.ph, m:g.m, md:g.md, wn:g.wn, wnm:g.wnm, t:r2(g.t), sA:g.sA, sB:g.sB, fm:g.fm, b: g.b ? { x:g.b.x, z:g.b.z, s:g.b.s, t:r2(g.b.t) } : 0, w:g.w, y:g.y, bm:g.bm, e:g.e, cd:r2(g.cd) } : null; }
 function buildPres(){
@@ -3230,22 +3321,35 @@ function modePhase(g){
     // the server's own count of my kills (it only counts kills it has confirmed)
     if (g.sc && NET.me && g.sc[NET.me] !== undefined && g.sc[NET.me] > player.kills){ player.kills = g.sc[NET.me]; onModeKill(); }
   } else if (ph === 'over' && NET.lastPh !== 'over'){
+    showNetResult(g);
     const mine = (g.wn && g.wn === NET.me) || (!g.wn && g.wnm === NET.name), rows = modeRows(), place = rows.findIndex(r => r.me) + 1;
     showMsg(mine ? "Siz yutdingiz!" : (g.wnm || "Kimdir") + ' yutdi', (g.md === 'gg' ? "Qurol poygasi tugadi. " : "Deathmatch tugadi. ") + 'Siz ' + place + "-o'rindasiz, " + player.kills + " o'ldirish. Isinish 10 soniyadan keyin boshlanadi.", mine ? 'atk' : '', 9000);
     sfxChord(mine); if (S.buyOpen) closeBuy(true);
   }
   NET.lastPh = ph; NET.lastMd = g.md;
 }
-function respawnWarm(){ spawnAt(player.team); player.alive = true; player.hp = 100; player.money = 16000; refill(); NET.inRound = 0; NET.deadT = 0; S.deathT = 0; player.planting = 0; $('dead').hidden = true; H.cross.style.display = ''; drawWeapon(); }
+// the server's final table (the Claude version builds one from what everybody reported)
+function showNetResult(g){
+  const md = curMode(); let rows;
+  if (g.st && g.st.length) rows = g.st.map(r => ({ ...r, me:r.id === NET.me, side: md === 'comp' ? sideOfSquad(r.sq, Math.max(1, g.r), g.fm) : (r.sq === 'B' ? 'CT' : 'T') }));
+  else rows = modeRows().map(r => ({ nm:r.name.replace(' (siz)', ''), k:r.k, d:r.d, hs:r.me ? player.hs : 0, dmg:r.me ? Math.round(player.dmg) : 0, mvp:r.me ? (player.mvp || 0) : 0, me:r.me, side:r.team }));
+  const mine = md === 'comp' ? (g.sA > g.sB) === (NET.sq !== 'B') : (g.wn ? g.wn === NET.me : g.wnm === NET.name);
+  const title = md === 'comp' ? (mine ? "G'alaba" : "Mag'lubiyat") : (mine ? "Siz yutdingiz!" : (g.wnm || 'Kimdir') + ' yutdi');
+  const sub = MODES[md].name + ' · ' + MAP.name + (md === 'comp' ? ' · hisob ' + (NET.sq === 'B' ? g.sB + ' : ' + g.sA : g.sA + ' : ' + g.sB) : '') + ' · isinish 10 soniyadan keyin';
+  $('result').innerHTML = resultHTML(title, sub, rows, md === 'comp' ? matchMVP(rows) : null); $('result').hidden = false; $('dead').hidden = true;
+  setTimeout(() => { H.msg.className = ''; }, 0);   // the table says it all
+  setTimeout(() => { if (!NET.g || NET.g.ph !== 'over') $('result').hidden = true; }, 10500);
+}
+function respawnWarm(){ killcamStop(); $('result').hidden = true; spawnAt(player.team); player.alive = true; player.hp = 100; player.money = 16000; refill(); NET.inRound = 0; NET.deadT = 0; S.deathT = 0; player.planting = 0; $('dead').hidden = true; H.cross.style.display = ''; drawWeapon(); }
 function enterWarmup(){ clearDrops(); respawnWarm(); const md = curMode();
   showMsg('Isinish · ' + MODES[md].name, md === 'dm' ? "O'yin xonada kamida 2 kishi bo'lganda boshlanadi." : "O'yin har ikki jamoada kamida bittadan o'yinchi bo'lganda boshlanadi. " + KB('M', 'Jamoa tugmasi') + " — jamoani almashtirish.", teamMsg(player.team), 4200); }
 function spawnRound(g){
   const newHalf = halfStart(g.r, g.fm), survived = player.alive && NET.inRound > 0 && !newHalf;
   player.team = sideOfSquad(NET.sq, g.r, g.fm);
-  if (g.r === 1){ player.money = 800; player.kills = player.deaths = player.hs = 0; player.dmg = 0; NET.loss = 0; resetInv(); }
+  if (g.r === 1){ player.money = 800; player.kills = player.deaths = player.hs = 0; player.dmg = 0; player.mvp = 0; NET.loss = 0; resetInv(); }
   else if (newHalf){ player.money = isOT(g.r, g.fm) ? 12500 : 800; NET.loss = 0; resetInv(); }
   else if (!survived) resetInv();
-  refill(); spawnAt(player.team);
+  refill(); killcamStop(); spawnAt(player.team);
   player.alive = true; player.hp = 100; player.planting = 0; player.scope = 0; player.recoil = 0; player.punchX = player.punchY = 0;
   NET.inRound = g.r; NET.plant = null; NET.def = null; NET.planted = false; NET.liveT = 0; NET.defuseT = 0; S.deathT = 0;
   bomb.planted = false; bomb.mesh.visible = false; H.prog.hidden = true; clearNades(); clearDrops();
@@ -3258,7 +3362,9 @@ function award(g){
   const win = g.w === player.team, why = { kill:"raqib jamoa yo'q qilindi", bomb:'bomba portladi', defuse:'bomba zararsizlantirildi', time:'vaqt tugadi' }[g.y] || '';
   if (win){ addMoney(g.y === 'bomb' ? 3500 : 3250, "raund g'alabasi"); NET.loss = 0; }
   else { addMoney(1400 + 500*Math.min(NET.loss, 4) + (player.team === 'T' && NET.planted ? 800 : 0), "mag'lubiyat"); NET.loss++; }
-  showMsg(TEAM_NAME[g.w] + " jamoasi g'alaba qozondi", (why ? why.charAt(0).toUpperCase() + why.slice(1) + ' · ' : '') + gSideScore(g, 'T') + ' : ' + gSideScore(g, 'CT'), g.w === 'CT' ? 'def' : 'atk', 5000);
+  const mvp = g.mv ? ' · ★ MVP: ' + (g.mv === NET.me ? 'Siz' : g.mvn) + (MVP_WHY(g.mvr) ? ' (' + MVP_WHY(g.mvr) + ')' : '') : '';
+  if (g.mv && g.mv === NET.me) player.mvp = (player.mvp || 0) + 1;
+  showMsg(TEAM_NAME[g.w] + " jamoasi g'alaba qozondi", (why ? why.charAt(0).toUpperCase() + why.slice(1) + ' · ' : '') + gSideScore(g, 'T') + ' : ' + gSideScore(g, 'CT') + mvp, g.w === 'CT' ? 'def' : 'atk', 5000);
   const r = g.r, mineFirst = () => NET.sq === 'B' ? g.sB + ' : ' + g.sA : g.sA + ' : ' + g.sB;
   if (!matchWinner(g.sA, g.sB, r, g.fm) && halfOf(r + 1, g.fm) !== halfOf(r, g.fm)) setTimeout(() => { if (NET.g && NET.g.ph === 'post' && NET.g.r === r) swapNotice(r, g.fm, mineFirst()); }, 3000);
   sfxChord(win); H.prog.hidden = true; player.planting = 0; NET.defuseT = 0; if (S.buyOpen) closeBuy(true);
@@ -3294,6 +3400,7 @@ function clientPhase(dt){
   if (!planted && ph !== 'post') bomb.mesh.visible = false;
   if (ph === 'post' && NET.awardKey !== key){ NET.awardKey = key; award(g); }
   if (ph === 'post' && g.y === 'defuse') bomb.mesh.visible = false;
+  if (ph === 'over' && NET.lastPh !== 'over') showNetResult(g);
   if (ph === 'over' && NET.lastPh !== 'over'){ const mine = (g.sA > g.sB) === (NET.sq !== 'B'), sc = NET.sq === 'B' ? g.sB + ' : ' + g.sA : g.sA + ' : ' + g.sB;
     showMsg(mine ? "Jamoangiz o'yinni yutdi" : "Raqib jamoa o'yinni yutdi", 'Hisob ' + sc + (g.r > 2*g.fm ? " (qo'shimcha vaqtda)" : '') + '. Isinish 10 soniyadan keyin boshlanadi.', mine ? teamMsg(player.team) : '', 9000); sfxChord(mine); }
   NET.lastPh = ph;
@@ -3439,7 +3546,7 @@ async function joinOnline(create, codeOverride){
   if (voiceMode() && voiceAvailable()) voiceMic();
 }
 function goOnline(named){
-  MODE = 'online'; NET.room = named;
+  MODE = 'online'; NET.room = named; recClear();
   Object.assign(NET, { lastMd:'comp', drops:[], picks:[], me:null, host:false, g:null, gSrc:null, hits:[], shot:null, death:null, plant:null, def:null, seen:{}, inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, joinT:1.6, cdShown:-1, tickLast:performance.now() });
   player.team = null; NET.sq = null; player.alive = false; player.hp = 100; player.kills = player.deaths = player.hs = 0; player.dmg = 0; resetInv(); player.money = 16000; player.killer = null;
   spawnAt('T'); player.deathPos.set(player.pos.x, 3, player.pos.z);
@@ -3452,6 +3559,7 @@ function goOnline(named){
   goFullscreen(); requestLock(); canvas.focus({ preventScroll:true });
 }
 function leaveOnline(){
+  killcamStop(); recClear(); $('result').hidden = true;
   voiceStop(); if (CHAT.open) chatClose(); $('chatLog').innerHTML = ''; NET.chats = []; NET.roomInfo = null; $('adminPanel').hidden = true;
   if (NET.room){ const r = NET.room; NET.room = null; r.leave().catch(() => {}); }
   NET.remotes.forEach(removeRemote); NET.remotes.clear(); NET.g = null;
@@ -3664,7 +3772,7 @@ function touchFrame(){
   $('tDrop').hidden = !player.alive || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot];
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){
@@ -3747,7 +3855,8 @@ function frame(now){
 }
 
 function step(dt){
-  if (S.phase === 'menu' || S.phase === 'over'){ return; }
+  if (S.phase === 'menu' || S.phase === 'over'){ if (KC.on) killcamStop(); return; }
+  recFrame();
   if (MODE === 'online'){ netFrame(dt); return; }
   // timers
   if (S.md !== 'comp') modeStepOffline(dt);
@@ -3863,13 +3972,14 @@ function matchOver(){
     $('overTitle').textContent = win ? "G'alaba" : "O'yin tugadi"; $('overTitle').style.color = win ? 'var(--atk)' : 'var(--ink)';
     $('overLead').textContent = (win ? (S.md === 'gg' ? "Siz qurol poygasini birinchi bo'lib tugatdingiz." : "Siz eng ko'p o'ldirdingiz.") : S.endWinner + ' yutdi. ') + (win ? '' : 'Siz ' + place + "-o'rindasiz (" + player.kills + " o'ldirish).");
     $('stK').textContent = player.kills; $('stD').textContent = player.deaths; $('stHS').textContent = (player.kills ? Math.round(player.hs/player.kills*100) : 0) + '%'; $('stDmg').textContent = Math.round(player.dmg);
-    $('over').hidden = false; sfxChord(win); return;
+    $('stMvpBox').hidden = true; $('over').hidden = false; sfxChord(win); return;
   }
   const win = S.sA > S.sB;
   $('overEyebrow').textContent = "O'yin tugadi · " + ({ easy:'Oson', normal:"O'rta", hard:'Qiyin' }[SET.diff]) + ' botlar';
   $('overTitle').textContent = win ? "G'alaba" : "Mag'lubiyat"; $('overTitle').style.color = win ? 'var(--atk)' : 'var(--def)';
   $('overLead').textContent = `Hisob ${S.sA} : ${S.sB}` + (S.round > 2*S.H ? " (qo'shimcha vaqtda)" : '') + '. ' + (win ? "Jamoangiz o'yinni yutdi." : "Bu safar botlar kuchliroq chiqdi. Yana bir bor urinib ko'ring.");
   $('stK').textContent = player.kills; $('stD').textContent = player.deaths; $('stHS').textContent = (player.kills ? Math.round(player.hs/player.kills*100) : 0) + '%'; $('stDmg').textContent = Math.round(player.dmg);
+  $('stMvp').textContent = S.mvp || 0; $('stMvpBox').hidden = false;
   $('over').hidden = false; sfxChord(win);
 }
 
@@ -3895,6 +4005,7 @@ function render(dt){
       if (t){ camTarget.set(t.pos.x - Math.sin(t.yaw)*3.2, 2.4, t.pos.z - Math.cos(t.yaw)*3.2); if (blockedAt(camTarget.x, camTarget.z, 0, .2, true)) camTarget.set(t.pos.x, 3.4, t.pos.z); camera.position.lerp(camTarget, Math.min(1, dt*5)); camera.rotation.set(-.25, t.yaw + Math.PI, 0); $('deadT').textContent = 'Kuzatilmoqda: ' + t.name; }
     }
   }
+  if (KC.on) killcamRender();
   if (shakeT > 0){ shakeT -= dt; camera.position.x += (rand()-.5)*shakeT*.4; camera.position.y += (rand()-.5)*shakeT*.4; }
   // fov / scope
   const baseV = 2*Math.atan(Math.tan(SET.fov*DEG/2) / camera.aspect)/DEG;

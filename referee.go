@@ -81,6 +81,11 @@ type gameState struct {
 	Sc  map[string]int `json:"sc,omitempty"`  // o'yinchi id → server tasdiqlagan o'ldirishlar
 	Wn  string         `json:"wn,omitempty"`  // g'olib id
 	Wnm string         `json:"wnm,omitempty"` // g'olib ismi
+	// statistika (stats.go)
+	Mv  string    `json:"mv,omitempty"`  // raund MVP id
+	Mvn string    `json:"mvn,omitempty"` // raund MVP ismi
+	Mvr string    `json:"mvr,omitempty"` // sabab: "k3" (3 o'ldirish), "bomb", "defuse"
+	St  []statRow `json:"st,omitempty"`  // o'yin oxiridagi jadval
 
 	liveAt time.Time // jonli faza boshlangan vaqt (xarid vaqtini bilish uchun)
 }
@@ -533,6 +538,7 @@ func (r *room) applyHitLocked(c *client, h hitClaim, now time.Time) {
 		vp.armor = math.Max(0, vp.armor-(dmg-red)*.5)
 		dmg = red
 	}
+	r.noteDamageLocked(c, math.Min(dmg, math.Max(0, vp.hp)))
 	vp.hp -= dmg
 	if v.bot != nil {
 		v.bot.alertAt = now
@@ -573,6 +579,7 @@ func (r *room) checkDeathLocked(c *client, f map[string]json.RawMessage, now tim
 		f["de"] = jsonMsg(d)
 	}
 	r.tr.death(r, c, killer, d.HS == 1)
+	r.noteDeathLocked(c, killer, d.HS == 1)
 	if killer != nil {
 		r.creditKillLocked(c, killer, now)
 	}
@@ -609,6 +616,7 @@ func (r *room) checkPlantLocked(c *client, f map[string]json.RawMessage, now tim
 				site := r.gm().siteAt(pl.X, pl.Z)
 				if site != "" && site == pl.S && at.flat(p.pos) < 2.5 && r.stoodLocked(p, now, 2.6, func(s sample) bool { return r.gm().siteAt(s.p.X, s.p.Z) == site && s.p.flat(at) < 2.5 }) {
 					g.B = &bombState{X: pl.X, Z: pl.Z, S: site, T: 40}
+					r.planter = c.id
 				} else {
 					c.warnLocked("noto'g'ri bomba o'rnatish", now)
 				}
@@ -629,6 +637,7 @@ func (r *room) checkPlantLocked(c *client, f map[string]json.RawMessage, now tim
 					need = 3.6
 				}
 				if p.pos.flat(b) < 2.5 && r.stoodLocked(p, now, need, func(s sample) bool { return s.p.flat(b) < 2.5 }) {
+					r.defuser = c.id
 					r.endRoundLocked("CT", "defuse")
 				} else {
 					c.warnLocked("noto'g'ri zararsizlantirish", now)
@@ -666,6 +675,7 @@ func (r *room) endRoundLocked(side, why string) {
 	} else {
 		g.SB++
 	}
+	r.roundMVPLocked(side, why)
 }
 
 func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
@@ -712,6 +722,7 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 			g.T = math.Max(0, g.Cd)
 			if g.Cd <= 0 {
 				g.R, g.Ph, g.T, g.SA, g.SB, g.B, g.Bm, g.E = 1, "freeze", 6, 0, 0, nil, -1, randEpoch()
+				g.Mv, g.Mvn, g.Mvr, g.St, r.planter, r.defuser = "", "", "", nil, "", ""
 			}
 		} else {
 			g.Cd, g.T = 6, 0
@@ -745,9 +756,11 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 		if g.T <= 0 {
 			if matchWinner(g.SA, g.SB, g.R, g.Fm) != "" {
 				g.Ph, g.T = "over", 10
+				r.finalStatsLocked()
 			} else {
 				g.R++
 				g.Ph, g.T, g.B = "freeze", 5, nil
+				g.Mv, g.Mvn, g.Mvr, r.planter, r.defuser = "", "", "", "", ""
 				if halfStart(g.R, g.Fm) {
 					g.T = 10
 				}
@@ -780,6 +793,7 @@ func (r *room) forceDeathsLocked(now time.Time) {
 			p.alive, p.forced, p.dueAt, p.deadAt = false, true, time.Time{}, now
 			killer := r.clients[p.dueBy]
 			r.tr.death(r, c, killer, p.dueHS)
+			r.noteDeathLocked(c, killer, p.dueHS)
 			if killer != nil {
 				r.creditKillLocked(c, killer, now)
 			}

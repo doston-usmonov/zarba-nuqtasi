@@ -140,6 +140,7 @@ func (r *room) finishModeLocked(w *client) {
 		}
 	}
 	g.Ph, g.T, g.B = "over", 10, nil
+	r.finalStatsLocked()
 	g.Wn, g.Wnm = "", ""
 	if w != nil {
 		g.Wn, g.Wnm = w.id, clientName(w)

@@ -49,6 +49,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - [ ] Telegram orqali kirish, parolni tiklash
 
 ## 7. Kosmetika va yutuqlar
+- ✅ Raund MVP (eng ko'p o'ldirgan, bombani o'rnatgan yoki zararsizlantirgan), o'yin oxirida natijalar jadvali va o'yin MVP'si, killcam
 - [ ] Yutuqlar va medallar (masalan: "1 raundda 5 ta o'ldirish")
 - [ ] Qurol ko'rinishlari (skinlar): yutuqlar va daraja orqali ochiladi, tasodifiy sandiq va pullik o'yin elementlari yo'q
 

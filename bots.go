@@ -248,6 +248,7 @@ func (r *room) botDieLocked(v, killer *client, w string, hs bool, now time.Time)
 	}
 	b.de = &deathClaim{N: b.deN, By: by, W: w, HS: map[bool]int{true: 1}[hs]}
 	r.tr.death(r, v, killer, hs)
+	r.noteDeathLocked(v, killer, hs)
 	if killer != nil {
 		r.creditKillLocked(v, killer, now)
 	}
@@ -573,6 +574,7 @@ func (r *room) botObjectiveLocked(c *client, now time.Time, dt float64) {
 			b.turn(yawTo(p.pos, bomb), 6, dt)
 			if b.actT >= 7 && g.Ph == "live" {
 				b.actT = 0
+				r.defuser = c.id
 				r.endRoundLocked("CT", "defuse")
 			}
 			return
@@ -618,6 +620,7 @@ func (r *room) botObjectiveLocked(c *client, now time.Time, dt float64) {
 			b.actT += dt
 			if b.actT >= 3.2 && g.B == nil {
 				g.B = &bombState{X: math.Round(p.pos.X*100) / 100, Z: math.Round(p.pos.Z*100) / 100, S: r.gm().siteAt(p.pos.X, p.pos.Z), T: 40}
+				r.planter = c.id
 				b.actT = 0
 				b.mode = "guard"
 			}

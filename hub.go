@@ -57,6 +57,10 @@ type room struct {
 	pub     bool          // ommaviy — bosh sahifadagi ro'yxatda ko'rinadi
 	max     int           // o'yinchilar (botlar bilan) chegarasi, 0 — cheksiz
 	bans    map[string]time.Time
+	// statistika (stats.go)
+	st               map[string]*pstat
+	stE              string
+	planter, defuser string
 }
 
 type hub struct {

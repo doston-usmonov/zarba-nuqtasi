@@ -13,6 +13,7 @@ zarba-server/
 ├── legacy.go          oldingi fayl bazasidan bir martalik import
 ├── api.go             /api: ro'yxatdan o'tish, kirish, reyting jadvali, profil
 ├── ws.go              WebSocket (RFC 6455) — serverga kerakli qismi
+├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── modes.go           o'yin rejimlari: deathmatch va qurol poygasi
 ├── gamemap.go         xaritalar panjarasi: ko'rinish, devorlar, bazalar, nuqtalar
 ├── mapsdata.go        xaritalar (web/index.html dagi MAPS dan tools/genmaps.py yasaydi)

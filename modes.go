@@ -13,6 +13,7 @@ package main
 // (yoki pichoq) bilan qabul qilinadi. Bu rejimlar reytingga yozilmaydi.
 
 import (
+	"encoding/json"
 	"math"
 	"math/rand/v2"
 	"sort"
@@ -34,7 +35,9 @@ const (
 // qurol poygasi zinapoyasi (web/index.html dagi GG_LADDER bilan bir xil)
 var ggLadder = []string{"rifle", "carbine", "smg", "sniper", "deagle", "pistol", "knife"}
 
-func validMode(m string) bool { return m == modeComp || m == modeDM || m == modeGG }
+func validMode(m string) bool {
+	return m == modeComp || m == modeDM || m == modeGG || m == modeWM || m == modeRT
+}
 
 func ggLevel(kills int) int     { return min(len(ggLadder)-1, max(0, kills)/ggPerLevel) }
 func ggWeapon(kills int) string { return ggLadder[ggLevel(kills)] }
@@ -53,6 +56,9 @@ func (r *room) foes(a, b *client) bool {
 
 // spawnOKLocked: yangi hayot boshlanadigan joy (deathmatch'da — istalgan ochiq katak).
 func (r *room) spawnOKLocked(p vec3, side string) bool {
+	if r.gs.Md == modeRT && side == "T" && (r.gs.Ph == "freeze" || r.gs.Ph == "live") {
+		return r.retakeSpawnOK(p) && !r.gm().botSolid(wc(p.X), wc(p.Z))
+	}
 	if r.gs.ffa() && r.gs.Ph == "live" {
 		return !r.gm().botSolid(wc(p.X), wc(p.Z))
 	}
@@ -182,7 +188,7 @@ func (r *room) tickModeLocked(now time.Time, dt float64, nA, nB int) {
 	case "over":
 		g.T -= dt
 		if g.T <= 0 {
-			g.reset()
+			r.applyVoteLocked(now)
 		}
 	default: // boshqa rejimdan qolgan bosqich
 		g.reset()
@@ -192,6 +198,9 @@ func (r *room) tickModeLocked(now time.Time, dt float64, nA, nB int) {
 // changeModeLocked: xona boshqa rejimga o'tadi — o'yin isinishdan boshlanadi.
 func (r *room) changeModeLocked(m string, now time.Time) {
 	r.gs.Md = m
+	if m == modeWM && (r.max == 0 || r.max > 4) {
+		r.max = 4 // Wingman: 2 ga 2
+	}
 	r.gs.reset()
 	for _, c := range r.clients {
 		if c.bot != nil {
@@ -225,4 +234,111 @@ func (m *gameMap) roamPoint() vec3 {
 		return cellCenter(m.holds[rand.IntN(len(m.holds))][0])
 	}
 	return cellCenter(m.open[rand.IntN(len(m.open))])
+}
+
+// ---- Wingman (2v2) va Retake ----
+//
+//   wm — Wingman: ikki kishilik jamoalar, bitta bomba nuqtasi (A), 9 g'alabagacha (MR8),
+//        raund 1,5 daqiqa, iqtisod raqobatdagidek.
+//   rt — Retake: har raund boshida bomba A yoki B da allaqachon o'rnatilgan; hujumchilar uni
+//        nuqta yonida himoya qiladi, himoyachilar bazadan kelib zararsizlantiradi. Xarid yo'q —
+//        qurollar har raundda beriladi. 7 g'alabagacha (har 6 raundda tomonlar almashadi).
+
+const (
+	modeWM = "wm"
+	modeRT = "rt"
+)
+
+func (g *gameState) roundTime() float64 {
+	switch g.Md {
+	case modeWM:
+		return 90
+	case modeRT:
+		return 40
+	}
+	return 115
+}
+
+// fixedFm: rejimning o'z formati (0 — o'yinchilar sozlamasi).
+func (g *gameState) fixedFm() int {
+	switch g.Md {
+	case modeWM:
+		return 8
+	case modeRT:
+		return 6
+	}
+	return 0
+}
+
+// retakeRoundLocked: yangi raund — bomba tasodifiy nuqtada allaqachon o'rnatilgan.
+func (r *room) retakeRoundLocked() {
+	g, gm := r.gs, r.gm()
+	site := []string{"A", "B"}[rand.IntN(2)]
+	spots := gm.spots[site]
+	p := cellCenter(spots[rand.IntN(len(spots))])
+	g.Rs = site
+	g.B = &bombState{X: math.Round(p.X*100) / 100, Z: math.Round(p.Z*100) / 100, S: site, T: 40}
+}
+
+// retakeSpawnOK: retake'da hujumchilar bomba yonida tug'iladi.
+func (r *room) retakeSpawnOK(p vec3) bool {
+	g := r.gs
+	if g.B == nil {
+		return false
+	}
+	return p.flat(vec3{g.B.X, 0, g.B.Z}) < 16 || r.gm().siteAt(p.X, p.Z) == g.Rs
+}
+
+// ---- keyingi xarita uchun ovoz berish (o'yin oxirida) ----
+
+func (r *room) voteLocked(c *client, raw []byte) {
+	g := r.gs
+	if g.Ph != "over" || c.bot != nil || c.info.Sq == "" {
+		return
+	}
+	var v struct {
+		M string `json:"m"`
+	}
+	if json.Unmarshal(raw, &v) != nil || !validMap(v.M) {
+		return
+	}
+	c.vote = v.M
+	g.Vt = map[string]int{}
+	for _, o := range r.clients {
+		if o.vote != "" {
+			g.Vt[o.vote]++
+		}
+	}
+}
+
+// applyVoteLocked: ovozlar bo'yicha keyingi xarita (teng bo'lsa — tasodifan). O'yin isinishdan boshlanadi.
+func (r *room) applyVoteLocked(now time.Time) {
+	g := r.gs
+	best, bn := []string{}, 0
+	for _, id := range mapOrder() {
+		n := g.Vt[id]
+		if n > bn {
+			best, bn = []string{id}, n
+		} else if n == bn && n > 0 {
+			best = append(best, id)
+		}
+	}
+	for _, c := range r.clients {
+		c.vote = ""
+	}
+	if len(best) > 0 {
+		if m := best[rand.IntN(len(best))]; m != g.M {
+			r.changeMapLocked(m, now)
+			return
+		}
+	}
+	g.reset()
+}
+
+func mapOrder() []string {
+	out := make([]string, 0, len(mapDefs))
+	for _, d := range mapDefs {
+		out = append(out, d.id)
+	}
+	return out
 }

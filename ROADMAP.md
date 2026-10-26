@@ -33,14 +33,14 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Xona egasi: bot qo'shish/chiqarish, o'yinchini chiqarish
 - [ ] Reytingga qarab navbat: "O'yin topish" tugmasi
 - ✅ Deathmatch (har kim har kimga, qayta tug'ilish, 6 daqiqa) va Qurol poygasi (har 2 o'ldirishda yangi qurol, oxiri pichoq); hisobni server yuritadi
-- [ ] 2v2 (Wingman) va Retake rejimlari
+- ✅ Wingman (2 ga 2, faqat A nuqta, MR8) va Retake (bomba raund boshidan o'rnatilgan, qurollar beriladi)
 - [ ] Partiya: do'stlar bilan birga navbatga turish
 - [ ] O'yinni tashlab ketganlik uchun jazo (vaqtincha navbat taqiqi)
 
 ## 5. Xaritalar
 - ✅ Ikki yangi ixcham xarita: Bozor va Karvonsaroy (Qumtepa bilan birga 3 ta); xona yaratishda va xona egasi o'yin davomida tanlaydi
 - [ ] Yana bitta xarita (zavod)
-- [ ] O'yin oldidan xarita tanlash uchun ovoz berish
+- ✅ O'yin oxirida keyingi xarita uchun ovoz berish (1/2/3 tugmalari)
 
 ## 6. Ijtimoiy
 - ✅ Xona ichida matnli chat (Y — hamma, U — jamoa)

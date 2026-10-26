@@ -36,6 +36,7 @@ type client struct {
 	pres    json.RawMessage
 	accJSON json.RawMessage   // boshqalarga ko'rsatiladigan hisob ma'lumoti (nom, reyting, daraja)
 	loadout map[string]string // qurol bo'yoqlari (room.mu ostida)
+	vote    string            // o'yin oxirida tanlagan xaritasi
 	info    presInfo
 	deSeen  bool
 	chatAt  time.Time // chat: oxirgi xabar va "chelak" (spamga qarshi)
@@ -158,6 +159,9 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 		}
 		if opts.mode != "" {
 			r.gs.Md = opts.mode
+		}
+		if r.gs.Md == modeWM && (r.max == 0 || r.max > 4) {
+			r.max = 4 // Wingman: 2 ga 2
 		}
 		h.rooms[roomName] = r
 		go r.run(h)
@@ -300,6 +304,13 @@ func (h *hub) reader(c *client) {
 				}
 				r.mu.Unlock()
 			}
+			continue
+		}
+		if m.T == "vote" { // o'yin oxirida keyingi xarita uchun ovoz
+			r := c.room
+			r.mu.Lock()
+			r.voteLocked(c, m.D)
+			r.mu.Unlock()
 			continue
 		}
 		if m.T == "chat" { // matnli chat: hammaga yoki faqat jamoaga

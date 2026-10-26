@@ -179,6 +179,12 @@ func (r *room) spawnBotLocked(c *client, now time.Time) {
 		zone = cCTSpawn
 	}
 	pos := r.gm().randomCellIn(zone)
+	if g.Md == modeRT && c.info.Tm == "T" && g.Rs != "" && g.Ph != "warmup" { // retake: bomba yonida
+		spots := r.gm().spots[g.Rs]
+		pos = cellCenter(spots[rand.IntN(len(spots))])
+		pos.X += (rand.Float64() - .5) * 1.2
+		pos.Z += (rand.Float64() - .5) * 1.2
+	}
 	modeLive := g.respawns() && g.Ph == "live"
 	if modeLive && g.ffa() {
 		pos = r.dmSpawnLocked(c)
@@ -213,6 +219,9 @@ func (r *room) spawnBotLocked(c *client, now time.Time) {
 	} else if c.info.Tm == "T" {
 		b.yaw = 0
 		b.site = []string{"A", "B"}[rand.IntN(2)]
+		if g.Md == modeWM {
+			b.site = "A"
+		}
 		spots := r.gm().spots[b.site]
 		b.goal = cellCenter(spots[rand.IntN(len(spots))])
 		looks := r.gm().looks[b.site]
@@ -221,7 +230,13 @@ func (r *room) spawnBotLocked(c *client, now time.Time) {
 		b.execAt = now.Add(time.Duration(6+rand.IntN(14)) * time.Second)
 	} else {
 		b.yaw = math.Pi
-		hs := r.gm().holds
+		gm := r.gm()
+		var hs [][2][2]int
+		for i, h := range gm.holds {
+			if g.Md != modeWM || gm.holdSite[i] != "B" { // Wingman: faqat A va o'rta
+				hs = append(hs, h)
+			}
+		}
 		h := hs[rand.IntN(len(hs))]
 		b.goal, b.look = cellCenter(h[0]), cellCenter(h[1])
 		b.goal.X += (rand.Float64() - .5) * 1.2

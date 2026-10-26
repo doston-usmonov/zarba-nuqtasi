@@ -118,7 +118,7 @@ func (iv *inventory) nadeCount() int {
 // ecoOn: pul va qurollar tekshiriladimi.
 func (r *room) ecoOn() bool {
 	g := r.gs
-	return !g.respawns() && g.E != "" && g.R > 0 && g.Ph != "warmup" && g.Ph != "over"
+	return !g.respawns() && g.Md != modeRT && g.E != "" && g.R > 0 && g.Ph != "warmup" && g.Ph != "over"
 }
 
 func (c *client) sendEco(extra map[string]any) {

@@ -14,6 +14,7 @@ for m in re.finditer(r"\n  (\w+):\{ name:(\"[^\"]*\")", blk):
     hl=[h for k in 'ABM' for h in holds[k]]
     out.append('\t{id: "%s", name: %s,'%(mid, m.group(2)))
     out.append('\t\tholds: [][2][2]int{'+', '.join('{{%d, %d}, {%d, %d}}'%(a[0],a[1],b[0],b[1]) for a,b in hl)+'},')
+    out.append('\t\tholdSite: []string{'+', '.join('"%s"'%k for k in 'ABM' for _ in holds[k])+'},')
     out.append('\t\tspots: map[string][][2]int{"A": %s, "B": %s},'%(g(plan['A']['spots']), g(plan['B']['spots'])))
     out.append('\t\tlooks: map[string][][2]int{"A": %s, "B": %s},'%(g(plan['A']['looks']), g(plan['B']['looks'])))
     out.append('\t\trows: []string{'); out += ['\t\t\t"%s",'%r for r in rows]; out.append('\t\t}},')

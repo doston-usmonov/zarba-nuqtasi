@@ -31,6 +31,7 @@ var cellHeight = [8]float64{0, 7, 1.0, 2.3, 0, 0, 0, 0}
 type mapDef struct {
 	id, name     string
 	holds        [][2][2]int         // himoyachi botlar turadigan joy va qaraydigan nuqta
+	holdSite     []string            // har bir joy qaysi nuqtaga tegishli: A, B yoki M (o'rta)
 	spots, looks map[string][][2]int // hujumchi botlar bomba qo'yadigan joylar va qarash nuqtalari
 	rows         []string
 }

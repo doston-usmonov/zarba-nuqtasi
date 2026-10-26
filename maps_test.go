@@ -259,3 +259,80 @@ func TestGGLadderMatchesClient(t *testing.T) {
 		t.Fatalf("web/index.html da %q topilmadi", want)
 	}
 }
+
+// TestWingmanRetakeVote: Wingman (faqat A, MR8), Retake (bomba boshidan o'rnatilgan) va xarita uchun ovoz.
+func TestWingmanRetakeVote(t *testing.T) {
+	r, a, b := newRefRoom()
+	r.gs.Md = modeRT
+	pres := func(c *client, sq, tm string, x, z float64, extra map[string]any) map[string]json.RawMessage {
+		d := map[string]any{"v": 1, "hc": 1, "sq": sq, "tm": tm, "in": 0, "al": 1, "x": x, "y": 0, "z": z, "w": "rifle"}
+		for k, v := range extra {
+			d[k] = v
+		}
+		return refPres(r, c, d)
+	}
+	pres(a, "A", "T", 43, 75, nil)
+	pres(b, "B", "CT", 43, 9, nil)
+	r.mu.Lock()
+	for i := 0; i < 130 && r.gs.Ph == "warmup"; i++ {
+		r.tickLocked(time.Now(), .05)
+	}
+	g := r.gs
+	if g.Ph != "freeze" || g.Fm != 6 || g.B == nil || g.Rs == "" || g.B.S != g.Rs {
+		t.Fatalf("retake boshlanmadi: %+v %+v", g, g.B)
+	}
+	bomb := vec3{g.B.X, 0, g.B.Z}
+	r.mu.Unlock()
+	// hujumchi bomba yonida tug'iladi (bazasida emas)
+	f := pres(a, "A", "T", bomb.X+1, bomb.Z, map[string]any{"in": 1})
+	if x, _ := num(f["x"]); math.Abs(x-(bomb.X+1)) > .01 {
+		t.Fatalf("retake: bomba yonida tug'ilish rad etildi (%v)", f["x"])
+	}
+	pres(b, "B", "CT", 43, 9, map[string]any{"in": 1})
+	// bomba portlaydi — hujum yutadi
+	r.mu.Lock()
+	r.gs.Ph, r.gs.B.T = "live", .01
+	r.tickLocked(time.Now(), .05)
+	if r.gs.Ph != "post" || r.gs.W != "T" || r.gs.Y != "bomb" {
+		t.Fatalf("retake raundi: %+v", r.gs)
+	}
+	// o'yin tugadi: ovoz berish keyingi xaritani tanlaydi
+	r.gs.Ph, r.gs.T = "over", .01
+	r.mu.Unlock()
+	r.mu.Lock()
+	r.voteLocked(a, []byte(`{"m":"karvon"}`))
+	r.voteLocked(b, []byte(`{"m":"karvon"}`))
+	if r.gs.Vt["karvon"] != 2 {
+		t.Fatalf("ovozlar: %v", r.gs.Vt)
+	}
+	r.tickLocked(time.Now(), .05)
+	if r.gs.M != "karvon" || r.gs.Ph != "warmup" || r.gs.Md != modeRT || len(r.gs.Vt) != 0 {
+		t.Fatalf("ovozdan keyin: %+v", r.gs)
+	}
+	r.mu.Unlock()
+
+	// Wingman: faqat A nuqtaga bomba qo'yiladi
+	w, x, _ := newRefRoom()
+	*w.gs = gameState{R: 1, Ph: "live", Md: modeWM, Fm: 8, E: "w1", Bm: -1, T: 90, liveAt: time.Now()}
+	gm := mapByID("")
+	bSpot, aSpot := cellCenter(gm.spots["B"][0]), cellCenter(gm.spots["A"][0])
+	for _, tc := range []struct {
+		at   vec3
+		site string
+		ok   bool
+	}{{bSpot, "B", false}, {aSpot, "A", true}} {
+		w.mu.Lock()
+		x.info = presInfo{Sq: "A", Tm: "T", In: 1}
+		x.ps.alive, x.ps.life, x.ps.pos, x.ps.posOK = true, 1, tc.at, true
+		x.ps.hn = 0
+		for i := 0; i < 40; i++ {
+			x.ps.push(sample{t: time.Now().Add(-time.Duration(40-i) * 100 * time.Millisecond), p: tc.at})
+		}
+		w.mu.Unlock()
+		refPres(w, x, map[string]any{"v": 1, "hc": 1, "sq": "A", "tm": "T", "in": 1, "al": 1, "x": tc.at.X, "y": 0, "z": tc.at.Z,
+			"pl": map[string]any{"n": map[bool]int{false: 1, true: 2}[tc.ok], "x": tc.at.X, "z": tc.at.Z, "s": tc.site, "r": 1}})
+		if (w.gs.B != nil) != tc.ok {
+			t.Fatalf("wingman %s nuqta: bomba=%v", tc.site, w.gs.B)
+		}
+	}
+}

@@ -67,7 +67,8 @@ type gameState struct {
 	R  int        `json:"r"`
 	Ph string     `json:"ph"`
 	M  string     `json:"m"`  // xarita
-	Md string     `json:"md"` // rejim: comp | dm | gg (modes.go)
+	Md string     `json:"md"` // rejim: comp | dm | gg | wm | rt (modes.go)
+	Rs string     `json:"rs"` // retake: shu raunddagi bomba nuqtasi
 	T  float64    `json:"t"`
 	SA int        `json:"sA"`
 	SB int        `json:"sB"`
@@ -83,10 +84,11 @@ type gameState struct {
 	Wn  string         `json:"wn,omitempty"`  // g'olib id
 	Wnm string         `json:"wnm,omitempty"` // g'olib ismi
 	// statistika (stats.go)
-	Mv  string    `json:"mv,omitempty"`  // raund MVP id
-	Mvn string    `json:"mvn,omitempty"` // raund MVP ismi
-	Mvr string    `json:"mvr,omitempty"` // sabab: "k3" (3 o'ldirish), "bomb", "defuse"
-	St  []statRow `json:"st,omitempty"`  // o'yin oxiridagi jadval
+	Mv  string         `json:"mv,omitempty"`  // raund MVP id
+	Mvn string         `json:"mvn,omitempty"` // raund MVP ismi
+	Mvr string         `json:"mvr,omitempty"` // sabab: "k3" (3 o'ldirish), "bomb", "defuse"
+	St  []statRow      `json:"st,omitempty"`  // o'yin oxiridagi jadval
+	Vt  map[string]int `json:"vt,omitempty"`  // keyingi xarita uchun ovozlar
 
 	liveAt time.Time // jonli faza boshlangan vaqt (xarid vaqtini bilish uchun)
 }
@@ -617,6 +619,9 @@ func (r *room) checkPlantLocked(c *client, f map[string]json.RawMessage, now tim
 			if g.Ph == "live" && g.B == nil && pl.R == g.R && c.info.Tm == "T" && p.alive && c.info.In == g.R {
 				at := vec3{pl.X, 0, pl.Z}
 				site := r.gm().siteAt(pl.X, pl.Z)
+				if g.Md == modeWM && site != "A" {
+					site = "" // Wingman: faqat A nuqta
+				}
 				if site != "" && site == pl.S && at.flat(p.pos) < 2.5 && r.stoodLocked(p, now, 2.6, func(s sample) bool { return r.gm().siteAt(s.p.X, s.p.Z) == site && s.p.flat(at) < 2.5 }) {
 					g.B = &bombState{X: pl.X, Z: pl.Z, S: site, T: 40}
 					r.planter = c.id
@@ -727,6 +732,9 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 		if first != nil && first.prefFm != 0 {
 			g.Fm = first.prefFm
 		}
+		if f := g.fixedFm(); f != 0 {
+			g.Fm = f
+		}
 		if nA > 0 && nB > 0 {
 			g.Cd -= dt
 			g.T = math.Max(0, g.Cd)
@@ -734,6 +742,9 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 				g.R, g.Ph, g.T, g.SA, g.SB, g.B, g.Bm, g.E = 1, "freeze", 6, 0, 0, nil, -1, randEpoch()
 				g.Mv, g.Mvn, g.Mvr, g.St, r.planter, r.defuser = "", "", "", nil, "", ""
 				r.purses, r.matchAt = nil, now
+				if g.Md == modeRT {
+					r.retakeRoundLocked()
+				}
 			}
 		} else {
 			g.Cd, g.T = 6, 0
@@ -741,7 +752,7 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 	case "freeze":
 		g.T -= dt
 		if g.T <= 0 {
-			g.Ph, g.T, g.liveAt = "live", 115, now
+			g.Ph, g.T, g.liveAt = "live", g.roundTime(), now
 		}
 	case "live":
 		if g.B != nil {
@@ -776,12 +787,15 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 				if halfStart(g.R, g.Fm) {
 					g.T = 10
 				}
+				if g.Md == modeRT {
+					r.retakeRoundLocked()
+				}
 			}
 		}
 	case "over":
 		g.T -= dt
 		if g.T <= 0 {
-			g.reset()
+			r.applyVoteLocked(now)
 		}
 	}
 	return r.tr.phase(r, prev, now)

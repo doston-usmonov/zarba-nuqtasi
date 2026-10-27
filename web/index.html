@@ -536,7 +536,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <div class="field"><span>Rejim</span><div class="seg modeSeg" data-set="mode"><button type="button" data-v="comp">Raqobat</button><button type="button" data-v="wm">Wingman</button><button type="button" data-v="rt">Retake</button><button type="button" data-v="dm">Deathmatch</button><button type="button" data-v="gg">Qurol poygasi</button></div></div>
         <p class="note" id="modeNote"></p>
         <div class="row trainQuick"><span class="note">Mashq:</span><button class="ghost sm" type="button" data-train="aim">Nishon mashqi</button><button class="ghost sm" type="button" data-train="nade">Granata mashqi</button></div>
-        <label class="field" for="mapSel"><span>Xarita</span><select id="mapSel"><option value="qumtepa">Qumtepa — Klassik: uzun yo'lak, o'rta va tunnel</option><option value="bozor">Bozor — Ixcham: rastalar, tor o'rta, ko'prikcha</option><option value="karvon">Karvonsaroy — Ixcham: markazda hovli, ikki qanot</option></select></label>
+        <label class="field" for="mapSel"><span>Xarita</span><select id="mapSel"><option value="qumtepa">Qumtepa — Klassik: uzun yo'lak, o'rta va tunnel</option><option value="bozor">Bozor — Ixcham: rastalar, tor o'rta, ko'prikcha</option><option value="karvon">Karvonsaroy — Ixcham: markazda hovli, ikki qanot</option><option value="registon">Registon — Maydon, madrasa hovlisi, yopiq bozor</option><option value="saroy">Saroy — Qal'a: ichki zallar, devor bo'yi yo'lak</option></select></label>
         <button class="cta" id="startBtn" type="button">Botlar bilan o'ynash</button>
       </div>
       <div class="panel" id="trainPanel">
@@ -561,7 +561,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <label class="field" for="newCode"><span>Kod</span><input id="newCode" maxlength="40" autocomplete="off"></label>
           <label class="field" for="newPub"><span>Kimga</span><select id="newPub"><option value="1">Ommaviy</option><option value="0">Yopiq (kod bilan)</option></select></label>
           <label class="field" for="newMode"><span>Rejim</span><select id="newMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option></select></label>
-          <label class="field" for="newMap"><span>Xarita</span><select id="newMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option></select></label>
+          <label class="field" for="newMap"><span>Xarita</span><select id="newMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="registon">Registon</option><option value="saroy">Saroy</option></select></label>
           <label class="field" for="newMax"><span>Maks. o'yinchi</span><select id="newMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select></label>
         </div>
         <button class="ghost srv-only" id="createBtn" type="button">O'yin yaratish</button>
@@ -646,7 +646,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <div class="set"><span>Bot darajasi</span><div class="seg" data-set="botLv"><button type="button" data-v="easy">Oson</button><button type="button" data-v="normal">O'rta</button><button type="button" data-v="hard">Qiyin</button></div><span></span></div>
           <div class="set"><span>Xona turi</span><div class="seg" id="admPub"><button type="button" data-v="1">Ommaviy</button><button type="button" data-v="0">Yopiq</button></div><span></span></div>
           <label class="set" for="admMode">Rejim <select id="admMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option></select><span></span></label>
-          <label class="set" for="admMap">Xarita <select id="admMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option></select><span></span></label>
+          <label class="set" for="admMap">Xarita <select id="admMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="registon">Registon</option><option value="saroy">Saroy</option></select><span></span></label>
           <label class="set" for="admMax">Maks. o'yinchi <select id="admMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select><span></span></label>
         </div>
         <table id="admList"></table>
@@ -920,6 +920,108 @@ const MAPS = {
     '############################################',
     '############################################',
     '############################################',
+    '############################################',
+    '############################################',
+    '############################################'] },
+  registon:{ name:"Registon", desc:"Maydon, madrasa hovlisi va yopiq bozor", theme:{ wall:0xf2d9b3, floor:0xe2d3b8 },
+    holds:{"A":[[[6,9],[13,18]],[[11,9],[5,19]],[[4,13],[13,18]],[[9,17],[5,21]]],"B":[[[34,9],[29,16]],[[39,11],[38,21]],[[32,14],[30,15]],[[37,16],[33,22]]],"M":[[[21,13],[21,27]],[[23,12],[22,28]],[[20,8],[21,20]]]},
+    plan:{"A":{"stages":[[5,31],[20,27],[5,21]],"spots":[[6,12],[9,9],[11,14],[4,9]],"looks":[[13,18],[8,5],[5,20]]},"B":{"stages":[[38,31],[24,24],[38,23]],"spots":[[35,11],[38,9],[32,9],[39,15]],"looks":[[29,15],[35,5],[38,19]]}},
+    signs:[[14,37,"N","← A",2.1],[29,37,"N","B →",2.1],[19,30,"E","MAYDON",2.2,1.3],[5,7,"S","A",3,2.6],[32,7,"S","B",3,2.6],[14,20,"E","← A",2,1.3],[29,24,"W","B →",2,1.3],[2,25,"E","A ↑",2.1],[35,24,"E","B ↑",2.1]],
+    cables:[[8,41,12,41],[74,47,80,47],[40,63,46,63],[8,55,12,55]],
+    style:'registon', arches:[[16,14,'S'],[27,14,'S'],[14,23,'E'],[29,19,'W'],[17,28,'N'],[26,28,'N'],[11,7,'S'],[38,7,'S']], minarets:[[14,14],[29,14],[14,28],[29,28]],
+    rows:[
+    '############################################',
+    '############################################',
+    '############################################',
+    '#################kkkkkkkkkk#################',
+    '#######..........kkkkkkkkkk..........#######',
+    '#######..........kkkkkkkkkk..........#######',
+    '#######..........kkkkkkkkkk..........#######',
+    '#######...#########......#########...#######',
+    '###AAAAAAAAAA######......######BBBBBBBBBB###',
+    '###AAAAAAAAAA######..c...######BBBBBBBBBs###',
+    '###AAsAAAAsAA######......######BBcBBcBBBB###',
+    '###AAAAAAAAAA######......######BBBBBBBBBB###',
+    '###AAAAcAAAAA######......######sBBBBBBBcB###',
+    '###AAAAAcAAAA######......######BBBBcBBBBB###',
+    '###AAAAAAAAAA######......######BBBBBBcBBB###',
+    '###AAsAAAAsAA##................BBcBBBBBBB###',
+    '###AAAAAAAAAA##................BBBBBBBBBB###',
+    '###AcAAAAAAAA...c..........c.##BBBBBBBBBB###',
+    '###AAAAAAAAAA...........c....####..##....###',
+    '###....######................####..##....###',
+    '###....########......ss......####..##c...###',
+    '###....########......ss......####..##....###',
+    '###..c.########....................##....###',
+    '###....########....c..............##.....###',
+    '###........####..............#######.....###',
+    '###........####..c........c..#######.....###',
+    '###........####..............####........###',
+    '###.c..########..............####........###',
+    '###....#############....############..c..###',
+    '###....#############....############.....###',
+    '###....#############....############.....###',
+    '###....#############.##.############.....###',
+    '###....#############....############.....###',
+    '####.........s..........................####',
+    '####......c.................s...........####',
+    '####..........................c.........####',
+    '####....................................####',
+    '################tttttttttttt################',
+    '################tttttttttttt################',
+    '################tttttttttttt################',
+    '################tttttttttttt################',
+    '############################################',
+    '############################################',
+    '############################################'] },
+  saroy:{ name:"Saroy", desc:"Tepalikdagi qal'a: ichki zallar, devor bo'yi uzun yo'lak", theme:{ wall:0xd2bfa3, floor:0xcdbb9c },
+    holds:{"A":[[[7,7],[13,17]],[[12,7],[4,16]],[[5,11],[12,17]],[[10,14],[4,18]]],"B":[[[33,7],[30,17]],[[38,9],[40,20]],[[31,10],[32,17]],[[36,13],[39,16]]],"M":[[[21,14],[21,28]],[[22,9],[22,24]],[[23,13],[20,22]]]},
+    plan:{"A":{"stages":[[4,31],[17,24],[4,18]],"spots":[[8,9],[5,7],[10,12],[12,10]],"looks":[[13,17],[15,5],[4,16]]},"B":{"stages":[[40,31],[27,23],[40,14]],"spots":[[35,9],[31,7],[37,12],[33,13]],"looks":[[30,17],[28,5],[40,16]]}},
+    signs:[[14,37,"N","← A",2.1],[29,37,"N","B →",2.1],[19,31,"W","ZALLAR",2.2,1.3],[8,5,"S","A",3,2.6],[35,5,"S","B",3,2.6],[1,24,"E","A ↑",2.1],[42,24,"W","B ↑",2.1],[14,16,"S","A",2.4,1.5],[29,16,"S","B",2.4,1.5]],
+    cables:[[4,41,10,41],[80,37,84,37],[40,61,46,61]],
+    style:'saroy', towers:[[3,5],[14,3],[29,3],[40,5],[1,33],[42,33]], banners:[[8,5,'S'],[35,5,'S'],[19,10,'E'],[24,10,'W']],
+    rows:[
+    '############################################',
+    '############################################',
+    '############################################',
+    '#################kkkkkkkkkk#################',
+    '##############...kkkkkkkkkk...##############',
+    '##############...kkkkkkkkkk...##############',
+    '####AAAAAAAAAA...kkkkkkkkkk...BBBBBBBBBB####',
+    '####AAAAAAAAAA######....######BBBBBBBBBc####',
+    '####AAsAAAAsAA######....######BBsBBBBsBB..##',
+    '####AAAAAAAAAA######.c..######BBBBBBBBBB..##',
+    '####AAAAcAAAAA######....######BBBBBBcBBB..##',
+    '####AAAAAcAAAA######....######BBBBsBBBBB..##',
+    '####AAAAAAAAAA######..c.######BcBBBBBBBB..##',
+    '####AAsAAAAsAA######....######BBBBBBBBsB..##',
+    '####AAAAAAAAAA######....######BBBBBBBBBB..##',
+    '####AAAAAAAAcA######....######....####....##',
+    '##...........##....#....#....#............##',
+    '##..............c.........................##',
+    '##........................c.......######..##',
+    '##.....########....#....#....###########..##',
+    '##.c...#########..###..###..############c.##',
+    '##.....########....#....#....###########..##',
+    '##.....########..............###########..##',
+    '##...c.########.......c......###########..##',
+    '##.....########....#....#....###########..##',
+    '##.....#########..###..###..############..##',
+    '##.....########....#....#....###########..##',
+    '##c....########..c...........###########.c##',
+    '##.....########............c.###########..##',
+    '##.....########....#....#....###########..##',
+    '##...c.#########...##..###..############..##',
+    '##.....#########...##..###..############..##',
+    '##.....#########...##..###..############..##',
+    '##..........c.............................##',
+    '##......c.................................##',
+    '##................................c.......##',
+    '##........................................##',
+    '################tttttttttttt################',
+    '################tttttttttttt################',
+    '################tttttttttttt################',
+    '################tttttttttttt################',
     '############################################',
     '############################################',
     '############################################'] }
@@ -1282,6 +1384,63 @@ function buildWorld(){
   const hillMat = new THREE.MeshBasicMaterial({ color:lin(0xb8a998), fog:false });
   for (let i=0;i<16;i++){ const a = i/16*Math.PI*2 + r()*.2, d = 520 + r()*120, h = 50 + r()*90; const c = new THREE.Mesh(new THREE.ConeGeometry(120 + r()*120, h, 7), hillMat); c.position.set(MAPW/2 + Math.cos(a)*d, h/2 - 6, MAPH/2 + Math.sin(a)*d); WG.add(c); }
   SIGNS.forEach(s => sign(...s));
+  if (MAP.style) buildStyle(faces, walls);
+}
+// ---- map styles ----
+// majolica: blue and turquoise girih-like stars on a cream ground (drawn here, no images)
+function tileTex(w, h, rows){ return canvasTex(w, h, (g) => {
+  g.fillStyle = '#1d4f8f'; g.fillRect(0, 0, w, h);
+  const s = h/rows; for (let y=0; y<rows; y++) for (let x=0; x<w/s; x++){ const cx = x*s + s/2, cy = y*s + s/2;
+    g.fillStyle = (x + y) % 2 ? '#2aa7b5' : '#e9dcc0'; g.beginPath(); for (let k=0;k<16;k++){ const a = k*Math.PI/8, r = k % 2 ? s*.2 : s*.45; g.lineTo(cx + Math.cos(a)*r, cy + Math.sin(a)*r); } g.closePath(); g.fill();
+    g.fillStyle = '#123766'; g.beginPath(); g.arc(cx, cy, s*.12, 0, 7); g.fill(); g.fillStyle = '#d7a43b'; g.beginPath(); g.arc(cx, cy, s*.06, 0, 7); g.fill(); }
+  g.fillStyle = '#e9dcc0'; g.fillRect(0, 0, w, 4); g.fillRect(0, h - 4, w, 4); speckle(g, w, h, 900, ['rgba(255,255,255,.12)', 'rgba(0,0,0,.12)']); }); }
+function buildStyle(faces, walls){
+  const st = MAP.style, DIR = { N:[0,-1,Math.PI], S:[0,1,0], W:[-1,0,-Math.PI/2], E:[1,0,Math.PI/2] };
+  const ov = (tex, o) => new THREE.MeshStandardMaterial(Object.assign({ map:tex, roughness:.5, metalness:.05, envMapIntensity:.6, polygonOffset:true, polygonOffsetFactor:-2 }, o || {}));
+  const onFace = (m, cx, cz, side, y, out) => { const [dx, dz, rot] = DIR[side]; m.position.set(cw(cx) + dx*(CELL/2 + (out || .02)), y, cw(cz) + dz*(CELL/2 + (out || .02))); m.rotation.y = rot; WG.add(m); return m; };
+  if (st === 'registon'){
+    // a tile frieze under the cornice of every open wall face
+    const band = tileTex(256, 64, 1), fr = faces.filter(f => f.open && !f.sign);
+    const im = new THREE.InstancedMesh(new THREE.PlaneGeometry(CELL, .62), ov(band), fr.length);
+    fr.forEach((f, i) => { tmpO.position.set(f.px + f.dx*.016, 6.05, f.pz + f.dz*.016); tmpO.rotation.set(0, f.rot, 0); tmpO.scale.set(1,1,1); tmpO.updateMatrix(); im.setMatrixAt(i, tmpO.matrix); }); WG.add(im);
+    // portals (pishtaq): a tall tiled frame around a pointed arch
+    const ARCH = canvasTex(256, 448, (g, w, h) => {
+      const fr2 = g.createLinearGradient(0, 0, w, 0); fr2.addColorStop(0, '#1f548f'); fr2.addColorStop(.5, '#2b6aa8'); fr2.addColorStop(1, '#1f548f'); g.fillStyle = fr2; g.fillRect(0, 0, w, h);
+      g.strokeStyle = '#e9dcc0'; g.lineWidth = 6; g.strokeRect(10, 10, w - 20, h - 10);
+      for (let i=0;i<14;i++){ g.fillStyle = i % 2 ? '#2aa7b5' : '#e9dcc0'; g.fillRect(22, 26 + i*28, 18, 14); g.fillRect(w - 40, 26 + i*28, 18, 14); }
+      const ax = 56, aw = w - 112, ay = 120; g.fillStyle = '#efe4cc'; g.beginPath(); g.moveTo(ax - 8, h); g.lineTo(ax - 8, ay + 40); g.quadraticCurveTo(ax - 8, ay - 64, w/2, ay - 90); g.quadraticCurveTo(ax + aw + 8, ay - 64, ax + aw + 8, ay + 40); g.lineTo(ax + aw + 8, h); g.fill();
+      const gi = g.createLinearGradient(0, ay - 80, 0, h); gi.addColorStop(0, '#0e1a2a'); gi.addColorStop(1, '#2a2118'); g.fillStyle = gi;
+      g.beginPath(); g.moveTo(ax, h); g.lineTo(ax, ay + 40); g.quadraticCurveTo(ax, ay - 56, w/2, ay - 80); g.quadraticCurveTo(ax + aw, ay - 56, ax + aw, ay + 40); g.lineTo(ax + aw, h); g.fill();
+      g.strokeStyle = 'rgba(215,164,59,.8)'; g.lineWidth = 3; for (let k=0;k<5;k++){ g.beginPath(); g.arc(w/2, ay + 10, 30 + k*14, Math.PI*1.1, Math.PI*1.9); g.stroke(); }
+      speckle(g, w, h, 1600, ['rgba(255,255,255,.08)', 'rgba(0,0,0,.12)']); });
+    (MAP.arches || []).forEach(([cx, cz, side]) => onFace(new THREE.Mesh(new THREE.PlaneGeometry(3.4, 6.2), ov(ARCH)), cx, cz, side, 3.1, .03));
+    // minarets and a blue dome over the north madrasa
+    const tile = tileTex(256, 256, 4); tile.wrapS = tile.wrapT = THREE.RepeatWrapping; tile.repeat.set(3, 6);
+    const mm = ov(tile, { polygonOffset:false }), cap = new THREE.MeshStandardMaterial({ color:lin(0xe9dcc0), roughness:.8 }), domeM = new THREE.MeshStandardMaterial({ color:lin(0x2a8fa8), roughness:.35, metalness:.15 });
+    (MAP.minarets || []).forEach(([cx, cz]) => { const x = cw(cx), z = cw(cz);
+      const t = new THREE.Mesh(new THREE.CylinderGeometry(.85, 1.05, 17, 16), mm); t.position.set(x, 8.5, z); t.castShadow = true; WG.add(t);
+      const b = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.0, .7, 16), cap); b.position.set(x, 15.2, z); WG.add(b);
+      const d = new THREE.Mesh(new THREE.SphereGeometry(.9, 16, 8, 0, Math.PI*2, 0, Math.PI/2), domeM); d.position.set(x, 17, z); WG.add(d); });
+    const dm = new THREE.Mesh(new THREE.SphereGeometry(4.2, 28, 14, 0, Math.PI*2, 0, Math.PI/2), domeM); dm.scale.y = 1.25; dm.position.set(cw(21.5), CH[WALL] + 1.6, cw(1)); dm.castShadow = true; WG.add(dm);
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(4.3, 4.3, 1.8, 28), mm); drum.position.set(cw(21.5), CH[WALL] + .7, cw(1)); WG.add(drum);
+  }
+  if (st === 'saroy'){
+    // battlements on every wall that faces the play area
+    const edge = walls.filter(([x, z]) => [[1,0],[-1,0],[0,1],[0,-1]].some(([dx, dz]) => cellT(x + dx, z + dz) !== WALL));
+    const mer = new THREE.InstancedMesh(new THREE.BoxGeometry(.85, .9, .85), new THREE.MeshStandardMaterial({ map:WALL_T.map, normalMap:WALL_T.normal, color:lin(MAP.theme.wall), roughness:.95, envMapIntensity:.4 }), edge.length*2);
+    edge.forEach(([x, z], i) => { for (let k=0;k<2;k++){ tmpO.position.set(cw(x) + (k ? .5 : -.5), CH[WALL] + .65, cw(z) + (k ? -.5 : .5)); tmpO.rotation.set(0,0,0); tmpO.scale.set(1,1,1); tmpO.updateMatrix(); mer.setMatrixAt(i*2 + k, tmpO.matrix); } });
+    mer.castShadow = mer.receiveShadow = true; WG.add(mer);
+    // round towers with pointed roofs
+    const stone = new THREE.MeshStandardMaterial({ map:WALL_T.map, normalMap:WALL_T.normal, color:lin(0xc4ae8e), roughness:.95, envMapIntensity:.4 }), roof = new THREE.MeshStandardMaterial({ color:lin(0x6b3a26), roughness:.8 });
+    (MAP.towers || []).forEach(([cx, cz]) => { const x = cw(cx), z = cw(cz);
+      const t = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.4, 12, 18), stone); t.position.set(x, 6, z); t.castShadow = t.receiveShadow = true; WG.add(t);
+      const r = new THREE.Mesh(new THREE.ConeGeometry(2.6, 3.4, 18), roof); r.position.set(x, 13.7, z); r.castShadow = true; WG.add(r); });
+    // banners
+    const BAN = canvasTex(128, 320, (g, w, h) => { g.fillStyle = '#8f1d1d'; g.beginPath(); g.moveTo(0, 0); g.lineTo(w, 0); g.lineTo(w, h); g.lineTo(w/2, h - 40); g.lineTo(0, h); g.fill();
+      g.strokeStyle = '#d7a43b'; g.lineWidth = 6; g.strokeRect(10, 10, w - 20, h - 70); g.fillStyle = '#d7a43b'; g.beginPath(); for (let k=0;k<16;k++){ const a = k*Math.PI/8, r = k % 2 ? 14 : 34; g.lineTo(w/2 + Math.cos(a)*r, 110 + Math.sin(a)*r); } g.closePath(); g.fill();
+      speckle(g, w, h, 700, ['rgba(0,0,0,.15)']); });
+    (MAP.banners || []).forEach(([cx, cz, side]) => onFace(new THREE.Mesh(new THREE.PlaneGeometry(1.3, 3.2), ov(BAN, { roughness:.9, metalness:0, side:THREE.DoubleSide })), cx, cz, side, 4.6, .05));
+  }
 }
 
 // painted wall signs
@@ -3347,7 +3506,7 @@ document.addEventListener('pointerlockchange', () => {
 document.addEventListener('pointerlockerror', lockFailed);
 document.addEventListener('keydown', e => {
   if (!inGame()) return;
-  if (MODE === 'online' && NET.g && NET.g.ph === 'over' && /^Digit[1-3]$/.test(e.code)){ castVote(Object.keys(MAPS)[+e.code.slice(5) - 1]); return; }   // vote for the next map
+  if (MODE === 'online' && NET.g && NET.g.ph === 'over' && /^Digit[1-5]$/.test(e.code)){ castVote(Object.keys(MAPS)[+e.code.slice(5) - 1]); return; }   // vote for the next map
   keys[e.code] = true;
   if (['Space','Tab','ArrowUp','ArrowDown'].includes(e.code) || (KBLOCK && e.ctrlKey)) e.preventDefault();
   if ((e.code === 'ControlLeft' || e.code === 'ControlRight') && !KBLOCK && !e.repeat && S.time - (S.ctrlHint || -99) > 8){ S.ctrlHint = S.time; hint(IN_ARTIFACT ? "Cho'kkalash — C. Brauzerda Ctrl+W yorliqni yopib qo'yadi" : "Cho'kkalash — C. Ctrl ishlashi uchun to'liq ekranga o'ting (F11 emas, o'yin tugmasi orqali)", 3200); }

@@ -167,6 +167,8 @@ Bosh sahifada **ochiq o'yinlar ro'yxati** bor (har 5 soniyada yangilanadi, `GET 
 - *Deathmatch — jamoa jamoaga*: ikki jamoa, faqat raqib jamoani o'ldirish mumkin (jamoadoshga o'q, granata zarar bermaydi), ekranning tepasida ikkala jamoaning hisobi. 6 daqiqada ko'proq o'ldirgan jamoa yutadi. O'yin har ikki jamoada kamida bittadan o'yinchi (yoki bot) bo'lganda boshlanadi. Botlarga qarshi yakka o'yinda deathmatch doim «hamma hammaga».
 - *Qurol poygasi*: eng kuchli quroldan boshlanib, har 2 o'ldirishda kuchsizrog'iga o'tiladi: Qirg'iy-50 (snayper) → Tog' (pulemyot) → Burkut → Lochin-K → Bo'ron (drobovik) → Shamol → Burgut .50 → Chaqmoq → P-18 → pichoq (19 o'ldirish). Pichoq bilan birinchi o'ldirgan yutadi.
 
+**Xaritalar** (hammasi o'zimizniki, 44×44 katak): Qumtepa, Bozor, Karvonsaroy, Registon (Samarqand uslubidagi maydon: o'rtada favvora va rastalar, g'arbiy madrasa hovlisi — A, sharqiy yopiq bozor — B; koshinli peshtoqlar, minoralar, moviy gumbazlar), Saroy (tepalikdagi qal'a: o'rtada ustunli ichki zallar, sharqda devor bo'yi uzun yo'lak, g'arbda zinapoyali yo'l; qal'a tishlari, dumaloq minoralar, bayroqlar). Xarita sxemasi `web/index.html` dagi `MAPS` da, server nusxasi `tools/genmaps.py` bilan yasaladi.
+
 **Qurollar** (nomlari va dizayni o'zimizniki):
 
 | Qurol | Turi | Narxi | Xususiyati |

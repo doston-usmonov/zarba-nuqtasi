@@ -191,14 +191,15 @@ def body():
     return ob
 
 # ---------------------------------------------------------------- head with a face
-def head():
+def head(v=0):
+    jaw, wide, nose = [(1, .8, 1), (1.12, .83, 1.12), (.92, .78, .92)][v]
     hc = Vector((0, 0, 1.665))
     bm = bmesh.new(); bmesh.ops.create_uvsphere(bm, u_segments=20, v_segments=13, radius=.1)
     for v in bm.verts:
         x, y, z = v.co
-        x *= .8; y *= .98; z *= 1.13
+        x *= wide; y *= .98; z *= 1.13
         if z < 0:                                     # jaw narrows, chin comes forward
-            t = -z / .113; x *= 1 - .22 * t
+            t = -z / .113; x *= 1 - .22 * t / jaw
             if y < 0: y *= 1 + .1 * t
         if y < -.04 and z < .03 and z > -.06: y -= .006   # cheek bones
         if y < -.05 and -.005 < z < .045 and abs(x) < .05: y += .012 * (1 - abs(x) / .05)  # eye sockets
@@ -208,10 +209,10 @@ def head():
     ob = link(bpy.data.objects.new('head', me)); s = ob.modifiers.new('sub', 'SUBSURF'); s.levels = 1; apply_mods(ob); shade_smooth(ob); set_mat(ob, M['skin']); ob['bone'] = 'head'
     parts = [ob]
     # nose: bridge and tip
-    parts.append(prim('cube', 'nose', (0, -.098, 1.668), (.02, .028, .05), (math.radians(-14), 0, 0), M['skin'], subd=2, bone='head'))
-    parts.append(prim('sphere', 'nosetip', (0, -.108, 1.645), (.016, .014, .013), m=M['skin'], seg=10, rings=7, bone='head'))
+    parts.append(prim('cube', 'nose', (0, -.098, 1.668), (.02 * nose, .028, .05 * nose), (math.radians(-14), 0, 0), M['skin'], subd=2, bone='head'))
+    parts.append(prim('sphere', 'nosetip', (0, -.104 - .004 * nose, 1.645), (.016 * nose, .014, .013 * nose), m=M['skin'], seg=10, rings=7, bone='head'))
     for sx in (1, -1):
-        parts.append(prim('sphere', 'ear', (sx * .08, .0, 1.665), (.012, .022, .03), m=M['skin'], seg=10, rings=7, bone='head'))
+        parts.append(prim('sphere', 'ear', (sx * .1 * wide, .0, 1.665), (.012, .022, .03), m=M['skin'], seg=10, rings=7, bone='head'))
         parts.append(prim('sphere', 'eye', (sx * .031, -.083, 1.688), (.0125, .0125, .0125), m=M['eye'], seg=10, rings=7, bone='head'))
         parts.append(prim('sphere', 'iris', (sx * .031, -.0945, 1.688), (.0065, .004, .0065), m=M['iris'], seg=10, rings=7, bone='head'))
         parts.append(prim('cube', 'brow', (sx * .033, -.092, 1.708), (.034, .008, .007), (0, math.radians(sx * 8), math.radians(sx * -6)), M['hair'], subd=1, bone='head'))
@@ -273,16 +274,7 @@ def gear():
         g.append(prim('cyl', 'antenna', (.14, -.15, 1.49), (.004, .004, .14), m=M['strap'], seg=6, bone='chest'))
         g.append(prim('cube', 'pack', (0, .165, 1.31), (.21, .07, .25), m=M['gear2'], bevel=.025, bone='chest'))
         g.append(prim('cube', 'holster', (-.15 * -1, -.02, .76), (.04, .07, .15), m=M['strap'], bevel=.01, bone='thighR'))
-        # helmet with headset and glasses
-        g.append(half_sphere('helmet', (0, .008, 1.712), (.112, .13, .118), M['helm'], cut=.5))
-        g.append(prim('torus', 'rim', (0, .008, 1.712), (1, 1.16, 1), m=M['helm'], R=.11, r=.007, seg=32, bone='head'))
         g.append(prim('torus', 'collar', (0, .006, 1.505), (1, .95, 1.6), m=M['cloth'], R=.062, r=.018, seg=20, bone='neck'))
-        g.append(prim('cube', 'nvg', (0, -.1, 1.81), (.045, .022, .034), m=M['metal'], bevel=.005, bone='head'))
-        for sx in (1, -1):
-            g.append(prim('cube', 'rail', (sx * .108, 0, 1.73), (.012, .13, .025), m=M['metal'], bevel=.003, bone='head'))
-            g.append(prim('cyl', 'cup', (sx * .088, .005, 1.665), (.03, .03, .032), (0, math.pi / 2, 0), M['strap'], seg=16, bone='head', bevel=.006))
-            g.append(prim('cube', 'arm', (sx * .066, -.064, 1.689), (.006, .09, .006), m=M['strap'], bone='head'))
-        g.append(prim('cube', 'glasses', (0, -.113, 1.772), (.1, .018, .03), (math.radians(-35), 0, 0), M['lens'], bevel=.007, bone='head'))
     else:
         # chest rig with magazine pouches, X straps on the back, scarf, knit cap and beard
         g.append(prim('cube', 'rig', (0, -.125, 1.2), (.32, .055, .17), m=M['gear'], bevel=.015, bone='chest'))
@@ -294,11 +286,46 @@ def gear():
             g.append(prim('cube', 'strapB', (0, .118, 1.27), (.045, .02, .3), (0, math.radians(sx * 32), 0), M['strap'], bevel=.004, bone='chest'))
         g.append(prim('cube', 'pack', (0, .15, 1.28), (.2, .07, .22), m=M['gear2'], bevel=.025, bone='chest'))
         g.append(prim('torus', 'scarf', (0, -.005, 1.505), (1, .92, 1.1), m=M['knit'], R=.064, r=.022, seg=20, bone='neck'))
-        g.append(half_sphere('cap', (0, .004, 1.698), (.088, .104, .104), M['knit'], cut=.55))
-        g.append(prim('cyl', 'capband', (0, .004, 1.71), (.09, .102, .04), m=M['knit'], seg=24, bone='head'))
-        g.append(prim('sphere', 'beard', (0, -.042, 1.598), (.074, .06, .05), m=M['hair'], seg=14, rings=9, bone='head'))
-        g.append(prim('cube', 'lipsT', (0, -.1, 1.617), (.036, .01, .008), m=M['lip'], subd=1, bone='head'))
-        g.append(prim('cube', 'mustache', (0, -.101, 1.63), (.052, .012, .012), m=M['hair'], bevel=.004, bone='head'))
+    return g
+
+def headgear(v):
+    """what is on the head: attackers — knit cap + full beard / head wrap + short beard / short hair + moustache;
+    defenders — helmet with goggles / helmet + moustache / soft cap with a headset + short beard"""
+    g = []
+    def helmet(goggles=True):
+        g.append(half_sphere('helmet', (0, .008, 1.712), (.112, .13, .118), M['helm'], cut=.5))
+        g.append(prim('torus', 'rim', (0, .008, 1.712), (1, 1.16, 1), m=M['helm'], R=.11, r=.007, seg=32, bone='head'))
+        g.append(prim('cube', 'nvg', (0, -.1, 1.81), (.045, .022, .034), m=M['metal'], bevel=.005, bone='head'))
+        for sx in (1, -1): g.append(prim('cube', 'rail', (sx * .108, 0, 1.73), (.012, .13, .025), m=M['metal'], bevel=.003, bone='head'))
+        if goggles: g.append(prim('cube', 'glasses', (0, -.113, 1.772), (.1, .018, .03), (math.radians(-35), 0, 0), M['lens'], bevel=.007, bone='head'))
+    def headset():
+        for sx in (1, -1):
+            g.append(prim('cyl', 'cup', (sx * .088, .005, 1.665), (.03, .03, .032), (0, math.pi / 2, 0), M['strap'], seg=16, bone='head', bevel=.006))
+            g.append(prim('cube', 'arm', (sx * .066, -.064, 1.689), (.006, .09, .006), m=M['strap'], bone='head'))
+    def beard(full):
+        if full: g.append(prim('sphere', 'beard', (0, -.042, 1.598), (.074, .06, .05), m=M['hair'], seg=14, rings=9, bone='head'))
+        else: g.append(prim('sphere', 'beard', (0, -.038, 1.592), (.068, .052, .036), m=M['hair'], seg=14, rings=9, bone='head'))
+        g.append(prim('cube', 'lipsT', (0, -.1 if full else -.096, 1.617), (.036, .01, .008), m=M['lip'], subd=1, bone='head'))
+    def moustache(y=-.101): g.append(prim('cube', 'mustache', (0, y, 1.63), (.052, .012, .012), m=M['hair'], bevel=.004, bone='head'))
+    def hair(): g.append(half_sphere('hair', (0, .006, 1.69), (.084, .1, .11), M['hair'], cut=.56))
+    if CT:
+        if v == 0: helmet(); headset()
+        elif v == 1: helmet(False); headset(); moustache(-.096)
+        else:
+            hair(); g.append(half_sphere('softcap', (0, .006, 1.705), (.09, .106, .1), M['helm'], cut=.5))
+            g.append(prim('cube', 'brim', (0, -.11, 1.712), (.15, .1, .008), (math.radians(-8), 0, 0), M['helm'], bevel=.004, bone='head'))
+            headset(); beard(False)
+    else:
+        if v == 0:
+            g.append(half_sphere('cap', (0, .004, 1.698), (.088, .104, .104), M['knit'], cut=.55))
+            g.append(prim('cyl', 'capband', (0, .004, 1.71), (.09, .102, .04), m=M['knit'], seg=24, bone='head'))
+            beard(True); moustache()
+        elif v == 1:
+            g.append(half_sphere('wrap', (0, .006, 1.7), (.094, .11, .112), M['gear2'], cut=.56))
+            for k in range(3): g.append(prim('torus', 'fold', (0, .004, 1.705 + k * .025), (1, 1.15, .9), m=M['gear2'], R=.093 - k * .012, r=.014, seg=24, bone='head'))
+            beard(False); moustache(-.097)
+        else:
+            hair(); moustache(-.097)
     return g
 
 # ---------------------------------------------------------------- armature
@@ -359,27 +386,22 @@ def uv_box(ob, scale=6):
 
 # ---------------------------------------------------------------- build
 rig = armature()
-parts = [body()] + head() + gear()
-import collections
-cnt = collections.Counter()
-for ob in parts: cnt[ob.name.split('.')[0]] += sum(len(p.vertices) - 2 for p in ob.data.polygons)
-print(cnt.most_common(12))
-for ob in parts:
-    uv_box(ob, 5 if ob.name.startswith('body') else 8)
-    if ob.name.startswith('body'): skin_weights(ob, rig)
-    else: rigid(ob, ob['bone'] or 'chest')
-# one mesh, one skin
-bpy.ops.object.select_all(action='DESELECT')
-for ob in parts: ob.select_set(True)
-bpy.context.view_layer.objects.active = parts[0]
-bpy.ops.object.join()
-soldier = bpy.context.active_object; soldier.name = 'soldier_' + SIDE
-mod = soldier.modifiers.new('rig', 'ARMATURE'); mod.object = rig
-soldier.parent = rig
-tris = sum(len(p.vertices) - 2 for p in soldier.data.polygons)
-print('triangles', tris, 'materials', len(soldier.data.materials))
-
+def join(parts, name, rig):
+    for ob in parts:
+        uv_box(ob, 5 if ob.name.startswith('body') else 8)
+        if ob.name.startswith('body'): skin_weights(ob, rig)
+        else: rigid(ob, ob['bone'] or 'chest')
+    bpy.ops.object.select_all(action='DESELECT')
+    for ob in parts: ob.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]; bpy.ops.object.join()
+    ob = bpy.context.active_object; ob.name = name
+    mod = ob.modifiers.new('rig', 'ARMATURE'); mod.object = rig; ob.parent = rig
+    print(name, 'triangles', sum(len(p.vertices) - 2 for p in ob.data.polygons))
+    return ob
+soldier = join([body()] + gear(), 'soldier_' + SIDE, rig)
+heads = [join(head(v) + headgear(v), 'head_%d' % v, rig) for v in range(3)]
 bpy.ops.object.select_all(action='DESELECT'); soldier.select_set(True); rig.select_set(True)
+for h in heads: h.select_set(True)
 bpy.ops.export_scene.gltf(filepath=OUT, export_format='GLB', use_selection=True, export_yup=True, export_skins=True,
                           export_animations=False, export_apply=False, export_image_format='JPEG', export_jpeg_quality=85)
 print('wrote', OUT, os.path.getsize(OUT))
@@ -409,6 +431,7 @@ if PREVIEW:
     shots = []
     views = [(-20, 3.1, 1.15, 1.0), (60, 3.1, 1.15, 1.0), (-8, 1.0, 1.66, 1.62)]
     if os.environ.get('QUICK'): views = views[:2]; scene.cycles.samples = 12
+    for h in heads[1:]: h.hide_render = True
     for i, (ang, dist, z, look) in enumerate(views):
         a = math.radians(ang)
         cam_data = bpy.data.cameras.new('cam'); cam = link(bpy.data.objects.new('cam', cam_data)); cam_data.lens = 50 if i < 2 else 60
@@ -416,6 +439,9 @@ if PREVIEW:
         d = Vector((0, 0, look)) - cam.location; cam.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler()
         scene.camera = cam; path = PREVIEW.replace('.png', f'_{i}.png'); scene.render.filepath = path
         bpy.ops.render.render(write_still=True); shots.append(path)
+    for v in (1, 2):
+        for k, h in enumerate(heads): h.hide_render = k != v
+        path = PREVIEW.replace('.png', f'_f{v}.png'); scene.render.filepath = path; bpy.ops.render.render(write_still=True); shots.append(path)
     from PIL import Image
     ims = [Image.open(p) for p in shots]; W, H = ims[0].size; out = Image.new('RGB', (W * len(ims), H))
     for k, im in enumerate(ims): out.paste(im, (k * W, 0))

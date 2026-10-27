@@ -1951,7 +1951,8 @@ function buildSoldier(pal){
    before; every pose is then copied onto the skeleton of the smooth skinned model. Spine, neck, head and feet copy
    the proxy's rotations; arms and legs are aimed from the proxy's joint positions, so the hands land on the gun. */
 const SOLDIER_GLB = {};
-const SK = { ready:false, src:{}, all:[] };
+const SK = { ready:false, src:{}, all:[], vn:0, tones:{} };
+const SKIN_TONES = [.82, .68, .95];
 // guns modelled in Blender (tools/weapons.py): same gun space and anchors as GUNS, game materials swapped in by name
 const WEAPON_GLB = '';
 const GUN_GLB = {};
@@ -1998,7 +1999,7 @@ function prepSoldier(root){
   SK_BONES.forEach(n => { const b = root.getObjectByName(n); if (!b) return; b.matrixWorld.decompose(p, q, sc); J[n] = { p:p.clone(), q:q.clone(), dir:new V3(0, 1, 0).applyQuaternion(q) }; });
   const rig = root.getObjectByName('hips').parent; rig.matrixWorld.decompose(p, q, sc);
   root.traverse(o => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false;
-    const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach(mt => { mt.envMapIntensity = .5; if (mt.name === 'skin') mt.color.setScalar(.82); }); } });
+    const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach(mt => { mt.envMapIntensity = .5; }); } });
   return { root, J, rigQ:q.clone() };
 }
 function upgradeSoldier(m){
@@ -2015,6 +2016,12 @@ function upgradeSoldier(m){
   m.aR.sh.position.copy(m.shR); m.aL.sh.position.copy(m.shL); m.aR.el.position.set(0, -m.l1, 0); m.aL.el.position.set(0, -m.l1, 0);
   for (const [lg, s] of [[m.lR, 'R'], [m.lL, 'L']]){ lg.th.position.copy(rel('thigh' + s, 'hips')); lg.kn.position.set(0, -J['shin' + s].p.distanceTo(J['thigh' + s].p), 0); lg.an.position.set(0, -J['foot' + s].p.distanceTo(J['shin' + s].p), 0); }
   const root = THREE.SkeletonUtils.clone(src.root); m.g.add(root);
+  // a face of its own: one of three heads (hair, beard, headgear) and one of three skin tones
+  const v = SK.vn++ % 3, tone = (SK.vn * 7 + (m.pal === PAL_CT ? 1 : 0)) % SKIN_TONES.length, side = m.pal === PAL_CT ? 'CT' : 'T';
+  for (let k=0;k<3;k++){ const h = root.getObjectByName('head_' + k); if (h) h.visible = k === v; }
+  root.traverse(o => { if (!o.isMesh) return; const swap = mt => { if (mt.name !== 'skin') return mt; const key = side + tone;
+      return SK.tones[key] || (SK.tones[key] = (() => { const c = mt.clone(); c.color.setScalar(SKIN_TONES[tone]); return c; })()); };
+    o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material); });
   const b = {}; SK_BONES.forEach(n => b[n] = root.getObjectByName(n));
   m.sk = { root, b, J, rigQ:src.rigQ, rigQi:src.rigQ.clone().invert(), hipsPos:b.hips.position.clone(), inv:new THREE.Matrix4(), mm:new THREE.Matrix4(),
     p:{}, q:{}, t:{}, v1:new V3(), v2:new V3(), v3:new V3(), qa:new THREE.Quaternion(), sc:new V3() };

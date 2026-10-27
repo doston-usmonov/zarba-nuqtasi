@@ -78,15 +78,22 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 #feed .a{color:var(--atk)} #feed .d{color:var(--def)} #feed .w{color:var(--dim);font-weight:500;font-size:13px}
 #feed .hs{font-family:var(--f-display);font-size:11px;background:var(--bad);color:#1a0d0b;border-radius:3px;padding:0 4px}
 
-#cross{position:absolute;left:50%;top:50%;width:0;height:0;--g:4px;--c:#5cff8a}
+#cross{position:absolute;left:50%;top:50%}
+.xhair{width:0;height:0;--g:4px;--c:#5cff8a;--len:8px;--th:2px;--a:1;--ol:0 0 0 1px rgba(0,0,0,.6);--dot:none;opacity:var(--a)}
+.xSet{display:flex;flex-direction:column;gap:12px;border:1px solid var(--line);border-radius:8px;padding:12px}
+.set.stack{grid-template-columns:minmax(0,1fr);gap:6px}
+.xHead{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:600}
+.xPrev{position:relative;width:132px;height:84px;border-radius:6px;overflow:hidden;flex:none;background:linear-gradient(180deg,#c9d6e2 0 42%,#d9c49e 42% 70%,#b59a6e 70%);border:1px solid var(--line)}
+.xPrev .xhair{position:absolute;left:50%;top:50%}
 #pickTip{position:absolute;left:50%;top:calc(50% + 26px);transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:5px 11px 5px 7px;border-radius:6px;background:rgba(14,13,11,.62);color:var(--ink);font-size:13px;white-space:nowrap;pointer-events:none}
 #pickTip b{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--atk);color:#1d1606;font-family:var(--f-display);font-size:19px;line-height:1}
 #pickTip kbd{font-family:var(--f-display);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin:0 2px;font-size:12px}
-#cross i{position:absolute;background:var(--c);box-shadow:0 0 0 1px rgba(0,0,0,.55)}
-#cross i:nth-child(1){width:2px;height:8px;left:-1px;bottom:var(--g)}
-#cross i:nth-child(2){width:2px;height:8px;left:-1px;top:var(--g)}
-#cross i:nth-child(3){height:2px;width:8px;top:-1px;right:var(--g)}
-#cross i:nth-child(4){height:2px;width:8px;top:-1px;left:var(--g)}
+.xhair i{position:absolute;background:var(--c);box-shadow:var(--ol)}
+.xhair i:nth-child(1){width:var(--th);height:var(--len);left:calc(var(--th)/-2);bottom:var(--g)}
+.xhair i:nth-child(2){width:var(--th);height:var(--len);left:calc(var(--th)/-2);top:var(--g)}
+.xhair i:nth-child(3){height:var(--th);width:var(--len);top:calc(var(--th)/-2);right:var(--g)}
+.xhair i:nth-child(4){height:var(--th);width:var(--len);top:calc(var(--th)/-2);left:var(--g)}
+.xhair i:nth-child(5){display:var(--dot);width:var(--th);height:var(--th);left:calc(var(--th)/-2);top:calc(var(--th)/-2)}
 #hit{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;opacity:0}
 #hit::before,#hit::after{content:"";position:absolute;left:50%;top:0;width:2px;height:100%;margin-left:-1px;background:linear-gradient(to bottom,#fff 0 30%,transparent 30% 70%,#fff 70%)}
 #hit::before{transform:rotate(45deg)} #hit::after{transform:rotate(-45deg)}
@@ -185,6 +192,10 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .swatches{display:flex;gap:8px}
 .swatches button{width:26px;height:26px;border-radius:50%;border:2px solid transparent}
 .swatches button[aria-pressed="true"]{border-color:var(--ink)}
+.swatches{flex-wrap:wrap;align-items:center}
+.xPick{width:30px;height:30px;padding:0;border:2px solid var(--line);border-radius:50%;background:none;cursor:pointer;overflow:hidden}
+.xPick::-webkit-color-swatch-wrapper{padding:0} .xPick::-webkit-color-swatch{border:0;border-radius:50%} .xPick::-moz-color-swatch{border:0;border-radius:50%}
+.xPick.on{border-color:var(--ink)}
 .note{font-size:13px;color:var(--dim);margin:0;line-height:1.45}
 .warn{color:var(--bad)}
 
@@ -489,7 +500,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
   <div id="modeInfo" hidden></div>
   <div id="feed"></div>
   <div id="scope" hidden></div>
-  <div id="cross"><i></i><i></i><i></i><i></i></div>
+  <div id="cross" class="xhair"><i></i><i></i><i></i><i></i><i></i></div>
   <div id="pickTip" hidden><b>+</b><span id="pickTxt"></span></div>
   <div id="hit"></div>
   <div id="dmgDir"></div>
@@ -674,7 +685,18 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <label class="set" for="sSens">Sezgirlik <input type="range" id="sSens" min="0.3" max="6" step="0.05"><output id="oSens"></output></label>
         <label class="set" for="sFov">Ko'rish burchagi <input type="range" id="sFov" min="70" max="110" step="1"><output id="oFov"></output></label>
         <label class="set" for="sVol">Ovoz <input type="range" id="sVol" min="0" max="1" step="0.05"><output id="oVol"></output></label>
-        <div class="set"><span>Nishon rangi</span><div class="swatches" id="swatches"></div><span></span></div>
+        <div class="xSet">
+          <div class="xHead"><span>Nishon ko'rsatkichi</span><div class="xPrev" id="xPrev" aria-hidden="true"><div class="xhair" id="xPrevX"><i></i><i></i><i></i><i></i><i></i></div></div></div>
+          <div class="set stack"><span>Yurganda va otganda</span><div class="seg" data-set="xs"><button type="button" data-v="dyn">Kattalashadi</button><button type="button" data-v="fire">Faqat otganda</button><button type="button" data-v="static">Doim bir xil</button></div></div>
+          <label class="set" for="sXl">Uzunligi <input type="range" id="sXl" min="0" max="16" step="1"><output id="oXl"></output></label>
+          <label class="set" for="sXw">Qalinligi <input type="range" id="sXw" min="1" max="6" step="1"><output id="oXw"></output></label>
+          <label class="set" for="sXg">Oralig'i <input type="range" id="sXg" min="0" max="16" step="1"><output id="oXg"></output></label>
+          <label class="set" for="sXa">Shaffofligi <input type="range" id="sXa" min="0.3" max="1" step="0.05"><output id="oXa"></output></label>
+          <div class="set"><span>Markaz nuqta</span><div class="seg" data-set="xd"><button type="button" data-v="off">Yo'q</button><button type="button" data-v="on">Bor</button></div><span></span></div>
+          <div class="set"><span>Qora chegara</span><div class="seg" data-set="xo"><button type="button" data-v="on">Bor</button><button type="button" data-v="off">Yo'q</button></div><span></span></div>
+          <div class="set"><span>Rangi</span><div class="swatches" id="swatches"></div><span></span></div>
+          <div class="row" style="gap:8px"><button class="ghost sm" type="button" id="xReset">Asl holiga qaytarish</button></div>
+        </div>
         <div class="set"><span>Grafika</span><div class="seg" data-set="gfx"><button type="button" data-v="auto">Avto</button><button type="button" data-v="min">Juda past</button><button type="button" data-v="low">Past</button><button type="button" data-v="mid">O'rta</button><button type="button" data-v="high">Yuqori</button></div><span></span></div>
         <div class="set"><span>Diktor ovozi</span><div class="seg" data-set="vo"><button type="button" data-v="on">Yoqilgan</button><button type="button" data-v="off">O'chiq</button></div><span></span></div>
         <div class="set"><span>Killcam</span><div class="seg" data-set="kc"><button type="button" data-v="on">Ko'rsatish</button><button type="button" data-v="off">O'chiq</button></div><span></span></div>
@@ -828,8 +850,17 @@ const KB = (desk, touch) => isTouch ? touch : desk;
 
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
-const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa', mode:'comp', kc:'on', vo:'on', trainW:'rifle', dmTeam:false }, loadSet());
+const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', xs:'dyn', xl:8, xw:2, xg:4, xd:'off', xo:'on', xa:1, diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa', mode:'comp', kc:'on', vo:'on', trainW:'rifle', dmTeam:false }, loadSet());
 function saveSet(){ try { localStorage.setItem('zn-set', JSON.stringify(SET)); } catch(e){} }
+const XH_DEF = { xs:'dyn', xl:8, xw:2, xg:4, xd:'off', xo:'on', xa:1, xc:'#5cff8a' };
+// crosshair look → CSS variables on the HUD crosshair and the settings preview (the gap is set every frame in render)
+function xhairApply(){
+  const c = /^#[0-9a-f]{6}$/i.test(SET.xc) ? SET.xc : '#5cff8a', len = clamp(+SET.xl || 0, 0, 16), th = clamp(+SET.xw || 2, 1, 6), a = clamp(+SET.xa || 1, .3, 1);
+  ['cross', 'xPrevX'].forEach(id => { const el = document.getElementById(id); if (!el) return; const st = el.style;
+    st.setProperty('--c', c); st.setProperty('--len', len + 'px'); st.setProperty('--th', th + 'px'); st.setProperty('--a', a);
+    st.setProperty('--ol', SET.xo === 'off' ? 'none' : '0 0 0 1px rgba(0,0,0,.6)'); st.setProperty('--dot', SET.xd === 'on' ? 'block' : 'none'); });
+  const p = document.getElementById('xPrevX'); if (p) p.style.setProperty('--g', clamp(+SET.xg || 0, 0, 16) + 'px');
+}
 const DIFFS = {
   easy:   { react:.85, acc:.18, hs:.07, turn:4.0, defuse:10 },
   normal: { react:.46, acc:.30, hs:.15, turn:6.5, defuse:7 },
@@ -3940,8 +3971,17 @@ syncSegs();
   bind('sFov', 'fov', v => v + '°', resize);
   bind('sVol', 'vol', v => Math.round(v*100) + '%', () => { if (master) master.gain.value = SET.vol; });
   bind('sVoice', 'vvol', v => Math.round(v*100) + '%', () => VOICE.peers.forEach(v => { if (v.audio) v.audio.volume = clamp(SET.vvol, 0, 1); }));
-  const sw = $('swatches'); ['#5cff8a','#ffe14a','#4ae3ff','#ffffff','#ff5bd1'].forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.style.background = c; b.setAttribute('aria-label', 'Nishon rangi ' + c); b.addEventListener('click', () => { SET.xc = c; saveSet(); syncXc(); }); sw.appendChild(b); });
-  function syncXc(){ [...sw.children].forEach(b => b.setAttribute('aria-pressed', b.style.background && rgbHex(b.style.background) === SET.xc.toLowerCase() ? 'true' : 'false')); H.cross.style.setProperty('--c', SET.xc); }
+  // crosshair look: same variables on the HUD crosshair and the little preview
+  bind('sXl', 'xl', v => v + ' px', xhairApply); bind('sXw', 'xw', v => v + ' px', xhairApply); bind('sXg', 'xg', v => v + ' px', xhairApply);
+  bind('sXa', 'xa', v => Math.round(v*100) + '%', xhairApply);
+  SEG_HOOK.xd = SEG_HOOK.xo = SEG_HOOK.xs = xhairApply;
+  $('xReset').addEventListener('click', () => { Object.assign(SET, XH_DEF); saveSet(); ['Xl','Xw','Xg','Xa'].forEach(k => { const el = $('s' + k); el.value = SET['x' + k[1].toLowerCase()]; el.dispatchEvent(new Event('input')); }); syncSegs(); syncXc(); xhairApply(); });
+  const sw = $('swatches'); ['#5cff8a','#ffe14a','#4ae3ff','#ffffff','#ff5bd1','#ff4040'].forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.style.background = c; b.setAttribute('aria-label', 'Nishon rangi ' + c); b.addEventListener('click', () => { SET.xc = c; saveSet(); syncXc(); }); sw.appendChild(b); });
+  // any colour: the last swatch is a colour picker
+  const pick = document.createElement('input'); pick.type = 'color'; pick.className = 'xPick'; pick.setAttribute('aria-label', "Boshqa rang tanlash"); pick.title = 'Boshqa rang';
+  pick.addEventListener('input', () => { SET.xc = pick.value; saveSet(); syncXc(); }); sw.appendChild(pick);
+  function syncXc(){ [...sw.querySelectorAll('button')].forEach(b => b.setAttribute('aria-pressed', b.style.background && rgbHex(b.style.background) === SET.xc.toLowerCase() ? 'true' : 'false'));
+    if (/^#[0-9a-f]{6}$/i.test(SET.xc)) pick.value = SET.xc; pick.classList.toggle('on', ![...sw.querySelectorAll('button')].some(b => rgbHex(b.style.background) === SET.xc.toLowerCase())); xhairApply(); }
   function rgbHex(s){ const m = s.match(/\d+/g); if (!m) return s; return '#' + m.slice(0,3).map(n => (+n).toString(16).padStart(2,'0')).join(''); }
   syncXc();
 })();
@@ -5433,9 +5473,10 @@ function render(dt){
 
   // crosshair gap
   if (inGame() && player.alive){
-    const w = curW(); let gap = 4;
-    if (w.spread !== undefined){ gap = 3 + inaccuracy(w)*520 + Math.min(player.recoil, 8)*1.6; }
-    H.cross.style.setProperty('--g', clamp(gap, 3, 48).toFixed(1) + 'px');
+    const w = curW(), base = clamp(+SET.xg || 0, 0, 16); let gap = base;
+    if (w.spread !== undefined && SET.xs !== 'static'){ const kick = Math.min(player.recoil, 8)*1.6;
+      gap = SET.xs === 'fire' ? base + kick : base - 1 + inaccuracy(w)*520 + kick; }
+    H.cross.style.setProperty('--g', clamp(gap, 0, 48).toFixed(1) + 'px');
     H.cross.style.display = (w.kind === 'sniper' || scoped) ? 'none' : '';
   }
 

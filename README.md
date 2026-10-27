@@ -24,7 +24,8 @@ zarba-server/
 ├── server_test.go     testlar (go test ./...)
 ├── web/index.html     o'yinning o'zi
 ├── web/vo/           o'zbekcha diktor ovozlari (ElevenLabs bilan yozilgan, 13 ta qisqa mp3)
-├── web/vendor/        three.js r128 (CDN'ga bog'liq emas)
+├── web/models/        askarlar 3D modellari (.glb, Blender'da yasalgan: tools/soldier.py)
+├── web/vendor/        three.js r128, GLTFLoader va SkeletonUtils (CDN'ga bog'liq emas)
 ├── Dockerfile
 ├── docker-compose.yml
 ├── deploy/            nginx namunasi, deploy va avtomatik yangilanish skriptlari
@@ -182,6 +183,8 @@ Bosh sahifada **ochiq o'yinlar ro'yxati** bor (har 5 soniyada yangilanadi, `GET 
 | Qirg'iy-50 | snayper | $4750 | tanaga bir o'qda |
 
 Drobovik o'qi serverga bitta tegish sifatida yuboriladi (nishonga tekkan saochmalar soni bilan), server zarar chegarasini saochmalar soniga qarab tekshiradi.
+
+**Askarlar modeli.** Hujumchi va himoyachi Blender'da yasalgan (`tools/soldier.py`, `pip install bpy` bilan ishlaydi): bitta yaxlit, silliq tana, 17 suyakli skelet, kamuflyaj teksturasi; 12,7 va 14,8 ming uchburchak. Qayta yasash: `python3 tools/soldier.py T web/models/soldier_T.glb preview.png` (CT uchun ham shunday). O'yinda modelning skeleti o'yin harakatlariga bog'lanadi: yurish, cho'kkalash, bosh va gavda harakati, qo'llar esa IK bilan qurol dastasiga. O'q tegadigan zonalar o'zgarmagan. Sozlamalarda grafika «past» bo'lsa, oddiy (yengil) modellar ishlatiladi.
 
 **Xona egasi** — o'yinni yaratgan o'yinchi. U chiqib ketsa, egalik eng oldin kirgan keyingi o'yinchiga o'tadi. Ega o'yin ichida Esc (telefonda «II») menyusidagi «Xona» bo'limida:
 - bot qo'shadi: hujumga yoki himoyaga, oson / o'rta / qiyin (xonada ko'pi bilan 10 ta bot);

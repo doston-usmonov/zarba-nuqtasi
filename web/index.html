@@ -727,6 +727,8 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 </section>
 
 <script src="/vendor/three.min.js"></script>
+<script src="/vendor/GLTFLoader.js"></script>
+<script src="/vendor/SkeletonUtils.js"></script>
 <script>
 (function(){
 "use strict";
@@ -1670,6 +1672,7 @@ function buildVM(){
 let vmTeam = null;
 function setVMTeam(team){ const pal = team === 'CT' ? PAL_CT : PAL_T; palMats(pal); VMM.sleeve.map = pal._camo; VMM.sleeve.needsUpdate = true; vmTeam = team; }
 buildVM(); setVMTeam('T');
+setTimeout(loadSoldierModels, 0);
 
 /* ---------- third-person soldiers ---------- */
 function limbGeo(rt, rb, len){ const k = 'lm' + [rt,rb,len].join(); if (geoCache[k]) return geoCache[k]; const g = new THREE.CylinderGeometry(rt, rb, len, 14, 2); g.translate(0, -len/2, 0); return geoCache[k] = g; }
@@ -1777,13 +1780,93 @@ function buildSoldier(pal){
   const lL = leg(-1), lR = leg(1);
   segs.forEach(mergeSegment);
   const gunHold = new THREE.Group(); torso.add(gunHold);
-  const m = { g, hips, torso, head, aR, aL, lL, lR, gunHold, guns:{}, cur:null, flash:null, pal };
+  const m = { g, hips, torso, head, aR, aL, lL, lR, gunHold, guns:{}, cur:null, flash:null, pal, segs };
   setSoldierWeapon(m, 'rifle');
+  const now = performance.now(); SK.all = SK.all.filter(x => x.g.parent || now - x.t0 < 5000); m.t0 = now; SK.all.push(m);
+  if (SK.ready) upgradeSoldier(m);
   return m;
 }
-function solveArm(a, S, T, pole){
-  const d = T.clone().sub(S), len = Math.min(d.length(), ARM_L1 + ARM_L2 - .002), dn = d.normalize();
-  const x = (ARM_L1*ARM_L1 - ARM_L2*ARM_L2 + len*len)/(2*len), h = Math.sqrt(Math.max(0, ARM_L1*ARM_L1 - x*x));
+
+/* ---------- skinned soldiers (modelled and rigged in Blender: tools/soldier.py) ----------
+   The jointed body above stays as an invisible "proxy": walking, crouching and the arm IK keep posing it exactly as
+   before; every pose is then copied onto the skeleton of the smooth skinned model. Spine, neck, head and feet copy
+   the proxy's rotations; arms and legs are aimed from the proxy's joint positions, so the hands land on the gun. */
+const SOLDIER_GLB = {};
+const SK = { ready:false, src:{}, all:[] };
+const SK_BONES = ['hips','spine','chest','neck','head','upperarmR','forearmR','handR','upperarmL','forearmL','handL','thighR','shinR','footR','thighL','shinL','footL'];
+function loadSoldierModels(){
+  if (!THREE.GLTFLoader || !THREE.SkeletonUtils || SET.gfx === 'low') return;
+  const loader = new THREE.GLTFLoader();
+  const one = side => new Promise((ok, no) => {
+    const d = SOLDIER_GLB[side];
+    if (d){ const raw = atob(d.slice(d.indexOf(',') + 1)), bin = new Uint8Array(raw.length); for (let i=0;i<raw.length;i++) bin[i] = raw.charCodeAt(i); loader.parse(bin.buffer, '', ok, no); }
+    else loader.load('/models/soldier_' + side + '.glb', ok, undefined, no);
+  });
+  Promise.all([one('T'), one('CT')]).then(([t, c]) => {
+    SK.src.T = prepSoldier(t.scene); SK.src.CT = prepSoldier(c.scene); SK.ready = true;
+    SK.all.forEach(upgradeSoldier);
+  }).catch(e => console.warn('askar modellari yuklanmadi', e));
+}
+function prepSoldier(root){
+  root.updateMatrixWorld(true);
+  const J = {}, q = new THREE.Quaternion(), p = new V3(), sc = new V3();
+  SK_BONES.forEach(n => { const b = root.getObjectByName(n); if (!b) return; b.matrixWorld.decompose(p, q, sc); J[n] = { p:p.clone(), q:q.clone(), dir:new V3(0, 1, 0).applyQuaternion(q) }; });
+  const rig = root.getObjectByName('hips').parent; rig.matrixWorld.decompose(p, q, sc);
+  root.traverse(o => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false;
+    const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach(mt => { mt.envMapIntensity = .5; if (mt.name === 'skin') mt.color.setScalar(.82); }); } });
+  return { root, J, rigQ:q.clone() };
+}
+function upgradeSoldier(m){
+  if (m.sk || !SK.ready) return;
+  const src = SK.src[m.pal === PAL_CT ? 'CT' : 'T'], J = src.J; if (!J.hips) return;
+  // the old meshes go away (the gun in the hands stays)
+  m.segs.forEach(sg => sg.children.forEach(o => { if (o.isMesh) o.visible = false; }));
+  // the proxy takes the model's proportions
+  const rel = (a, b) => J[a].p.clone().sub(J[b].p);
+  m.hips.position.copy(J.hips.p); m.hipY = J.hips.p.y;
+  m.torso.position.copy(rel('spine', 'hips')); m.head.position.copy(rel('head', 'spine'));
+  m.l1 = J.forearmR.p.distanceTo(J.upperarmR.p); m.lw = J.handR.p.distanceTo(J.forearmR.p); m.l2 = m.lw + .055;
+  m.shR = rel('upperarmR', 'spine'); m.shL = rel('upperarmL', 'spine');
+  m.aR.sh.position.copy(m.shR); m.aL.sh.position.copy(m.shL); m.aR.el.position.set(0, -m.l1, 0); m.aL.el.position.set(0, -m.l1, 0);
+  for (const [lg, s] of [[m.lR, 'R'], [m.lL, 'L']]){ lg.th.position.copy(rel('thigh' + s, 'hips')); lg.kn.position.set(0, -J['shin' + s].p.distanceTo(J['thigh' + s].p), 0); lg.an.position.set(0, -J['foot' + s].p.distanceTo(J['shin' + s].p), 0); }
+  const root = THREE.SkeletonUtils.clone(src.root); m.g.add(root);
+  const b = {}; SK_BONES.forEach(n => b[n] = root.getObjectByName(n));
+  m.sk = { root, b, J, rigQ:src.rigQ, rigQi:src.rigQ.clone().invert(), hipsPos:b.hips.position.clone(), inv:new THREE.Matrix4(), mm:new THREE.Matrix4(),
+    p:{}, q:{}, t:{}, v1:new V3(), v2:new V3(), v3:new V3(), qa:new THREE.Quaternion(), sc:new V3() };
+  SK_BONES.forEach(n => { m.sk.t[n] = new THREE.Quaternion(); });
+  ['hips','torso','head','shR','elR','shL','elL','thR','knR','anR','thL','knL','anL'].forEach(n => { m.sk.p[n] = new V3(); m.sk.q[n] = new THREE.Quaternion(); });
+  const id = m.cur, hd = id && m.guns[id], fin = hd ? hd.userData.fin : ''; m.cur = null; setSoldierWeapon(m, id || 'rifle', fin);
+  retarget(m);
+}
+function retarget(m){
+  const k = m.sk, J = k.J, T = k.t;
+  m.g.updateMatrixWorld(true); k.inv.copy(m.g.matrixWorld).invert();
+  const grab = (n, o) => { k.mm.multiplyMatrices(k.inv, o.matrixWorld); k.mm.decompose(k.p[n], k.q[n], k.sc); };
+  grab('hips', m.hips); grab('torso', m.torso); grab('head', m.head);
+  grab('shR', m.aR.sh); grab('elR', m.aR.el); grab('shL', m.aL.sh); grab('elL', m.aL.el);
+  grab('thR', m.lR.th); grab('knR', m.lR.kn); grab('anR', m.lR.an); grab('thL', m.lL.th); grab('knL', m.lL.kn); grab('anL', m.lL.an);
+  // model-space targets
+  const copyRot = (bn, pn) => T[bn].copy(k.q[pn]).multiply(J[bn].q);
+  const aim = (bn, from, to) => { k.v1.subVectors(to, from).normalize(); k.qa.setFromUnitVectors(J[bn].dir, k.v1); T[bn].copy(k.qa).multiply(J[bn].q); };
+  copyRot('hips', 'hips'); copyRot('spine', 'torso'); copyRot('chest', 'torso'); copyRot('neck', 'torso'); copyRot('head', 'head');
+  for (const s of ['R', 'L']){
+    const E = k.p['el' + s]; k.v2.set(0, -m.lw, 0).applyQuaternion(k.q['el' + s]).add(E);   // wrist
+    aim('upperarm' + s, k.p['sh' + s], E); aim('forearm' + s, E, k.v2);
+    T['hand' + s].copy(T['forearm' + s]).multiply(k.qa.copy(J['forearm' + s].q).invert()).multiply(J['hand' + s].q);
+    aim('thigh' + s, k.p['th' + s], k.p['kn' + s]); aim('shin' + s, k.p['kn' + s], k.p['an' + s]); copyRot('foot' + s, 'an' + s);
+  }
+  // to local rotations, parents first
+  const set = (bn, parentQ) => k.b[bn].quaternion.copy(k.qa.copy(parentQ).invert().multiply(T[bn]));
+  set('hips', k.rigQ); set('spine', T.hips); set('chest', T.spine); set('neck', T.chest); set('head', T.neck);
+  for (const s of ['R', 'L']){ set('upperarm' + s, T.chest); set('forearm' + s, T['upperarm' + s]); set('hand' + s, T['forearm' + s]);
+    set('thigh' + s, T.hips); set('shin' + s, T['thigh' + s]); set('foot' + s, T['shin' + s]); }
+  // the pelvis moves with the proxy (crouching, the walk bob)
+  k.v3.subVectors(k.p.hips, J.hips.p).applyQuaternion(k.rigQi); k.b.hips.position.copy(k.hipsPos).add(k.v3);
+}
+function solveArm(a, S, T, pole, L1, L2){
+  L1 = L1 || ARM_L1; L2 = L2 || ARM_L2;
+  const d = T.clone().sub(S), len = Math.min(d.length(), L1 + L2 - .002), dn = d.normalize();
+  const x = (L1*L1 - L2*L2 + len*len)/(2*len), h = Math.sqrt(Math.max(0, L1*L1 - x*x));
   const pl = pole.clone().sub(dn.clone().multiplyScalar(pole.dot(dn))).normalize();
   const E = S.clone().addScaledVector(dn, x).addScaledVector(pl, h), Tc = S.clone().addScaledVector(dn, len);
   a.sh.quaternion.setFromUnitVectors(new V3(0,-1,0), E.clone().sub(S).normalize());
@@ -1806,9 +1889,10 @@ function setSoldierWeapon(m, id, fn){
   const Gn = hd.userData.Gn, kind = holdOf(id), hp = HOLD[kind]; m.gunHold.position.copy(hp);
   if (kind === 'low') hd.rotation.set(.5, Math.PI, 0); else hd.rotation.set(0, Math.PI, 0);
   const rel = s => new V3(-(s.x - Gn.grip.x), s.y - Gn.grip.y, -(s.z - Gn.grip.z));
-  solveArm(m.aR, SH_R, hp.clone(), new V3(1, -1.2, -.25));
+  solveArm(m.aR, m.shR || SH_R, hp.clone(), new V3(1, -1.2, -.25), m.l1, m.l2);
   const tL = kind === 'low' ? new V3(-.24, .03, .07) : hp.clone().add(rel(kind === 'long' ? Gn.supportTP : Gn.support));
-  solveArm(m.aL, SH_L, tL, new V3(-1, -1.2, -.1));
+  solveArm(m.aL, m.shL || SH_L, tL, new V3(-1, -1.2, -.1), m.l1, m.l2);
+  if (m.sk) retarget(m);
 }
 // walk cycle, crouch and a little sway
 function poseSoldier(m, walk, moving, kneel){
@@ -1819,10 +1903,11 @@ function poseSoldier(m, walk, moving, kneel){
   // feet flat on the ground; while walking the trailing foot rolls onto its toes
   if (m.lL.an){ m.lL.an.rotation.x = -(m.lL.th.rotation.x + m.lL.kn.rotation.x) + (moving ? Math.max(0, s)*.35 : 0);
     m.lR.an.rotation.x = -(m.lR.th.rotation.x + m.lR.kn.rotation.x) + (moving ? Math.max(0, -s)*.35 : 0); }
-  m.hips.position.y = .95 - kneel*.38 + (moving ? Math.abs(Math.cos(walk))*.025 : 0);
+  m.hips.position.y = (m.hipY || .95) - kneel*.38 + (moving ? Math.abs(Math.cos(walk))*.025 : 0);
   m.hips.rotation.y = moving ? Math.sin(walk)*.06 : 0;
   m.torso.rotation.set(.07*mv + kneel*.18, moving ? -Math.sin(walk)*.1 : 0, 0);
   m.head.rotation.set(-.07*mv - kneel*.12, moving ? Math.sin(walk)*.05 : 0, 0);
+  if (m.sk) retarget(m);
 }
 
 /* ================= PLAYER ================= */
@@ -4549,7 +4634,7 @@ function touchFrame(){
   $('tDrop').hidden = !player.alive || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot];
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){

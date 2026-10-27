@@ -53,6 +53,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 
 ## 7. Kosmetika va yutuqlar
 - ✅ To'rtta yangi qurol: Chaqmoq (avtomatik to'pponcha), Bo'ron (drobovik), Tog' (pulemyot), Sayyod (yengil snayper) — serverda tekshiriladi, botlar ham ishlatadi
+- ✅ Blender'da yasalgan 3D askar modellari (yaxlit silliq tana, skelet, kamuflyaj), o'yin harakatlariga bog'langan
 - ✅ Personajlar odamga o'xshashroq: yuz (ko'z, qosh, burun, quloq, lab), soqol yoki dubulg'a va quloqchin, yumaloq tana va qo'l-oyoq, barmoqli qo'lqop, oyoq kiyimi yerga tekis turadi; har bir tana qismi bitta mesh qilib birlashtirilgan (kamroq draw call)
 - ✅ Raund MVP (eng ko'p o'ldirgan, bombani o'rnatgan yoki zararsizlantirgan), o'yin oxirida natijalar jadvali va o'yin MVP'si, killcam
 - ✅ XP va 40 ta daraja, har kuni 3 ta vazifa (Toshkent vaqti bilan yangilanadi)

@@ -940,6 +940,7 @@ func newPlainServer(t *testing.T, h *hub) (*httptest.Server, fs.FS) {
 		h.serve(ws, r.URL.Query().Get("room"), r.RemoteAddr+newID(), r.Host, nil, parseRoomOpts(r.URL.Query()))
 	})
 	mux.Handle("/api/rooms", http.HandlerFunc(h.roomsHandler))
+	mux.HandleFunc("GET /api/rooms/{code}", h.roomHandler)
 	mux.Handle("/", webHandler(sub, h))
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
@@ -1098,4 +1099,63 @@ func TestOfficialRooms(t *testing.T) {
 		w.c.Close()
 	}
 	waitFor("wingman bo'shadi", func() bool { r := find("karvon-wm"); return r.Humans == 0 && r.Bots == 0 })
+}
+
+// TestRoomBrowserAPI: /api/rooms dagi byMap va GET /api/rooms/{kod} (yopiq xona ham).
+func TestRoomBrowserAPI(t *testing.T) {
+	h := newHub(64, nil)
+	h.startOfficial(parseOfficialRooms("registon:comp:16"))
+	srv, _ := newPlainServer(t, h)
+	tc := newTestClient(srv.URL)
+	a := dialWS(t, tc, "zn-registon-comp")
+	defer a.c.Close()
+	a.send(map[string]any{"t": "p", "d": map[string]any{"nm": "Lochin", "tm": "T", "sq": "A", "hc": 1}})
+	p := dialWS(t, tc, "zn-yashirin&create=1&pub=0&map=saroy&mode=dm")
+	defer p.c.Close()
+	time.Sleep(150 * time.Millisecond)
+
+	_, body := tc.get(t, "/api/rooms")
+	bm, _ := body["byMap"].(map[string]any)
+	if len(bm) != len(mapOrder()) || bm["registon"] != float64(1) || bm["saroy"] != float64(1) || bm["qumtepa"] != float64(0) {
+		t.Fatalf("byMap: %v", bm)
+	}
+	for _, x := range body["rooms"].([]any) {
+		if x.(map[string]any)["code"] == "yashirin" {
+			t.Fatal("yopiq xona ro'yxatda ko'rinmasligi kerak")
+		}
+		if _, ok := x.(map[string]any)["region"]; !ok {
+			t.Fatal("region maydoni yo'q")
+		}
+	}
+
+	code, d := tc.get(t, "/api/rooms/registon-comp")
+	pl, _ := d["players"].([]any)
+	if code != 200 || d["official"] != true || d["map"] != "registon" || d["humans"] != float64(1) || len(pl) != 10 {
+		t.Fatalf("registon-comp: %d %v", code, d)
+	}
+	var me map[string]any
+	bots := 0
+	for _, x := range pl {
+		m := x.(map[string]any)
+		if m["bot"] == true {
+			bots++
+		} else {
+			me = m
+		}
+	}
+	if bots != 9 || me == nil || me["name"] != "Lochin" || me["team"] != "T" || me["k"] != float64(0) {
+		t.Fatalf("o'yinchilar: %v", pl)
+	}
+	if pl[0].(map[string]any)["team"] != "T" {
+		t.Fatalf("tartib: avval T: %v", pl)
+	}
+	// yopiq xona — kodi bilan ochiladi
+	if code, d := tc.get(t, "/api/rooms/yashirin"); code != 200 || d["map"] != "saroy" || d["mode"] != "dm" || len(d["players"].([]any)) != 1 {
+		t.Fatalf("yopiq xona: %d %v", code, d)
+	}
+	for _, c := range []string{"yoq-xona", "A..", "%3Cx%3E"} {
+		if code, _ := tc.get(t, "/api/rooms/"+c); code != 404 {
+			t.Errorf("%s: %d, kerak 404", c, code)
+		}
+	}
 }

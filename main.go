@@ -89,6 +89,7 @@ func main() {
 	})
 	a.routes(mux)
 	mux.HandleFunc("/api/rooms", h.roomsHandler)
+	mux.HandleFunc("GET /api/rooms/{code}", h.roomHandler)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		rooms, players := h.stats()
 		w.Header().Set("Content-Type", "application/json")

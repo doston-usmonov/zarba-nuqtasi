@@ -31,6 +31,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 ## 4. Matchmaking
 - ✅ Ochiq o'yinlar ro'yxati, ommaviy/yopiq xonalar, o'yinchilar chegarasi
 - ✅ Xona egasi: bot qo'shish/chiqarish, o'yinchini chiqarish
+- ✅ Server brauzeri: xarita kartochkalari (hozir nechta odam, «O'ynash»), filtrlar, xona oynasi (o'yinchilar va hisob), `GET /api/rooms/{kod}` — [docs/play-cs-uslubi.md](docs/play-cs-uslubi.md) 3-bosqich
 - ✅ Rasmiy xonalar (`OFFICIAL_ROOMS`): har doim ochiq, egasi yo'q, botlar odamlar soniga qarab qo'shiladi/chiqadi, bo'shasa xona qoladi — [docs/play-cs-uslubi.md](docs/play-cs-uslubi.md) 2-bosqich
 - ✅ Xona havolasi `/x/<xarita>/<kod>`: ochgan odam shu xonaga tushadi, messenjerlarda rasm va o'yinchilar soni bilan chiqadi (og: teglari), pauza menyusida «Havolani ulashish» — [docs/play-cs-uslubi.md](docs/play-cs-uslubi.md) 1-bosqich
 - [ ] Reytingga qarab navbat: "O'yin topish" tugmasi

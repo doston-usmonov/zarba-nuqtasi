@@ -158,7 +158,13 @@ Bitta IP manzildan bir vaqtda ko'pi bilan 8 ta ulanish qabul qilinadi. Bir o'yin
 
 ## Xonalar va botlar
 
-Bosh sahifada **ochiq o'yinlar ro'yxati** bor (har 5 soniyada yangilanadi, `GET /api/rooms`): kod, egasi, o'yinchilar va botlar soni, chegara, raund va hisob. «Kirish» tugmasi bilan qo'shilasiz.
+Bosh sahifadagi **server brauzeri** (har 5 soniyada yangilanadi, telefonda ham qulay):
+- **Xarita kartochkalari** — har xaritada hozir nechta odam o'ynayapti va «O'ynash» tugmasi: shu xaritadagi eng ko'p odamli, lekin to'lmagan xonaga kiradi (xarita bo'yicha hech qanday xona bo'lmasa — `<xarita>-ochiq` yaratiladi).
+- **Serverlar ro'yxati** — xarita rasmi, kod, rejim, o'yinchilar `odam+bot/chegara`, raund va hisob, holat (isinish / o'yin / tanaffus / to'la). Rasmiy xonalar tepada.
+- **Filtrlar** — xarita, rejim, «Bo'sh joyi bor», «Bo'sh xonalarni yashirish»; tanlov brauzerda saqlanadi.
+- Qatorni bossangiz darhol kirmaysiz — **xona oynasi** ochiladi: kim o'ynayapti (ism, klan tegi, jamoa, o'ldirish/o'lim), joriy hisob, «Kirish» va «Havolani nusxalash». Esc yoki «Yopish» — orqaga.
+
+API: `GET /api/rooms` → `{rooms:[…], byMap:{qumtepa:3, …}}` (har qatorda `official` va hozircha bo'sh `region` maydoni ham bor); `GET /api/rooms/{kod}` → ro'yxatdagi maydonlar + `players:[{name, tag, team, k, d, bot}]` — yopiq xona uchun ham ishlaydi (kodni bilgan ko'radi), xona bo'lmasa 404.
 
 **Rasmiy xonalar** (`OFFICIAL_ROOMS`) — har doim ochiq, ro'yxatning tepasida «RASMIY» belgisi bilan, odam bo'lmasa ham ko'rinadi: `registon-comp`, `qumtepa-dm`, `bozor-comp`, `saroy-gg`, `karvon-wm`. Kirgan odam hech qachon bo'sh xonaga tushmaydi: odam + bot soni `min(chegara, 10)` ga yetguncha o'rta darajadagi botlar qo'shiladi, har yangi odam kirganda bitta bot chiqadi, jamoalar teng saqlanadi (odam jamoa tanlagach, raundlar orasida bot boshqa jamoaga o'tadi). Hamma chiqib ketsa botlar ham chiqadi, xona o'z xaritasida boshidan boshlanadi va bo'sh turganda hech narsa hisoblamaydi. Egasi yo'q: bot qo'shish/chiqarish, chegara, ommaviylik va rejimni hech kim o'zgartira olmaydi; xaritani faqat o'yin oxiridagi ovoz almashtiradi (kod o'zgarmaydi). Bot qatnashgani uchun bu o'yinlar reytingga yozilmaydi — ular tez o'ynash uchun. Chegara botlarni emas, odamlarni sanaydi.
 

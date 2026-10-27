@@ -196,26 +196,35 @@ type roomListing struct {
 	Region   string `json:"region"` // hozircha bitta server; keyin ikkinchisi qo'shilsa kerak bo'ladi
 }
 
-// publicRooms: bosh sahifadagi ro'yxat uchun.
-func (h *hub) publicRooms() []roomListing {
+// listingLocked: ro'yxatdagi bitta qator (r.mu ushlangan holda).
+func (r *room) listingLocked() roomListing {
+	bots, humans := r.botCountLocked()
+	owner := ""
+	if o := r.clients[r.owner]; o != nil {
+		owner = cleanGuestName(o.info.Nm)
+	}
+	return roomListing{Code: strings.TrimPrefix(r.name, "zn-"), Owner: owner, Humans: humans, Bots: bots, Max: r.max, Map: r.gs.M, Mode: r.gs.modeID(),
+		Phase: r.gs.Ph, Round: r.gs.R, SA: r.gs.SA, SB: r.gs.SB, Fm: r.gs.Fm, Official: r.official != nil}
+}
+
+func (h *hub) roomList() []*room {
 	h.mu.Lock()
+	defer h.mu.Unlock()
 	rooms := make([]*room, 0, len(h.rooms))
 	for _, r := range h.rooms {
 		rooms = append(rooms, r)
 	}
-	h.mu.Unlock()
+	return rooms
+}
+
+// publicRooms: bosh sahifadagi ro'yxat uchun.
+func (h *hub) publicRooms() []roomListing {
 	out := []roomListing{}
-	for _, r := range rooms {
+	for _, r := range h.roomList() {
 		r.mu.Lock()
 		if r.pub {
-			bots, humans := r.botCountLocked()
-			owner := ""
-			if o := r.clients[r.owner]; o != nil {
-				owner = cleanGuestName(o.info.Nm)
-			}
-			if humans > 0 || r.official != nil {
-				out = append(out, roomListing{Code: strings.TrimPrefix(r.name, "zn-"), Owner: owner, Humans: humans, Bots: bots, Max: r.max, Map: r.gs.M, Mode: r.gs.modeID(),
-					Phase: r.gs.Ph, Round: r.gs.R, SA: r.gs.SA, SB: r.gs.SB, Fm: r.gs.Fm, Official: r.official != nil})
+			if l := r.listingLocked(); l.Humans > 0 || l.Official {
+				out = append(out, l)
 			}
 		}
 		r.mu.Unlock()
@@ -235,8 +244,93 @@ func (h *hub) publicRooms() []roomListing {
 	return out
 }
 
+// mapCounts: har xaritada hozir nechta odam o'ynayapti (yopiq xonalar ham — faqat son).
+func (h *hub) mapCounts() map[string]int {
+	out := map[string]int{}
+	for _, m := range mapOrder() {
+		out[m] = 0
+	}
+	for _, r := range h.roomList() {
+		r.mu.Lock()
+		_, humans := r.botCountLocked()
+		out[r.gs.M] += humans
+		r.mu.Unlock()
+	}
+	return out
+}
+
 func (h *hub) roomsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	json.NewEncoder(w).Encode(map[string]any{"rooms": h.publicRooms()})
+	json.NewEncoder(w).Encode(map[string]any{"rooms": h.publicRooms(), "byMap": h.mapCounts()})
+}
+
+// roomPlayer: xona oynasidagi o'yinchi.
+type roomPlayer struct {
+	Name string `json:"name"`
+	Tag  string `json:"tag,omitempty"` // klan tegi
+	Team string `json:"team"`          // T, CT yoki "" (hali tanlamagan)
+	K    int    `json:"k"`
+	D    int    `json:"d"`
+	Bot  bool   `json:"bot"`
+}
+
+type roomDetail struct {
+	roomListing
+	Players []roomPlayer `json:"players"`
+}
+
+// roomDetailLocked: ro'yxatdagi maydonlar + o'yinchilar (hisob joriy o'yindan).
+func (r *room) roomDetailLocked() roomDetail {
+	d := roomDetail{roomListing: r.listingLocked(), Players: []roomPlayer{}}
+	for _, c := range r.clients {
+		p := roomPlayer{Name: clientName(c), Team: c.info.Tm, Bot: c.bot != nil}
+		if s := r.st[c.id]; s != nil && r.stE == r.gs.E {
+			p.K, p.D = s.k, s.d
+		}
+		if len(c.accJSON) > 0 {
+			var a struct {
+				Cl string `json:"cl"`
+			}
+			if json.Unmarshal(c.accJSON, &a) == nil {
+				p.Tag = a.Cl
+			}
+		}
+		d.Players = append(d.Players, p)
+	}
+	sort.Slice(d.Players, func(i, j int) bool {
+		a, b := d.Players[i], d.Players[j]
+		if a.Team != b.Team {
+			return a.Team > b.Team // T, keyin CT, keyin tanlamaganlar
+		}
+		if a.K != b.K {
+			return a.K > b.K
+		}
+		return a.Name < b.Name
+	})
+	return d
+}
+
+// roomHandler: GET /api/rooms/{kod} — yopiq xona ham, kodi ma'lum bo'lsa.
+func (h *hub) roomHandler(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	code := req.PathValue("code")
+	if !roomName.MatchString("zn-" + code) {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "not_found"})
+		return
+	}
+	h.mu.Lock()
+	r := h.rooms["zn-"+code]
+	h.mu.Unlock()
+	if r == nil {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "not_found"})
+		return
+	}
+	r.mu.Lock()
+	d := r.roomDetailLocked()
+	r.mu.Unlock()
+	json.NewEncoder(w).Encode(d)
 }

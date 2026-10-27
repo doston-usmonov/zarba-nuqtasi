@@ -24,7 +24,7 @@ zarba-server/
 ├── server_test.go     testlar (go test ./...)
 ├── web/index.html     o'yinning o'zi
 ├── web/vo/           o'zbekcha diktor ovozlari (ElevenLabs bilan yozilgan, 13 ta qisqa mp3)
-├── web/models/        askarlar 3D modellari (.glb, Blender'da yasalgan: tools/soldier.py)
+├── web/models/        askarlar va qurollar 3D modellari (.glb, Blender'da yasalgan: tools/soldier.py, tools/weapons.py)
 ├── web/vendor/        three.js r128, GLTFLoader va SkeletonUtils (CDN'ga bog'liq emas)
 ├── Dockerfile
 ├── docker-compose.yml

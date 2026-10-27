@@ -1952,10 +1952,36 @@ function buildSoldier(pal){
    the proxy's rotations; arms and legs are aimed from the proxy's joint positions, so the hands land on the gun. */
 const SOLDIER_GLB = {};
 const SK = { ready:false, src:{}, all:[] };
+// guns modelled in Blender (tools/weapons.py): same gun space and anchors as GUNS, game materials swapped in by name
+const WEAPON_GLB = '';
+const GUN_GLB = {};
+function loadWeaponModels(loader){
+  const done = g => {
+    g.scene.updateMatrixWorld(true);
+    Object.keys(GUNS).forEach(id => { const n = g.scene.getObjectByName(id); if (!n) return;
+      n.traverse(o => { if (!o.isMesh) return; const ms = Array.isArray(o.material) ? o.material : [o.material];
+        const sw = ms.map(mt => GM[(mt.name || '').replace(/\.\d+$/, '')] || mt); o.material = Array.isArray(o.material) ? sw : sw[0]; o.castShadow = true; });
+      n.position.set(0, 0, 0); n.rotation.set(0, 0, 0); n.scale.set(1, 1, 1); GUN_GLB[id] = n; });
+    upgradeGuns();
+  };
+  if (WEAPON_GLB){ const raw = atob(WEAPON_GLB.slice(WEAPON_GLB.indexOf(',') + 1)), bin = new Uint8Array(raw.length); for (let i=0;i<raw.length;i++) bin[i] = raw.charCodeAt(i); loader.parse(bin.buffer, '', done, e => console.warn('qurol modellari', e)); }
+  else loader.load('/models/weapons.glb', done, undefined, e => console.warn('qurol modellari', e));
+}
+// swap the box-built guns for the Blender ones: the first-person view, every soldier's guns, dropped-gun prototypes
+function upgradeGuns(){
+  Object.keys(GUN_GLB).forEach(id => { const old = GUNS[id]; if (old._glb) return;
+    const a = old(); const f = () => { const G = new THREE.Group(); G.add(GUN_GLB[id].clone()); return { G, muzzle:a.muzzle.clone(), grip:a.grip.clone(), support:a.support.clone(), supportTP:a.supportTP.clone() }; };
+    f._glb = true; GUNS[id] = f; });
+  Object.values(VM).forEach(v => vmRoot.remove(v.g)); Object.keys(VM).forEach(k => delete VM[k]); buildVM(); if (vmTeam) setVMTeam(vmTeam); vmCur = null;
+  Object.keys(DROP_PROTO).forEach(k => delete DROP_PROTO[k]);
+  SK.all.forEach(m => { const cur = m.cur, hd = cur && m.guns[cur], fin = hd ? hd.userData.fin : '';
+    Object.values(m.guns).forEach(h => m.gunHold.remove(h)); m.guns = {}; m.cur = null; if (cur) setSoldierWeapon(m, cur, fin); });
+}
 const SK_BONES = ['hips','spine','chest','neck','head','upperarmR','forearmR','handR','upperarmL','forearmL','handL','thighR','shinR','footR','thighL','shinL','footL'];
 function loadSoldierModels(){
   if (!THREE.GLTFLoader || !THREE.SkeletonUtils || SET.gfx === 'low') return;
   const loader = new THREE.GLTFLoader();
+  loadWeaponModels(loader);
   const one = side => new Promise((ok, no) => {
     const d = SOLDIER_GLB[side];
     if (d){ const raw = atob(d.slice(d.indexOf(',') + 1)), bin = new Uint8Array(raw.length); for (let i=0;i<raw.length;i++) bin[i] = raw.charCodeAt(i); loader.parse(bin.buffer, '', ok, no); }

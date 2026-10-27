@@ -10,6 +10,15 @@
 <meta name="description" content="Brauzerdagi taktik otishma: botlarga qarshi yoki do'stlar bilan onlayn.">
 <style>[hidden]{display:none!important}img{max-width:100%}</style>
 <title>Zarba Nuqtasi</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Zarba Nuqtasi">
+<meta property="og:title" content="Zarba Nuqtasi">
+<meta property="og:description" content="Brauzerdagi taktik otishma: botlarga qarshi yoki do'stlar bilan onlayn.">
+<meta property="og:image" content="/og/qumtepa.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="/">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap">
@@ -637,6 +646,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
       <h2>O'yin to'xtatildi</h2>
       <p class="note">Davom etish uchun tugmani bosing — sichqoncha yana o'yinga ulanadi.</p>
       <div class="row"><button class="cta" id="resumeBtn" type="button">Davom etish</button><button class="ghost" id="quitBtn" type="button">Bosh menyu</button></div>
+      <button class="ghost sm" id="shareBtn" type="button" hidden>Havolani ulashish</button>
       <div class="panel" id="pauseFriends" hidden><h3>Do'stlarni chaqirish</h3><div class="socList" id="pfList"></div></div>
       <div class="panel" id="adminPanel" hidden>
         <h3>Xona</h3>
@@ -3629,12 +3639,13 @@ canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('wheel', e => { if (!inGame() || S.paused || S.buyOpen) return; e.preventDefault(); const order = [1,2,3,4,5].filter(s => s === 5 ? player.bomb : s === 4 ? nadeTotal() > 0 : !!player.inv[s]); let i = order.indexOf(player.slot); i = (i + (e.deltaY > 0 ? 1 : -1) + order.length) % order.length; switchSlot(order[i]); }, { passive:false });
 
 /* ================= MENUS ================= */
-function pauseGame(){ S.paused = true; mouseL = mouseR = false; $('pause').hidden = false; $('pauseSettings').appendChild($('settingsPanelInner')); renderAdmin(); pauseFriends(); if (ACC.me && MODE === 'online') socLoad(); }
+function pauseGame(){ S.paused = true; mouseL = mouseR = false; $('pause').hidden = false; $('shareBtn').hidden = !(LINK.on && MODE === 'online' && NET.room); $('pauseSettings').appendChild($('settingsPanelInner')); renderAdmin(); pauseFriends(); if (ACC.me && MODE === 'online') socLoad(); }
 function resumeGame(){ S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); requestLock(); canvas.focus({ preventScroll:true }); }
 $('resumeBtn').addEventListener('click', () => { goFullscreen(); resumeGame(); });
 $('quitBtn').addEventListener('click', () => { S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); toMenu(); });
 function toMenu(){ if (MODE === 'online') leaveOnline(); clearNades(); trainClearMarks(); clearDrops(); setTimeout(() => { if (S.phase === 'menu'){ setMap(SET.map); placeBackdrop(); } }, 0); S.phase = 'menu'; $('hud').hidden = true; $('dead').hidden = true; $('over').hidden = true; $('menu').hidden = false; showBoard(false); if (document.pointerLockElement) document.exitPointerLock(); bots.forEach(b => { b.m.g.visible = true; }); }
 $('onlineBtn').addEventListener('click', () => { joinOnline(false); });
+$('shareBtn').addEventListener('click', () => linkShare());
 $('createBtn').addEventListener('click', () => { joinOnline(true); });
 $('mapSel').value = SET.map; $('newMap').value = SET.map;
 $('mapSel').addEventListener('change', () => { SET.map = $('mapSel').value; saveSet(); setMap(SET.map); });
@@ -3799,7 +3810,8 @@ function wsJoin(name, opts){
   return new Promise((resolve, reject) => {
     opts = opts || {};
     const url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?room=' + encodeURIComponent(name) +
-      (opts.create ? '&create=1&pub=' + (opts.pub ? 1 : 0) + '&max=' + (opts.max|0) + '&map=' + encodeURIComponent(opts.map || 'qumtepa') + '&mode=' + encodeURIComponent(opts.mode || 'comp') : '');
+      (opts.create ? '&create=1&pub=' + (opts.pub ? 1 : 0) + '&max=' + (opts.max|0) + '&map=' + encodeURIComponent(opts.map || 'qumtepa') + '&mode=' + encodeURIComponent(opts.mode || 'comp')
+        : opts.map ? '&map=' + encodeURIComponent(opts.map) + (opts.mode ? '&mode=' + encodeURIComponent(opts.mode) : '') : '');
     const others = new Map(); let ws = null, me = null, conn = false, closed = false, mine = {}, snap = [], dirty = true, settled = false, tries = 0;
     const api = {
       peers(){ if (dirty){ dirty = false; const a = []; if (me) a.push({ peer:me, presence:mine, sameTab:true, isMe:true, kind:'viewer', guest:false, by:null });
@@ -4304,7 +4316,7 @@ function netBoom(){
   if (player.alive){ const d = player.pos.distanceTo(bomb.pos); if (d < 25){ let dmg = 520*Math.pow(1 - d/25, 2.3); if (player.armor > 0) dmg *= .78; player.hp -= dmg; vignT = .8; if (player.hp <= 0) playerDie(null, W.bomb, false); } }
 }
 function clientPhase(dt){
-  const g = NET.g; if (!g || !player.team) return;
+  const g = NET.g; if (g && LINK.on) linkSync(); if (!g || !player.team) return;
   if (g.m && g.m !== MAP_ID && setMap(g.m)){   // the room switched maps: rebuild and stand on the new map
     hint('Xarita: ' + MAP.name, 2500);
     if (g.ph === 'warmup') respawnWarm(); else if (respawnMode()) modeSpawn(); else if (player.alive) spawnAt(player.team); else { spawnAt(player.team); player.deathPos.set(player.pos.x, 3, player.pos.z); }
@@ -4462,7 +4474,8 @@ async function joinOnline(create, codeOverride){
   NET.name = cleanName($('nick').value); NET.code = cleanCode(raw); $('nick').value = NET.name; SET.nick = NET.name;
   if (create) $('newCode').value = NET.code; else { $('roomCode').value = NET.code; SET.room = NET.code; }
   saveSet();
-  const opts = create ? { create:true, pub:$('newPub').value === '1', max:+$('newMax').value || 0, map:$('newMap').value, mode:$('newMode').value } : null;
+  const deep = !create && LINK.want && LINK.want.code === NET.code ? LINK.want : null;   // opened from /x/<map>/<code>: create it on that map if it isn't there
+  const opts = create ? { create:true, pub:$('newPub').value === '1', max:+$('newMax').value || 0, map:$('newMap').value, mode:$('newMode').value } : deep ? { map:deep.map, mode:deep.mode } : null;
   btn.disabled = true; note.textContent = 'Ulanmoqda…';
   const room = await roomP;
   if (!room){ btn.disabled = false; note.textContent = "Onlayn rejim bu ko'rinishda ishlamaydi. Sahifani claude.ai'da hisobingizga kirib oching; do'stlaringiz ham artifakt ulashilgan hisob bilan kirishi kerak."; return; }
@@ -4476,8 +4489,8 @@ async function joinOnline(create, codeOverride){
       const why = { room_exists:"Bu kodli o'yin allaqachon bor. Boshqa kod tanlang yoki unga «Kirish» orqali qo'shiling.", kicked:"Xona egasi sizni chiqarib yuborgan — 10 daqiqadan keyin qayta urinib ko'ring.", room_full:"Xona to'la. Boshqa o'yinni tanlang yoki yangisini yarating.", already_in_room:"Bu hisob bilan siz allaqachon shu xonadasiz (boshqa oyna yoki qurilmada).", too_many_connections:"Bu manzildan juda ko'p ulanish bor." }[e && e.code];
       btn.disabled = false; note.textContent = why || ("Xonaga ulanib bo'lmadi (" + ((e && e.code) || 'xato') + "). Birozdan keyin qayta urinib ko'ring."); return; }
   }
-  btn.disabled = false; note.textContent = DEFAULT_NOTE;
-  goOnline(named);
+  btn.disabled = false; note.textContent = DEFAULT_NOTE; LINK.want = null;
+  goOnline(named); linkSync();
   if (voiceMode() && voiceAvailable()) voiceMic();
 }
 function goOnline(named){
@@ -4499,6 +4512,40 @@ function leaveOnline(){
   if (NET.room){ const r = NET.room; NET.room = null; r.leave().catch(() => {}); }
   NET.remotes.forEach(removeRemote); NET.remotes.clear(); NET.g = null;
   MODE = 'bots'; player.team = 'T'; bots.forEach(b => b.m.g.visible = true); $('teamTag').hidden = true; bomb.mesh.visible = false; bomb.planted = false;
+  linkSync();
+}
+
+/* ---------- room links: https://<host>/x/<map>/<code> ----------
+   Opening one drops you straight into that room (created on that map if nobody is there yet). While you're in a room the
+   address bar keeps showing its link — current map included — so copying it from the browser works too. */
+const LINK = { want:null, on:!IN_ARTIFACT && /^https?:$/.test(location.protocol) && !!(window.history && history.replaceState) };
+function linkParse(){
+  const m = /^\/x\/([a-z0-9]+)\/([a-z0-9][a-z0-9_.-]{0,39})\/?$/.exec(location.pathname);
+  if (!m || !MAPS[m[1]]) return null;
+  const md = new URLSearchParams(location.search).get('mode');
+  return { map:m[1], code:m[2], mode:md && /^[a-z]{2,4}$/.test(md) ? md : '' };
+}
+const linkPath = () => '/x/' + (NET.g && MAPS[NET.g.m] ? NET.g.m : MAP_ID) + '/' + encodeURIComponent(NET.code);
+function linkSync(){
+  if (!LINK.on) return;
+  const want = MODE === 'online' && NET.room ? linkPath() : LINK.want ? location.pathname : '/';
+  if (location.pathname !== want){ try { history.replaceState(null, '', want); } catch(e){} }
+}
+async function linkShare(){
+  const url = location.origin + linkPath(), title = MAP.name + ' — ' + NET.code + ' · Zarba Nuqtasi';
+  if (navigator.share){ try { await navigator.share({ title, text:"Men bilan o'ynang:", url }); return; } catch(e){ if (e && e.name === 'AbortError') return; } }
+  try { await navigator.clipboard.writeText(url); hint('Nusxalandi: ' + url, 3000); }
+  catch(e){ hint('Havola: ' + url, 6000); }
+}
+function linkBoot(){
+  const l = LINK.on && linkParse(); if (!l) return;
+  LINK.want = l; $('roomCode').value = l.code;
+  const nm = cleanName($('nick').value);
+  if ($('nick').value.trim() && nm){ joinOnline(false, l.code); return; }
+  // no name yet: point at the name field, the join button finishes it
+  const p = $('onlinePanel'); if (p && p.scrollIntoView) p.scrollIntoView({ block:'center' });
+  $('onlineNote').textContent = '«' + l.code + '» xonasiga (' + MAPS[l.map].name + ') kirish uchun ismingizni yozing va «Kirish» tugmasini bosing.';
+  setTimeout(() => { try { $('nick').focus(); } catch(e){} }, 50);
 }
 
 
@@ -4869,7 +4916,8 @@ function touchFrame(){
   $('tDrop').hidden = !player.alive || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot];
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+setTimeout(linkBoot, 0);
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){

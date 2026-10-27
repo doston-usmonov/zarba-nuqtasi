@@ -31,6 +31,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 ## 4. Matchmaking
 - ✅ Ochiq o'yinlar ro'yxati, ommaviy/yopiq xonalar, o'yinchilar chegarasi
 - ✅ Xona egasi: bot qo'shish/chiqarish, o'yinchini chiqarish
+- ✅ Xona havolasi `/x/<xarita>/<kod>`: ochgan odam shu xonaga tushadi, messenjerlarda rasm va o'yinchilar soni bilan chiqadi (og: teglari), pauza menyusida «Havolani ulashish» — [docs/play-cs-uslubi.md](docs/play-cs-uslubi.md) 1-bosqich
 - [ ] Reytingga qarab navbat: "O'yin topish" tugmasi
 - ✅ Deathmatch (har kim har kimga yoki jamoa jamoaga — xona yaratishda tanlanadi; qayta tug'ilish, 6 daqiqa) va Qurol poygasi (snayperdan boshlab har 2 o'ldirishda kuchsizroq qurol, oxiri pichoq); hisobni server yuritadi
 - ✅ Wingman (2 ga 2, faqat A nuqta, MR8) va Retake (bomba raund boshidan o'rnatilgan, qurollar beriladi)

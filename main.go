@@ -65,8 +65,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	files := http.FileServer(http.FS(sub))
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		if !originOK(r, allowed) {
@@ -106,13 +104,7 @@ func main() {
 		}
 		json.NewEncoder(w).Encode(map[string]any{"rooms": rooms, "players": players, "db": db, "version": v})
 	})
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" || r.URL.Path == "/index.html" {
-			w.Header().Set("Cache-Control", "no-cache")
-		}
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		files.ServeHTTP(w, r)
-	})
+	mux.Handle("/", webHandler(sub, h))
 
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
 	log.Printf("Zarba Nuqtasi serveri %s manzilida ishlayapti (xonada ko'pi bilan %d o'yinchi)", addr, maxPlayers)

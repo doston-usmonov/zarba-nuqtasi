@@ -10,13 +10,16 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"html"
 	"io"
+	"io/fs"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -840,5 +843,96 @@ func TestChat(t *testing.T) {
 	}
 	if n := len(drain(b)); n > 3 {
 		t.Fatalf("spam cheklanmadi: %d", n)
+	}
+}
+
+// TestDeepLink: /x/<xarita>/<kod> — index.html, sarlavha va og: teglari shu xona uchun to'ldirilgan.
+func TestDeepLink(t *testing.T) {
+	h := newHub(16, nil)
+	sub, err := fs.Sub(webFS, "web")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		ws, err := upgrade(w, r)
+		if err != nil {
+			return
+		}
+		h.serve(ws, r.URL.Query().Get("room"), r.RemoteAddr+newID(), r.Host, nil, parseRoomOpts(r.URL.Query()))
+	})
+	mux.Handle("/", webHandler(sub, h))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	get := func(path string) (int, string) {
+		t.Helper()
+		resp, err := http.Get(srv.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		b, _ := io.ReadAll(resp.Body)
+		return resp.StatusCode, string(b)
+	}
+	ogTitle := regexp.MustCompile(`<meta property="og:title" content="([^"]*)">`)
+	title := func(body string) string {
+		m := ogTitle.FindStringSubmatch(body)
+		if m == nil {
+			t.Fatal("og:title yo'q")
+		}
+		return html.UnescapeString(m[1])
+	}
+
+	// xona hali yo'q: xarita nomi bor, o'yinchi soni yo'q
+	code, body := get("/x/registon/umumiy")
+	if code != 200 || !strings.Contains(title(body), "Registon — umumiy") || !strings.Contains(body, "<title>Registon — umumiy · Zarba Nuqtasi</title>") {
+		t.Fatalf("bo'sh xona havolasi: %d %q", code, title(body))
+	}
+	if !strings.Contains(body, `content="http://`+strings.TrimPrefix(srv.URL, "http://")+`/og/registon.png"`) {
+		t.Fatal("og:image registon rasmiga to'liq manzil bilan ishora qilishi kerak")
+	}
+	if _, err := fs.Stat(sub, "og/registon.png"); err != nil {
+		t.Fatal("web/og/registon.png yo'q")
+	}
+
+	// bitta odam kirdi (16 kishilik xona): «1/16 o'yinchi»
+	tc := newTestClient(srv.URL)
+	w := dialWS(t, tc, "zn-umumiy&map=registon&max=16")
+	defer w.c.Close()
+	if _, body = get("/x/registon/umumiy"); !strings.Contains(title(body), "Registon — umumiy · 1/16 o'yinchi · Zarba Nuqtasi") {
+		t.Fatalf("o'yinchi soni: %q", title(body))
+	}
+	// havoladagi xarita eski bo'lsa ham — xonaning haqiqiy xaritasi
+	if _, body = get("/x/bozor/umumiy"); !strings.HasPrefix(title(body), "Registon") || !strings.Contains(body, "/og/registon.png") {
+		t.Fatalf("xonaning haqiqiy xaritasi: %q", title(body))
+	}
+
+	// noto'g'ri havolalar — 200 va oddiy bosh sahifa
+	for _, p := range []string{"/x/dust/umumiy", "/x/registon/", "/x/registon/A-B", "/x/registon/a/b", "/x/registon/%3Cscript%3E", "/x/"} {
+		code, body := get(p)
+		if code != 200 || title(body) != "Zarba Nuqtasi" || !strings.Contains(body, "<title>Zarba Nuqtasi</title>") {
+			t.Errorf("%s: %d %q", p, code, title(body))
+		}
+	}
+	// qiymatlar sahifaga ekranlangan holda tushadi
+	if _, body = get("/x/registon/a.b_c-d?mode=dm"); !strings.Contains(title(body), "Registon — a.b_c-d") {
+		t.Fatalf("kod: %q", title(body))
+	}
+	if pg := string(fillMeta([]byte(siteTitle+`<meta property="og:title" content="Zarba Nuqtasi">`), `a"<b>`, "d", "i", "u")); strings.Contains(pg, `a"<b>`) || !strings.Contains(pg, "a&#34;&lt;b&gt;") {
+		t.Fatalf("ekranlanmagan: %s", pg)
+	}
+	// /x/ ostidan statik fayl berilmaydi, yo'l chiqishlari ham ishlamaydi
+	for _, p := range []string{"/x/../../etc/passwd", "/x/registon/..%2f..%2fetc%2fpasswd", "/x/vendor/three.min.js"} {
+		code, body := get(p)
+		if strings.Contains(body, "root:") || strings.Contains(body, "THREE") && !strings.Contains(body, "<!doctype html>") {
+			t.Errorf("%s: statik fayl qaytdi (%d)", p, code)
+		}
+	}
+	// bosh sahifa va statik fayllar avvalgidek
+	if code, body := get("/"); code != 200 || !strings.Contains(body, "<title>Zarba Nuqtasi</title>") {
+		t.Fatalf("bosh sahifa: %d", code)
+	}
+	if code, _ := get("/vendor/GLTFLoader.js"); code != 200 {
+		t.Fatalf("statik fayl: %d", code)
 	}
 }

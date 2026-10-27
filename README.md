@@ -161,6 +161,10 @@ Bosh sahifada **ochiq o'yinlar ro'yxati** bor (har 5 soniyada yangilanadi, `GET 
 
 **O'yin yaratish:** kod, kimga (ommaviy yoki yopiq) va maksimal o'yinchilar soni (standart: ommaviy, cheksiz). Yopiq o'yin ro'yxatda ko'rinmaydi, unga faqat kodni bilganlar kiradi. Bunday kodli o'yin allaqachon bo'lsa, yaratib bo'lmaydi. Kod bilan kirganda o'yin hali bo'lmasa, standart sozlamalar bilan yaratiladi.
 
+**Xona havolasi:** har bir xonaning to'g'ridan-to'g'ri havolasi bor — `https://game.telegap.uz/x/<xarita>/<kod>`, masalan `/x/registon/umumiy`. Havolani ochgan odam ismi saqlangan bo'lsa darhol o'sha xonaga tushadi, bo'lmasa ismini yozib «Kirish»ni bosadi. Xona hali yo'q bo'lsa, havoladagi xaritada (va `?mode=dm` kabi berilgan rejimda) ommaviy xona bo'lib yaratiladi. Xonada turganingizda manzil satri shu havolani ko'rsatib turadi (xona egasi xaritani almashtirsa — yangilanadi), chiqqaningizda `/` ga qaytadi. Pauza menyusidagi **«Havolani ulashish»** telefonda ulashish oynasini ochadi, kompyuterda havolani nusxalaydi. Yopiq xona havolasi ham ishlaydi — kodni bilgan kiradi.
+
+Telegram va boshqa messenjerlarda havola rasm va sarlavha bilan chiqadi: server `/x/...` so'rovi uchun `index.html` dagi `<title>` va `og:` teglarini to'ldiradi — «Registon — umumiy · 6/16 o'yinchi · Zarba Nuqtasi», rasm `web/og/<xarita>.png` (1200×630, o'yinning o'zidan olingan). Noto'g'ri havola (`/x/yoq-xarita/...`) oddiy bosh sahifani ochadi; `/x/` ostidan hech qanday fayl berilmaydi.
+
 **Rejimlar** (o'yin yaratishda tanlanadi, xona egasi o'yin davomida almashtira oladi):
 - *Raqobat*, *Wingman* (2 ga 2), *Retake* — raundlar va bomba.
 - *Deathmatch — hamma hammaga*: har kim har kimga qarshi, 6 daqiqada eng ko'p o'ldirgan yutadi.

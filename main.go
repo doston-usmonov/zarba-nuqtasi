@@ -52,6 +52,7 @@ func main() {
 	a.hub = h
 	h.voice = voiceFromEnv()
 	h.debug = os.Getenv("ZARBA_DEBUG") == "1"
+	h.startOfficial(parseOfficialRooms(os.Getenv("OFFICIAL_ROOMS")))
 	if h.debug {
 		log.Printf("DIQQAT: ZARBA_DEBUG=1 — raund holatini mijoz o'zgartira oladi, faqat test uchun")
 	}

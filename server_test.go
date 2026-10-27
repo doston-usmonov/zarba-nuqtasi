@@ -10,6 +10,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"html"
 	"io"
 	"io/fs"
@@ -849,21 +850,7 @@ func TestChat(t *testing.T) {
 // TestDeepLink: /x/<xarita>/<kod> — index.html, sarlavha va og: teglari shu xona uchun to'ldirilgan.
 func TestDeepLink(t *testing.T) {
 	h := newHub(16, nil)
-	sub, err := fs.Sub(webFS, "web")
-	if err != nil {
-		t.Fatal(err)
-	}
-	mux := http.NewServeMux()
-	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		ws, err := upgrade(w, r)
-		if err != nil {
-			return
-		}
-		h.serve(ws, r.URL.Query().Get("room"), r.RemoteAddr+newID(), r.Host, nil, parseRoomOpts(r.URL.Query()))
-	})
-	mux.Handle("/", webHandler(sub, h))
-	srv := httptest.NewServer(mux)
-	defer srv.Close()
+	srv, sub := newPlainServer(t, h)
 	get := func(path string) (int, string) {
 		t.Helper()
 		resp, err := http.Get(srv.URL + path)
@@ -935,4 +922,180 @@ func TestDeepLink(t *testing.T) {
 	if code, _ := get("/vendor/GLTFLoader.js"); code != 200 {
 		t.Fatalf("statik fayl: %d", code)
 	}
+}
+
+// newPlainServer: bazasiz test serveri — /ws va sahifalar.
+func newPlainServer(t *testing.T, h *hub) (*httptest.Server, fs.FS) {
+	t.Helper()
+	sub, err := fs.Sub(webFS, "web")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		ws, err := upgrade(w, r)
+		if err != nil {
+			return
+		}
+		h.serve(ws, r.URL.Query().Get("room"), r.RemoteAddr+newID(), r.Host, nil, parseRoomOpts(r.URL.Query()))
+	})
+	mux.Handle("/api/rooms", http.HandlerFunc(h.roomsHandler))
+	mux.Handle("/", webHandler(sub, h))
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	return srv, sub
+}
+
+// TestOfficialRooms: doimiy xonalar — ishga tushganda bor, egasi yo'q, botlar odamlarga qarab.
+func TestOfficialRooms(t *testing.T) {
+	// OFFICIAL_ROOMS ni o'qish
+	def := parseOfficialRooms("")
+	var codes []string
+	for _, o := range def {
+		codes = append(codes, fmt.Sprintf("%s:%d", o.code(), o.max))
+	}
+	if strings.Join(codes, ",") != "registon-comp:16,qumtepa-dm:20,bozor-comp:10,saroy-gg:12,karvon-wm:4" {
+		t.Fatalf("standart ro'yxat: %v", codes)
+	}
+	if parseOfficialRooms("-") != nil {
+		t.Fatal(`"-" o'chirishi kerak`)
+	}
+	if l := parseOfficialRooms("dust:comp:10, registon:xx:10, registon:dm:1, karvon:wm:10, karvon:wm:8, bozor:tdm:12"); len(l) != 2 || l[0].code() != "karvon-wm" || l[0].max != 4 || l[1].code() != "bozor-tdm" {
+		t.Fatalf("noto'g'ri bandlar tashlanishi kerak: %+v", l)
+	}
+
+	h := newHub(64, nil)
+	h.startOfficial(parseOfficialRooms("registon:comp:16,karvon:wm:4"))
+	srv, _ := newPlainServer(t, h)
+	find := func(code string) roomListing {
+		t.Helper()
+		for _, r := range h.publicRooms() {
+			if r.Code == code {
+				return r
+			}
+		}
+		t.Fatalf("%s ro'yxatda yo'q", code)
+		return roomListing{}
+	}
+	waitFor := func(what string, ok func() bool) {
+		t.Helper()
+		for i := 0; i < 100 && !ok(); i++ {
+			time.Sleep(20 * time.Millisecond)
+		}
+		if !ok() {
+			t.Fatal(what)
+		}
+	}
+
+	// ishga tushganda: ikkalasi ham ro'yxatda, odamsiz, botsiz, rasmiy belgisi bilan, tepada
+	tc := newTestClient(srv.URL)
+	_, body := tc.get(t, "/api/rooms")
+	rl, _ := body["rooms"].([]any)
+	if len(rl) != 2 || rl[0].(map[string]any)["official"] != true {
+		t.Fatalf("/api/rooms: %v", body)
+	}
+	if r := find("registon-comp"); r.Humans != 0 || r.Bots != 0 || r.Max != 16 || r.Map != "registon" || r.Mode != "comp" || r.Owner != "" {
+		t.Fatalf("registon-comp: %+v", r)
+	}
+	// oddiy xona tepada emas
+	other := dialWS(t, tc, "zn-boshqa")
+	if r := h.publicRooms(); len(r) != 3 || r[2].Code != "boshqa" || r[2].Official {
+		t.Fatalf("tartib: %+v", r)
+	}
+	other.c.Close()
+
+	// bitta odam: 16 kishilik xonada 10 tagacha to'ladi — 9 bot, jamoalarga teng
+	a := dialWS(t, tc, "zn-registon-comp")
+	if r := find("registon-comp"); r.Humans != 1 || r.Bots != 9 {
+		t.Fatalf("1 odam: %+v", r)
+	}
+	rm := h.rooms["zn-registon-comp"]
+	rm.mu.Lock()
+	sq := map[string]int{}
+	for _, c := range rm.clients {
+		if c.bot != nil {
+			sq[c.info.Sq]++
+			if c.bot.lv != "normal" {
+				t.Errorf("bot darajasi %s, kerak normal", c.bot.lv)
+			}
+		}
+	}
+	owner := rm.owner
+	rm.mu.Unlock()
+	if sq["A"] < 4 || sq["B"] < 4 || owner != "" {
+		t.Fatalf("botlar jamoalarda: %v, egasi %q", sq, owner)
+	}
+	// odam A jamoani tanladi: raundlar orasida bot B ga o'tadi — 5 ga 5
+	rm.mu.Lock()
+	for _, c := range rm.clients {
+		if c.bot == nil {
+			c.info.Sq = "A"
+		}
+	}
+	for i := 0; i < 5; i++ {
+		rm.fillBotsLocked(time.Now())
+	}
+	sq = map[string]int{}
+	for _, c := range rm.clients {
+		sq[c.info.Sq]++
+	}
+	rm.mu.Unlock()
+	if sq["A"] != 5 || sq["B"] != 5 {
+		t.Fatalf("jamoalar muvozanati: %v", sq)
+	}
+	// ikkinchi odam — bitta bot chiqadi
+	b := dialWS(t, tc, "zn-registon-comp")
+	if r := find("registon-comp"); r.Humans != 2 || r.Bots != 8 {
+		t.Fatalf("2 odam: %+v", r)
+	}
+	// egasi buyruqlari ishlamaydi: botni chiqarish, xonani yopish, chegara, rejim, xarita
+	var botID string
+	rm.mu.Lock()
+	for id, c := range rm.clients {
+		if c.bot != nil {
+			botID = id
+			break
+		}
+	}
+	rm.mu.Unlock()
+	for _, d := range []map[string]any{{"a": "kick", "id": botID}, {"a": "kick", "id": b.id}, {"a": "set", "pub": false, "max": 2}, {"a": "mode", "m": "dm"}, {"a": "map", "m": "saroy"}, {"a": "bot", "sq": "A"}} {
+		a.send(map[string]any{"t": "adm", "d": d})
+		b.send(map[string]any{"t": "adm", "d": d})
+	}
+	time.Sleep(200 * time.Millisecond)
+	if r := find("registon-comp"); r.Humans != 2 || r.Bots != 8 || r.Max != 16 || r.Map != "registon" || r.Mode != "comp" {
+		t.Fatalf("egasi buyruqlari ishlamasligi kerak: %+v", r)
+	}
+	// hamma chiqdi: xona qoladi, botlar ketadi
+	a.c.Close()
+	waitFor("bitta odam qolganda 9 bot", func() bool { r := find("registon-comp"); return r.Humans == 1 && r.Bots == 9 })
+	b.c.Close()
+	waitFor("bo'sh xonada bot qolmasligi kerak", func() bool { r := find("registon-comp"); return r.Humans == 0 && r.Bots == 0 })
+	if _, ok := h.rooms["zn-boshqa"]; ok {
+		t.Fatal("oddiy xona bo'shaganda o'chishi kerak")
+	}
+
+	// Wingman (4 kishilik): 1 odam + 3 bot = to'la, lekin yangi odam baribir kiradi — bot joy bo'shatadi
+	w1 := dialWS(t, tc, "zn-karvon-wm")
+	if r := find("karvon-wm"); r.Humans != 1 || r.Bots != 3 {
+		t.Fatalf("wingman 1 odam: %+v", r)
+	}
+	var ws []*wsTest
+	for i := 0; i < 3; i++ {
+		ws = append(ws, dialWS(t, tc, "zn-karvon-wm"))
+	}
+	if r := find("karvon-wm"); r.Humans != 4 || r.Bots != 0 {
+		t.Fatalf("wingman 4 odam: %+v", r)
+	}
+	// beshinchisi — haqiqatan to'la
+	x := dialWS2(t, tc, "zn-karvon-wm")
+	if m := x.read(t); m["t"] != "err" || m["code"] != "room_full" {
+		t.Fatalf("5-odam: %v", m)
+	}
+	x.c.Close()
+	w1.c.Close()
+	for _, w := range ws {
+		w.c.Close()
+	}
+	waitFor("wingman bo'shadi", func() bool { r := find("karvon-wm"); return r.Humans == 0 && r.Bots == 0 })
 }

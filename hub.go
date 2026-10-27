@@ -59,6 +59,8 @@ type room struct {
 	pub     bool          // ommaviy — bosh sahifadagi ro'yxatda ko'rinadi
 	max     int           // o'yinchilar (botlar bilan) chegarasi, 0 — cheksiz
 	bans    map[string]time.Time
+	// official: doimiy xona (officials.go) — egasi yo'q, bo'shasa ham yo'qolmaydi
+	official *officialRoom
 	// statistika (stats.go)
 	st               map[string]*pstat
 	stE              string
@@ -174,7 +176,11 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 	}
 	r.mu.Lock()
 	reject := ""
-	if n := len(r.clients); n >= h.maxPlayers || (r.max > 0 && n >= r.max) {
+	n := len(r.clients)
+	if r.official != nil { // rasmiy xonada botlar odamga joy bo'shatadi
+		_, n = r.botCountLocked()
+	}
+	if n >= h.maxPlayers || (r.max > 0 && n >= r.max) {
 		reject = "room_full"
 	}
 	if r.bannedLocked(ip, acct, time.Now()) {
@@ -186,7 +192,7 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 		}
 	}
 	if reject != "" {
-		empty := len(r.clients) == 0
+		empty := len(r.clients) == 0 && r.official == nil
 		r.mu.Unlock()
 		if empty {
 			delete(h.rooms, roomName)
@@ -214,9 +220,10 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 	if acct != nil {
 		h.joinedLocked(acct.id, r)
 	}
-	if r.owner == "" {
+	if r.owner == "" && r.official == nil {
 		r.owner = c.id
 	}
+	r.fillBotsLocked(time.Now())
 	r.broadcast(r.infoMsgLocked(), "")
 	r.mu.Unlock()
 	h.perIP[ip]++
@@ -241,7 +248,15 @@ func (h *hub) leave(c *client) {
 	_, humans := r.botCountLocked()
 	empty := humans == 0 // botlar o'zi xonani ushlab turmaydi
 	r.broadcast(jsonMsg(map[string]string{"t": "l", "id": c.id}), "")
-	if !empty && r.pickOwnerLocked() {
+	if r.official != nil {
+		if empty {
+			r.emptyOfficialLocked()
+		} else {
+			r.fillBotsLocked(time.Now())
+			r.broadcast(r.infoMsgLocked(), "")
+		}
+		empty = false // rasmiy xona yo'qolmaydi
+	} else if !empty && r.pickOwnerLocked() {
 		r.broadcast(r.infoMsgLocked(), "")
 	}
 	r.mu.Unlock()

@@ -862,9 +862,12 @@ func (r *room) run(h *hub) {
 			dt := math.Min(now.Sub(last).Seconds(), 1)
 			last = now
 			r.mu.Lock()
-			if r.manual {
+			if r.manual || len(r.clients) == 0 { // bo'sh (rasmiy) xona hech narsa hisoblamaydi
 				r.mu.Unlock()
 				continue
+			}
+			if n%20 == 0 {
+				r.fillBotsLocked(now) // rasmiy xona: soniyasiga bir marta botlar soni va jamoalar
 			}
 			for _, c := range r.clients {
 				if c.bot != nil {

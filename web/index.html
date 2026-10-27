@@ -245,6 +245,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 #roomList .rm b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #roomList .rm small{grid-column:1;color:var(--dim);font-size:12px}
 #roomList .rm button{grid-row:1/3;grid-column:2}
+#roomList .rm .offTag{display:inline-block;margin-right:6px;padding:1px 5px;border-radius:3px;background:var(--atk);color:#15130f;font-size:10px;letter-spacing:.06em;vertical-align:2px}
 .joinrow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
 .createrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end}
 
@@ -3670,7 +3671,9 @@ async function loadRooms(){
     el.innerHTML = list.map(r => {
       const code = String(r.code || ''), ph = { warmup:'isinish', freeze:r.round + '-raund', live:r.mode && r.mode !== 'comp' ? 'davom etmoqda' : r.round + '-raund', post:r.round + '-raund', over:"o'yin tugadi" }[r.phase] || '';
       const people = (r.humans|0) + " o'yinchi" + (r.bots ? ' + ' + (r.bots|0) + ' bot' : '') + ' / ' + (r.max ? r.max|0 : '∞');
-      return `<div class="rm"><b>${escH(code)}</b><small>${escH(modeInfo(r.mode).name)} · ${escH((MAPS[r.map] || MAPS.qumtepa).name)} · ${escH(r.owner || '')} · ${people} · ${ph}${r.round && (!r.mode || r.mode === 'comp') ? ' · ' + (r.sA|0) + ':' + (r.sB|0) : ''}</small><button class="ghost sm" type="button" data-room="${escH(code)}"${r.max && (r.humans + r.bots) >= r.max ? ' disabled' : ''}>Kirish</button></div>`;
+      // official rooms run around the clock: bots step aside for people, so only people count towards "full"
+      const full = r.max && ((r.humans|0) + (r.official ? 0 : r.bots|0)) >= r.max, who = r.official ? '' : escH(r.owner || '') + ' · ';
+      return `<div class="rm${r.official ? ' off' : ''}"><b>${r.official ? '<span class="offTag">RASMIY</span>' : ''}${escH(code)}</b><small>${escH(modeInfo(r.mode).name)} · ${escH((MAPS[r.map] || MAPS.qumtepa).name)} · ${who}${r.official && !r.humans ? "bo'sh — birinchi bo'ling" : people + ' · ' + ph}${r.round && (!r.mode || r.mode === 'comp') ? ' · ' + (r.sA|0) + ':' + (r.sB|0) : ''}</small><button class="ghost sm" type="button" data-room="${escH(code)}"${full ? ' disabled' : ''}>Kirish</button></div>`;
     }).join('');
   } catch(e){ $('roomList').innerHTML = `<p class="note">Ro'yxatni yuklab bo'lmadi.</p>`; }
 }
@@ -3681,7 +3684,7 @@ setInterval(() => { if (S.phase === 'menu' && !document.hidden) loadRooms(); }, 
 if (IN_ARTIFACT || !/^https?:$/.test(location.protocol)) document.querySelectorAll('.srv-only').forEach(e => e.hidden = true);
 else { document.querySelectorAll('.art-only').forEach(e => e.hidden = true); loadRooms(); }
 /* room owner tools (pause menu) */
-function netRoomInfo(m){ NET.roomInfo = { owner:String(m.owner || ''), pub:!!m.pub, max:num(m.max)|0, bots:num(m.bots)|0, humans:num(m.humans)|0 }; renderAdmin(); }
+function netRoomInfo(m){ NET.roomInfo = { owner:String(m.owner || ''), pub:!!m.pub, max:num(m.max)|0, bots:num(m.bots)|0, humans:num(m.humans)|0, official:!!m.official }; renderAdmin(); }
 function isOwner(){ return MODE === 'online' && !!NET.roomInfo && !!NET.me && NET.roomInfo.owner === NET.me; }
 function netKicked(){ if (MODE !== 'online') return; toMenu(); const n = $('onlineNote'); n.textContent = 'Xona egasi sizni o\'yindan chiqarib yubordi.'; hint("Siz xonadan chiqarildingiz", 4000); }
 function renderAdmin(){
@@ -3690,6 +3693,7 @@ function renderAdmin(){
   if (panel.hidden) return;
   const own = isOwner(), ownerR = NET.remotes.get(ri.owner);
   $('admInfo').textContent = 'Kod: ' + NET.code + ' · ' + (ri.pub ? 'ommaviy' : 'yopiq') + ' · ' + (ri.max ? 'ko\'pi bilan ' + ri.max : 'cheksiz') + ' · egasi: ' + (own ? 'siz' : ownerR ? ownerR.name : '—') + (own ? '' : '. Botlarni va o\'yinchilarni faqat xona egasi boshqaradi.');
+  if (ri.official) $('admInfo').textContent = 'Kod: ' + NET.code + " · rasmiy xona, doim ochiq · ko'pi bilan " + ri.max + " o'yinchi. Egasi yo'q: botlar o'zi qo'shiladi va odam kirganda joy bo'shatadi, xaritani o'yin oxiridagi ovoz almashtiradi.";
   $('admCtl').hidden = !own;
   $('admPub').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === (ri.pub ? '1' : '0'))));
   $('admMax').value = String(ri.max || 0); if (NET.g && NET.g.m) $('admMap').value = NET.g.m; if (NET.g && document.activeElement !== $('admMode')) $('admMode').value = curModeID();

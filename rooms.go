@@ -73,6 +73,9 @@ func (r *room) bannedLocked(ip string, acct *account, now time.Time) bool {
 
 // pickOwnerLocked: egasi chiqib ketgan bo'lsa, eng oldin kirgan odamni ega qiladi.
 func (r *room) pickOwnerLocked() bool {
+	if r.official != nil {
+		return false
+	}
 	if o := r.clients[r.owner]; o != nil && o.bot == nil {
 		return false
 	}
@@ -91,12 +94,12 @@ func (r *room) pickOwnerLocked() bool {
 
 func (r *room) infoMsgLocked() []byte {
 	bots, humans := r.botCountLocked()
-	return jsonMsg(map[string]any{"t": "room", "owner": r.owner, "pub": r.pub, "max": r.max, "bots": bots, "humans": humans})
+	return jsonMsg(map[string]any{"t": "room", "owner": r.owner, "pub": r.pub, "max": r.max, "bots": bots, "humans": humans, "official": r.official != nil})
 }
 
 // adminLocked: xona egasining buyruqlari.
 func (h *hub) adminLocked(r *room, c *client, d json.RawMessage, now time.Time) {
-	if c.id != r.owner {
+	if r.official != nil || c.id != r.owner { // rasmiy xonada egasi yo'q — buyruqlar ishlamaydi
 		return
 	}
 	var m struct {
@@ -188,6 +191,9 @@ type roomListing struct {
 	SA     int    `json:"sA"`
 	SB     int    `json:"sB"`
 	Fm     int    `json:"fm"`
+	// Official: doimiy xona — odam bo'lmasa ham ro'yxatda
+	Official bool   `json:"official"`
+	Region   string `json:"region"` // hozircha bitta server; keyin ikkinchisi qo'shilsa kerak bo'ladi
 }
 
 // publicRooms: bosh sahifadagi ro'yxat uchun.
@@ -207,14 +213,17 @@ func (h *hub) publicRooms() []roomListing {
 			if o := r.clients[r.owner]; o != nil {
 				owner = cleanGuestName(o.info.Nm)
 			}
-			if humans > 0 {
+			if humans > 0 || r.official != nil {
 				out = append(out, roomListing{Code: strings.TrimPrefix(r.name, "zn-"), Owner: owner, Humans: humans, Bots: bots, Max: r.max, Map: r.gs.M, Mode: r.gs.modeID(),
-					Phase: r.gs.Ph, Round: r.gs.R, SA: r.gs.SA, SB: r.gs.SB, Fm: r.gs.Fm})
+					Phase: r.gs.Ph, Round: r.gs.R, SA: r.gs.SA, SB: r.gs.SB, Fm: r.gs.Fm, Official: r.official != nil})
 			}
 		}
 		r.mu.Unlock()
 	}
 	sort.Slice(out, func(i, j int) bool {
+		if out[i].Official != out[j].Official { // rasmiy xonalar tepada
+			return out[i].Official
+		}
 		if out[i].Humans != out[j].Humans {
 			return out[i].Humans > out[j].Humans
 		}

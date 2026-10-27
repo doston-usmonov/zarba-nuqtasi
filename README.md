@@ -152,12 +152,15 @@ API: `POST /api/register`, `POST /api/login`, `POST /api/logout`, `GET /api/me`,
 | `TURN_SECRET` | bo'sh (Docker'da `.env` dan) | coturn bilan bir xil kalit. Bo'sh bo'lsa TURN ishlatilmaydi |
 | `TURN_HOST` | bo'sh | TURN domeni. Bo'sh bo'lsa o'yin ochilgan domen olinadi |
 | `TURN_PORT` | `3478` | TURN porti |
+| `OFFICIAL_ROOMS` | `registon:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4` | Doimiy (rasmiy) xonalar: `xarita:rejim:chegara`, vergul bilan. Kodi — `<xarita>-<rejim>`. `-` — o'chirish |
 
 Bitta IP manzildan bir vaqtda ko'pi bilan 8 ta ulanish qabul qilinadi. Bir o'yinchidan soniyasiga 60 tadan ortiq xabar kelsa, ortiqchasi tashlanadi. Bitta xabar 8 KB dan oshmaydi.
 
 ## Xonalar va botlar
 
 Bosh sahifada **ochiq o'yinlar ro'yxati** bor (har 5 soniyada yangilanadi, `GET /api/rooms`): kod, egasi, o'yinchilar va botlar soni, chegara, raund va hisob. «Kirish» tugmasi bilan qo'shilasiz.
+
+**Rasmiy xonalar** (`OFFICIAL_ROOMS`) — har doim ochiq, ro'yxatning tepasida «RASMIY» belgisi bilan, odam bo'lmasa ham ko'rinadi: `registon-comp`, `qumtepa-dm`, `bozor-comp`, `saroy-gg`, `karvon-wm`. Kirgan odam hech qachon bo'sh xonaga tushmaydi: odam + bot soni `min(chegara, 10)` ga yetguncha o'rta darajadagi botlar qo'shiladi, har yangi odam kirganda bitta bot chiqadi, jamoalar teng saqlanadi (odam jamoa tanlagach, raundlar orasida bot boshqa jamoaga o'tadi). Hamma chiqib ketsa botlar ham chiqadi, xona o'z xaritasida boshidan boshlanadi va bo'sh turganda hech narsa hisoblamaydi. Egasi yo'q: bot qo'shish/chiqarish, chegara, ommaviylik va rejimni hech kim o'zgartira olmaydi; xaritani faqat o'yin oxiridagi ovoz almashtiradi (kod o'zgarmaydi). Bot qatnashgani uchun bu o'yinlar reytingga yozilmaydi — ular tez o'ynash uchun. Chegara botlarni emas, odamlarni sanaydi.
 
 **O'yin yaratish:** kod, kimga (ommaviy yoki yopiq) va maksimal o'yinchilar soni (standart: ommaviy, cheksiz). Yopiq o'yin ro'yxatda ko'rinmaydi, unga faqat kodni bilganlar kiradi. Bunday kodli o'yin allaqachon bo'lsa, yaratib bo'lmaydi. Kod bilan kirganda o'yin hali bo'lmasa, standart sozlamalar bilan yaratiladi.
 

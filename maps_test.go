@@ -49,6 +49,52 @@ func TestMapsMatchClient(t *testing.T) {
 	}
 }
 
+// TestSmokeLineups: granata mashqidagi tayyor tutun joylari — har xaritada A, B va o'rta uchun bittadan,
+// turish joyi ochiq katakda, tushish nuqtasi xarita ichida (tools/lineups.py yasaydi).
+func TestSmokeLineups(t *testing.T) {
+	b, err := os.ReadFile("web/index.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := string(b)
+	blk := src[strings.Index(src, "const MAPS = {"):strings.Index(src, "const MAP_CH")]
+	head := regexp.MustCompile(`\n  (\w+):\{ name:`)
+	lu := regexp.MustCompile(`\n    lineups:(\[.*\]),\n`)
+	locs := head.FindAllStringSubmatchIndex(blk, -1)
+	for n, l := range locs {
+		id, end := blk[l[2]:l[3]], len(blk)
+		if n+1 < len(locs) {
+			end = locs[n+1][0]
+		}
+		m := lu.FindStringSubmatch(blk[l[1]:end])
+		if m == nil {
+			t.Fatalf("%s: lineups yo'q", id)
+		}
+		var list []struct {
+			Site, Name       string
+			X, Z, Yaw, Pitch float64
+			Land             [2]float64
+		}
+		if err := json.Unmarshal([]byte(m[1]), &list); err != nil {
+			t.Fatalf("%s: %v", id, err)
+		}
+		sites := ""
+		for _, x := range list {
+			sites += x.Site
+			cx, cz := int(x.X/2), int(x.Z/2)
+			if c := gameMaps[id].rows[cz][cx]; c == '#' {
+				t.Errorf("%s %s: turish joyi devorda (%d,%d)", id, x.Name, cx, cz)
+			}
+			if x.Land[0] < 2 || x.Land[0] > 86 || x.Land[1] < 2 || x.Land[1] > 86 || x.Pitch < -.2 || x.Pitch > 1.45 || x.Name == "" {
+				t.Errorf("%s %s: noto'g'ri qiymatlar %+v", id, x.Name, x)
+			}
+		}
+		if sites != "ABM" {
+			t.Errorf("%s: joylar %q, kerak ABM", id, sites)
+		}
+	}
+}
+
 // TestMapsPlayable: har xaritada bazalar, nuqtalar bor va botlar hamma joyga yetib boradi.
 func TestMapsPlayable(t *testing.T) {
 	for id, gm := range gameMaps {

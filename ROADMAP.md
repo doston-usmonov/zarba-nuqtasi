@@ -66,6 +66,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 ## Mashq
 - ✅ Nishon mashqi: 60 soniya, qurolni o'zingiz tanlaysiz, nishonlar o'q uzmaydi, qiyinlikka qarab turadi, yuradi yoki cho'kkalaydi. Natija: ochko, aniqlik, boshga tekkani, o'rtacha reaksiya. Har qurol va qiyinlik uchun rekord brauzerda saqlanadi
 - ✅ Granata mashqi: cheksiz granata, tugma bosib turilganda uchish yo'li va tushadigan joy ko'rinadi (haqiqiy otish bilan aynan bir xil fizika), R — oxirgi otgan joyga qaytish, tushgan joylar belgilanib qoladi, o'z granatangiz zarar bermaydi
+- ✅ Tayyor tutun joylari: har xaritada A, B va o'rta uchun 3 tadan (jami 15), o'yin fizikasi bilan topilgan (`tools/lineups.py`); turish halqasi, nishon doirasi, L — keyingi joy
 - [ ] Xarita bo'yicha tayyor granata otish joylari (smoke lineup) to'plami
 
 ## Ovoz

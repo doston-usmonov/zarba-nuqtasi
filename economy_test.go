@@ -162,3 +162,122 @@ func TestPurseReconnect(t *testing.T) {
 		t.Fatalf("qayta ulanish: pul=%d qurol=%q jon=%v", a2.ps.money, a2.ps.inv.prim, a2.ps.hp)
 	}
 }
+
+// TestSellBack: shu raundda sotib olingan narsa xarid vaqtida to'liq narxiga qaytariladi.
+func TestSellBack(t *testing.T) {
+	r, a, _ := newRefRoom()
+	*r.gs = gameState{R: 1, Ph: "freeze", Md: modeComp, Fm: 12, E: "e1", Bm: -1, T: 5}
+	n := 0
+	pres := func(extra map[string]any) {
+		d := map[string]any{"v": 1, "hc": 1, "sq": "A", "tm": "T", "in": 1, "al": 1, "x": 43, "y": 0, "z": 75, "w": "pistol"}
+		for k, v := range extra {
+			d[k] = v
+		}
+		refPres(r, a, d)
+	}
+	ev := func(id string, sell bool) map[string]any {
+		n++
+		m := map[string]any{"n": n, "id": id}
+		if sell {
+			m["s"] = 1
+		}
+		return m
+	}
+	pres(nil)
+	pres(map[string]any{"bu": []map[string]any{ev("deagle", false), ev("smoke", false), ev("taser", false)}})
+	if a.ps.inv.sec != "deagle" || a.ps.money != 100 {
+		t.Fatalf("xarid: %d %+v", a.ps.money, a.ps.inv)
+	}
+	pres(map[string]any{"bu": []map[string]any{ev("deagle", true)}})
+	if a.ps.inv.sec != "" || a.ps.money != 800 {
+		t.Fatalf("Burgut qaytarildi: %d %+v", a.ps.money, a.ps.inv)
+	}
+	pres(map[string]any{"bu": []map[string]any{ev("deagle", true)}}) // ikkinchi marta — yo'q
+	if a.ps.money != 800 {
+		t.Fatalf("ikki marta qaytarildi: %d", a.ps.money)
+	}
+	// uchqun va tutun
+	pres(map[string]any{"bu": []map[string]any{ev("taser", false), ev("smoke", false)}})
+	if !a.ps.inv.taser || a.ps.inv.nades["smoke"] != 1 || a.ps.money != 300 {
+		t.Fatalf("uchqun+tutun: %v %v %d", a.ps.inv.taser, a.ps.inv.nades, a.ps.money)
+	}
+	pres(map[string]any{"bu": []map[string]any{ev("taser", true), ev("smoke", true)}})
+	if a.ps.inv.taser || a.ps.inv.nades["smoke"] != 0 || a.ps.money != 800 {
+		t.Fatalf("qaytarish: %v %v %d", a.ps.inv.taser, a.ps.inv.nades, a.ps.money)
+	}
+	// zirh: shikastlanmagan bo'lsa qaytadi, oldingi holatga
+	pres(map[string]any{"bu": []map[string]any{ev("kevlar", false)}, "ar": 100})
+	if a.ps.armor != 100 {
+		t.Fatalf("zirh: %v", a.ps.armor)
+	}
+	pres(map[string]any{"bu": []map[string]any{ev("kevlar", true)}, "ar": 100})
+	if a.ps.armor != 0 || a.ps.money != 800 {
+		t.Fatalf("zirh qaytarildi: %v %d", a.ps.armor, a.ps.money)
+	}
+	pres(map[string]any{"bu": []map[string]any{ev("kevlar", false)}, "ar": 100})
+	pres(map[string]any{"bu": []map[string]any{ev("kevlar", true)}, "ar": 92}) // o'q tekkan
+	if a.ps.money != 150 {
+		t.Fatalf("shikastlangan zirh qaytarilmasligi kerak: %d", a.ps.money)
+	}
+	// tashlangan qurol qaytarilmaydi; boshlang'ich to'pponcha ham (sotib olinmagan)
+	r.mu.Lock()
+	a.ps.money = 800
+	r.mu.Unlock()
+	pres(map[string]any{"bu": []map[string]any{ev("mpistol", false)}})
+	pres(map[string]any{"dr": []map[string]any{{"n": 1, "id": "a:1", "w": "mpistol", "r": 1}}})
+	pres(map[string]any{"bu": []map[string]any{ev("mpistol", true), ev("pistol", true)}})
+	if a.ps.money != 300 {
+		t.Fatalf("tashlangan qurol yoki sotib olinmagan to'pponcha qaytarildi: %d", a.ps.money)
+	}
+	// xarid vaqti tugagach — yo'q
+	pres(map[string]any{"bu": []map[string]any{ev("flash", false)}})
+	r.mu.Lock()
+	r.gs.Ph, r.gs.liveAt = "live", time.Now().Add(-time.Minute)
+	r.mu.Unlock()
+	pres(map[string]any{"bu": []map[string]any{ev("flash", true)}})
+	if a.ps.money != 100 || a.ps.inv.nades["flash"] != 1 {
+		t.Fatalf("xarid vaqtidan keyin qaytarildi: %d %v", a.ps.money, a.ps.inv.nades)
+	}
+}
+
+// TestBotDropsGun: raundli rejimda o'lgan botning quroli yerda qoladi va odam uni ola oladi.
+func TestBotDropsGun(t *testing.T) {
+	r, a, _ := newRefRoom()
+	*r.gs = gameState{R: 2, Ph: "live", Md: modeComp, Fm: 12, E: "e1", Bm: -1, T: 90}
+	r.gs.liveAt = time.Now()
+	r.mu.Lock()
+	bot := r.addBotLocked("B", "normal", time.Now())
+	bot.bot.weapon, bot.bot.mag = "rifle", 17
+	bot.ps.alive = true
+	r.botDieLocked(bot, nil, "rifle", false, time.Now())
+	r.publishBotLocked(bot, time.Now())
+	var pres struct {
+		Dr []struct {
+			ID string `json:"id"`
+			W  string `json:"w"`
+			Mg int    `json:"mg"`
+			R  int    `json:"r"`
+		} `json:"dr"`
+	}
+	json.Unmarshal(bot.pres, &pres)
+	r.mu.Unlock()
+	if len(pres.Dr) != 1 || pres.Dr[0].W != "rifle" || pres.Dr[0].Mg != 17 || pres.Dr[0].R != 2 || r.ground[pres.Dr[0].ID].w != "rifle" {
+		t.Fatalf("botning quroli: %+v %v", pres.Dr, r.ground)
+	}
+	// odam uni oladi
+	refPres(r, a, map[string]any{"v": 1, "hc": 1, "sq": "A", "tm": "T", "in": 2, "al": 1, "x": 43, "y": 0, "z": 75, "w": "pistol",
+		"pk": []map[string]any{{"n": 1, "id": pres.Dr[0].ID}}})
+	if a.ps.inv.prim != "rifle" {
+		t.Fatalf("odam botning qurolini ololmadi: %+v", a.ps.inv)
+	}
+	// qayta tug'iladigan rejimda qurol tashlanmaydi
+	r.mu.Lock()
+	r.gs.Md = modeDM
+	b2 := r.addBotLocked("A", "normal", time.Now())
+	b2.bot.weapon, b2.ps.alive = "smg", true
+	r.botDieLocked(b2, nil, "smg", false, time.Now())
+	r.mu.Unlock()
+	if len(b2.bot.drops) != 0 {
+		t.Fatal("deathmatch'da bot qurol tashlamasligi kerak")
+	}
+}

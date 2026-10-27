@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"math"
 	"math/rand/v2"
+	"strconv"
 	"time"
 )
 
@@ -67,6 +68,8 @@ type botBrain struct {
 	sh        map[string]any
 	hiSeq     int
 	hits      []hitClaim
+	drops     []map[string]any // o'lganda tashlangan qurollar ("dr" hodisalari)
+	dropN     int
 	deN       int
 	de        *deathClaim
 	kills     int
@@ -277,10 +280,36 @@ func (r *room) botDieLocked(v, killer *client, w string, hs bool, now time.Time)
 		}
 	}
 	b.de = &deathClaim{N: b.deN, By: by, W: w, HS: map[bool]int{true: 1}[hs]}
+	if !r.gs.respawns() && weaponMag[b.weapon] > 0 {
+		r.botDropLocked(v)
+	}
 	r.tr.death(r, v, killer, hs)
 	r.noteDeathLocked(v, killer, hs, w)
 	if killer != nil {
 		r.creditKillLocked(v, killer, now)
+	}
+}
+
+// botDropLocked: o'lgan botning quroli yerda qoladi — odamlar uni olishi mumkin (brauzer odamnikidek
+// "dr" hodisasini ko'radi, server esa uni yerdagi qurollar ro'yxatiga yozadi).
+func (r *room) botDropLocked(c *client) {
+	b, p, g := c.bot, c.ps, r.gs
+	tag := g.R
+	if g.Ph == "warmup" {
+		tag = 0
+	}
+	b.dropN++
+	id := c.id + ":" + strconv.Itoa(b.dropN)
+	if r.ecoOn() {
+		r.groundLocked()
+		r.ground[id] = groundGun{w: b.weapon, r: g.R}
+	}
+	a := rand.Float64() * 2 * math.Pi
+	r2 := func(v float64) float64 { return math.Round(v*100) / 100 }
+	b.drops = append(b.drops, map[string]any{"n": b.dropN, "id": id, "w": b.weapon, "mg": max(0, b.mag), "rs": weaponMag[b.weapon] * 3, "r": tag,
+		"x": r2(p.pos.X), "y": r2(p.pos.Y + .9), "z": r2(p.pos.Z), "vx": r2(math.Cos(a) * 1.2), "vy": 1.6, "vz": r2(math.Sin(a) * 1.2)})
+	if len(b.drops) > 6 {
+		b.drops = b.drops[1:]
 	}
 }
 
@@ -520,7 +549,7 @@ func (r *room) botFire(c *client, t *client, dist float64, now time.Time) {
 	if !hit {
 		return
 	}
-	dmg := spec.dmg * partMult[part] * math.Pow(weaponFall[b.weapon], dist/10)
+	dmg := spec.dmg * partMult[part] * math.Pow(weaponFall[b.weapon], dist/rangeUnit)
 	pc := 0
 	if spec.pellets > 1 { // drobovik: masofa oshgan sari kamroq saochma yetib boradi
 		pc = max(1, int(math.Round(float64(spec.pellets)*math.Max(.1, math.Min(1, 1.3-dist/14)))))
@@ -694,6 +723,9 @@ func (r *room) publishBotLocked(c *client, now time.Time) {
 		"sh": b.sh, "de": b.de, "ar": math.Round(p.armor)}
 	if len(b.hits) > 0 {
 		f["hi"] = b.hits
+	}
+	if len(b.drops) > 0 {
+		f["dr"] = b.drops
 	}
 	out, err := json.Marshal(f)
 	if err != nil {

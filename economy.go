@@ -45,6 +45,7 @@ var shop = map[string]buyItem{
 	"kevlar":  {price: 650},
 	"helmet":  {price: 1000},
 	"kit":     {price: 400},
+	"taser":   {price: 200, kill: 100}, // elektroshoker «Uchqun», bir martalik
 }
 
 const (
@@ -67,6 +68,7 @@ func killReward(w string) int {
 // inventory: server biladigan qurollar (bir hayot davomida).
 type inventory struct {
 	prim, sec string
+	taser     bool
 	nades     map[string]int
 	gone      map[string]time.Time // yaqinda qo'ldan chiqqan qurollar (kechikkan o'qlar uchun)
 }
@@ -79,15 +81,22 @@ func (iv *inventory) has(w string, now time.Time) bool {
 	if w == iv.prim || w == iv.sec || w == "knife" {
 		return w != ""
 	}
+	if w == "taser" && iv.taser {
+		return true
+	}
 	t, ok := iv.gone[w]
 	return ok && now.Sub(t) < 1500*time.Millisecond
 }
 
 func (iv *inventory) remove(w string, now time.Time) bool {
-	switch w {
-	case iv.prim:
+	switch {
+	case w == "taser" && iv.taser:
+		iv.taser = false
+	case w == "":
+		return false
+	case w == iv.prim:
 		iv.prim = ""
-	case iv.sec:
+	case w == iv.sec:
 		iv.sec = ""
 	default:
 		return false
@@ -254,6 +263,17 @@ func matchWinner2(g *gameState) bool { return matchWinner(g.SA, g.SB, g.R, g.Fm)
 type buyEvent struct {
 	N  int    `json:"n"`
 	ID string `json:"id"`
+	S  int    `json:"s,omitempty"` // 1 — qaytarib sotish
+}
+
+// boughtItem: xarid — shu raundning xarid vaqtida to'liq narxiga qaytarib sotsa bo'ladi.
+type boughtItem struct {
+	id      string
+	price   int
+	armor0  float64 // xariddan oldingi zirh (zirh qaytarilsa tiklanadi)
+	helmet0 bool
+	e       string
+	r       int
 }
 
 // checkBuysLocked: presence'dagi yangi xaridlar.
@@ -275,8 +295,12 @@ func (r *room) checkBuysLocked(c *client, f map[string]json.RawMessage, now time
 		if !r.ecoOn() {
 			continue // isinish va boshqa rejimlar: hamma narsa bepul
 		}
-		if why := r.buyLocked(c, b.ID, now); why != "" {
-			c.warnLocked("rad etilgan xarid: "+b.ID+" ("+why+")", now)
+		what, do := "xarid", r.buyLocked
+		if b.S == 1 {
+			what, do = "qaytarib sotish", r.sellLocked
+		}
+		if why := do(c, b.ID, now); why != "" {
+			c.warnLocked("rad etilgan "+what+": "+b.ID+" ("+why+")", now)
 			c.sendEco(map[string]any{"deny": b.N, "id": b.ID})
 		}
 	}
@@ -303,6 +327,7 @@ func (r *room) buyLocked(c *client, id string, now time.Time) string {
 	if price > p.money {
 		return "pul yetmaydi"
 	}
+	a0, h0 := p.armor, p.helmet
 	switch {
 	case it.slot == 4:
 		if p.inv.nades[id] >= it.max || p.inv.nadeCount() >= nadeMax {
@@ -321,6 +346,11 @@ func (r *room) buyLocked(c *client, id string, now time.Time) string {
 			return "dubulg'a bor"
 		}
 		p.armor, p.helmet = 100, true
+	case id == "taser":
+		if p.inv.taser {
+			return "uchqun bor"
+		}
+		p.inv.taser = true
 	case id == "kit":
 		if c.info.Tm != "CT" || p.kit {
 			return "to'plam kerak emas"
@@ -328,8 +358,101 @@ func (r *room) buyLocked(c *client, id string, now time.Time) string {
 		p.kit = true
 	}
 	p.money -= price
+	keep := p.bought[:0]
+	for _, b := range p.bought { // faqat shu raunddagilar
+		if b.e == g.E && b.r == g.R {
+			keep = append(keep, b)
+		}
+	}
+	p.bought = append(keep, boughtItem{id: id, price: price, armor0: a0, helmet0: h0, e: g.E, r: g.R})
 	c.sendEco(nil)
 	return ""
+}
+
+// sellLocked: shu raundda sotib olingan narsani xarid vaqtida, bazada, hali qo'lda bo'lsa to'liq narxiga qaytarib oladi.
+func (r *room) sellLocked(c *client, id string, now time.Time) string {
+	g, p := r.gs, c.ps
+	switch {
+	case !p.alive:
+		return "o'lik"
+	case !inBuyTime(g, now):
+		return "xarid vaqti tugagan"
+	case !r.nearSpawnLocked(p.pos, c.info.Tm):
+		return "bazadan tashqarida"
+	}
+	idx := -1
+	for i := len(p.bought) - 1; i >= 0; i-- {
+		b := p.bought[i]
+		if b.e != g.E || b.r != g.R {
+			continue
+		}
+		if id == "kevlar" || id == "helmet" { // zirh: faqat oxirgi zirh xaridi
+			if b.id == "kevlar" || b.id == "helmet" {
+				if b.id == id {
+					idx = i
+				}
+				break
+			}
+			continue
+		}
+		if b.id == id {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		return "bu raundda sotib olinmagan"
+	}
+	b, it := p.bought[idx], shop[id]
+	switch {
+	case it.slot == 4:
+		if p.inv.nades[id] <= 0 {
+			return "granata yo'q"
+		}
+		p.inv.nades[id]--
+	case it.slot == 1 || it.slot == 2:
+		if !p.inv.remove(id, now) {
+			return "qurol qo'lda emas"
+		}
+	case id == "kevlar" || id == "helmet":
+		if p.armor < 100 {
+			return "zirh shikastlangan"
+		}
+		p.armor, p.helmet = b.armor0, b.helmet0
+	case id == "kit":
+		if !p.kit {
+			return "to'plam yo'q"
+		}
+		p.kit = false
+	case id == "taser":
+		if !p.inv.remove("taser", now) {
+			return "uchqun yo'q"
+		}
+	default:
+		return "noma'lum narsa"
+	}
+	p.bought = append(p.bought[:idx], p.bought[idx+1:]...)
+	p.money = min(moneyMax, p.money+b.price)
+	c.sendEco(nil)
+	return ""
+}
+
+// forgetBought: qo'ldan chiqqan qurolni (tashlangan) endi qaytarib sotib bo'lmaydi.
+func (p *pstate) forgetBought(w string) {
+	for i := len(p.bought) - 1; i >= 0; i-- {
+		if p.bought[i].id == w {
+			p.bought = append(p.bought[:i], p.bought[i+1:]...)
+			return
+		}
+	}
+}
+
+// groundLocked: yerdagi qurollar ro'yxati shu raund uchun.
+func (r *room) groundLocked() {
+	g := r.gs
+	if r.ground == nil || r.groundR != g.R || r.groundE != g.E {
+		r.ground, r.groundR, r.groundE = map[string]groundGun{}, g.R, g.E
+	}
 }
 
 // nearSpawnLocked: o'z bazasida (bir katak chetlanish bilan — kechikish uchun).
@@ -363,9 +486,7 @@ type dropEvent struct {
 // checkDropsLocked: tashlangan va olingan qurollar. Noto'g'rilari boshqalarga yuborilmaydi.
 func (r *room) checkDropsLocked(c *client, f map[string]json.RawMessage, now time.Time) {
 	p, g := c.ps, r.gs
-	if r.ground == nil || r.groundR != g.R || r.groundE != g.E {
-		r.ground, r.groundR, r.groundE = map[string]groundGun{}, g.R, g.E
-	}
+	r.groundLocked()
 	if raw := f["dr"]; len(raw) > 0 && raw[0] == '[' {
 		var list []json.RawMessage
 		if json.Unmarshal(raw, &list) == nil {
@@ -387,6 +508,7 @@ func (r *room) checkDropsLocked(c *client, f map[string]json.RawMessage, now tim
 						c.warnLocked("sizda yo'q qurol tashlandi: "+d.W, now)
 						continue
 					}
+					p.forgetBought(d.W)
 					r.ground[d.ID] = groundGun{w: d.W, r: g.R}
 				}
 				p.okDrops[d.N] = true

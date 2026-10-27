@@ -37,7 +37,14 @@ type wspec struct {
 	dmg, pen, rate float64
 	pellets        int // drobovik: bitta o'qda nechta saochma (tegishi bitta da'vo bo'lib keladi)
 	melee, nade    bool
+	taser          bool // elektroshoker: yaqin masofa, bir martalik
 }
+
+// taserReach: elektroshoker 4,6 m gacha uradi (ko'zdan oyoqqacha masofa va kechikish uchun zaxira bilan).
+const taserReach = 6.2
+
+// rangeUnit: zarar har shuncha metrda qurolning fall ko'paytmasiga kamayadi (brauzerdagi RANGE_U).
+const rangeUnit = 12.7
 
 var weaponSpecs = map[string]wspec{
 	"knife":   {dmg: 180, pen: .85, rate: .45, melee: true},
@@ -51,13 +58,14 @@ var weaponSpecs = map[string]wspec{
 	"shotgun": {dmg: 20, pen: .6, rate: .85, pellets: 8},
 	"lmg":     {dmg: 32, pen: .8, rate: .08},
 	"scout":   {dmg: 88, pen: .85, rate: 1.2},
+	"taser":   {dmg: 500, pen: 1, rate: 1, taser: true},
 	"he":      {nade: true, pen: .57},
 	"flash":   {nade: true},
 	"smoke":   {nade: true},
 	"molly":   {nade: true, pen: 1},
 }
 
-var partMult = map[string]float64{"h": 4, "c": 1, "s": 1.25, "l": .75}
+var partMult = map[string]float64{"h": 4, "c": 1, "s": 1.25, "a": 1, "l": .75} // a — qo'llar
 
 // ---- o'yin holati ----
 
@@ -199,6 +207,7 @@ type pstate struct {
 	ecoE             string // qaysi o'yinda pul berilgan
 	inv              inventory
 	buyN             int
+	bought           []boughtItem // shu raundda sotib olinganlar (qaytarib sotish uchun)
 	dropN, pickN     int
 	okDrops, okPicks map[int]bool
 	nadeOK           bool
@@ -479,7 +488,7 @@ func (r *room) validHitLocked(c *client, h hitClaim, now time.Time) string {
 		return "sizda yo'q qurol: " + h.W
 	}
 	limit := spec.dmg * mult
-	if spec.melee {
+	if spec.melee || spec.taser {
 		limit = spec.dmg
 	}
 	if spec.pellets > 1 { // saochmalar har xil joyga tegadi: eng yomon holat — hammasi qism ko'paytmasi bilan
@@ -518,6 +527,9 @@ func (r *room) validHitLocked(c *client, h hitClaim, now time.Time) string {
 	if best > 180 {
 		return "juda uzoq"
 	}
+	if spec.taser && best > taserReach {
+		return "uchqun uzoqdan"
+	}
 	for _, s := range shooter {
 		e := eye(s)
 		for _, t := range target {
@@ -546,6 +558,9 @@ func (r *room) applyHitLocked(c *client, h hitClaim, now time.Time) {
 	vp := v.ps
 	c.ps.hitAt = append(c.ps.hitAt, now)
 	c.ps.dealt[v.id] = now
+	if spec.taser { // bitta zaryad — ishlatildi
+		c.ps.inv.remove("taser", now)
+	}
 	dmg := h.D
 	prot := vp.armor > 0 && h.P != "l" && (h.P != "h" || vp.helmet)
 	if prot {

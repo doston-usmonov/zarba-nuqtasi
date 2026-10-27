@@ -196,8 +196,15 @@ Telegram va boshqa messenjerlarda havola rasm va sarlavha bilan chiqadi: server 
 | Tog' | pulemyot | $5000 | 100 o'q, og'ir — sekin yuradi, uzoq qayta o'qlanadi |
 | Sayyod | yengil snayper | $1700 | 10 o'q, harakatda ham aniq, boshga bir o'qda |
 | Qirg'iy-50 | snayper | $4750 | tanaga bir o'qda |
+| Uchqun | elektroshoker (Jihozlar bo'limida) | $200 | 4,6 m gacha bitta urishda o'ldiradi, zirhdan o'tadi; bir martalik. 3 tugmasi bilan pichoq ⇄ Uchqun |
 
 Drobovik o'qi serverga bitta tegish sifatida yuboriladi (nishonga tekkan saochmalar soni bilan), server zarar chegarasini saochmalar soniga qarab tekshiradi.
+
+**Zarar** CS'dagi kabi hisoblanadi: bosh ×4, ko'krak va qo'llar ×1, qorin ×1,25, oyoq ×0,75. Zirh ko'krak, qorin va qo'llarni, dubulg'a boshni himoya qiladi; qurolning zirh teshish ko'rsatkichi qancha zarar o'tishini belgilaydi. Zarar har 12,7 metrda qurolning masofa ko'paytmasiga kamayadi (to'pponcha va pistolet-pulemyotda ko'proq, avtomat va snayperda deyarli kamaymaydi). Masalan, Burkut zirhsiz nishonni ko'krakka 3 o'qda, zirhlisini 4 o'qda o'ldiradi. Pichoq: oldidan 40 (og'ir zarba — o'ng tugma — 65), **orqadan esa har qanday zarba bitta urishda o'ldiradi**.
+
+**Yerdagi qurollar.** O'lgan o'yinchining (va raundli rejimlarda botning) eng yaxshi quroli yerda qoladi. Unga qarasangiz, nishon ostida «+» belgisi, qurol nomi va o'qlari chiqadi: **E** — olish, **G** — qo'lingizdagi shu turdagi qurolni tashlab, yerdagisini olish. Bo'sh slotga qurol ustidan yurib o'tganda o'zi olinadi.
+
+**Qaytarib sotish.** Shu raundda sotib olgan narsangizni xarid vaqti tugaguncha, bazada turgan holda, to'liq narxiga qaytarib sotishingiz mumkin: xarid menyusida «↩ Qaytarish» belgisini (yoki o'ng tugmani) bosing. Qurol qo'lingizda bo'lishi, zirh esa shikastlanmagan bo'lishi kerak; yerga tashlangan yoki boshqadan olingan qurol qaytarilmaydi. Server ham buni tekshiradi.
 
 **Askarlar modeli.** Hujumchi va himoyachi Blender'da yasalgan (`tools/soldier.py`, `pip install bpy` bilan ishlaydi): bitta yaxlit, silliq tana, 17 suyakli skelet, kamuflyaj teksturasi; 12,7 va 14,8 ming uchburchak. Qayta yasash: `python3 tools/soldier.py T web/models/soldier_T.glb preview.png` (CT uchun ham shunday). O'yinda modelning skeleti o'yin harakatlariga bog'lanadi: yurish, cho'kkalash, bosh va gavda harakati, qo'llar esa IK bilan qurol dastasiga. O'q tegadigan zonalar o'zgarmagan. Har bir askarga uchta bosh variantidan biri (hujumchi: to'qima shapka va to'liq soqol / salla va qisqa soqol / qisqa soch va mo'ylov; himoyachi: ko'zoynakli dubulg'a / dubulg'a va mo'ylov / kepka, quloqchin va qisqa soqol) va uchta teri rangidan biri tushadi. Sozlamalarda grafika «past» bo'lsa, oddiy (yengil) modellar ishlatiladi.
 
@@ -252,7 +259,7 @@ Hosting provayderida alohida firewall bo'lsa (masalan, bulut paneli), o'sha port
 
 ## Boshqaruv
 
-WASD — harakat, sichqoncha — nishonga olish va otish, C yoki Ctrl — cho'kkalab yurish, Shift — sekin yurish, Bo'shliq — sakrash, R — qayta o'qlash, B — xarid, E (bosib turing) — bomba o'rnatish yoki zararsizlantirish, Tab — hisob, G — qurolni tashlash, E (qurolga qarab) — yerdagi qurolni olish, M — jamoani almashtirish, K (bosib turing) — ovozli chatda gapirish.
+WASD — harakat, sichqoncha — nishonga olish va otish, C yoki Ctrl — cho'kkalab yurish, Shift — sekin yurish, Bo'shliq — sakrash, R — qayta o'qlash, B — xarid, E (bosib turing) — bomba o'rnatish yoki zararsizlantirish, Tab — hisob, G — qurolni tashlash (yerdagi qurolga qarab turilsa — almashtirish), E (qurolga qarab) — yerdagi qurolni olish, 3 (yana bosilsa) — pichoq ⇄ Uchqun, M — jamoani almashtirish, K (bosib turing) — ovozli chatda gapirish.
 
 Granatalar 4-slotda: 4 tugmasi granatani oladi, yana bosilsa keyingi turiga o'tadi. Chap tugma — uzoqqa, o'ng tugma — yaqinga otish; granata tugma qo'yib yuborilganda uchadi. Turlari: portlovchi ($300), ko'r qiluvchi ($200, ikkitagacha), tutun ($300, 18 soniya ko'rinishni to'sadi), yondiruvchi ($400, 7 soniya yonadi, tutun uni o'chiradi). Bir o'yinchida ko'pi bilan 4 ta granata bo'ladi. Himoyachilar zararsizlantirish to'plamini ($400) olsa, bomba 7 emas, 4 soniyada zararsizlanadi.
 

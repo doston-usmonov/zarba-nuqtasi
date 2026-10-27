@@ -79,6 +79,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 #feed .hs{font-family:var(--f-display);font-size:11px;background:var(--bad);color:#1a0d0b;border-radius:3px;padding:0 4px}
 
 #cross{position:absolute;left:50%;top:50%;width:0;height:0;--g:4px;--c:#5cff8a}
+#pickTip{position:absolute;left:50%;top:calc(50% + 26px);transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:5px 11px 5px 7px;border-radius:6px;background:rgba(14,13,11,.62);color:var(--ink);font-size:13px;white-space:nowrap;pointer-events:none}
+#pickTip b{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--atk);color:#1d1606;font-family:var(--f-display);font-size:19px;line-height:1}
+#pickTip kbd{font-family:var(--f-display);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin:0 2px;font-size:12px}
 #cross i{position:absolute;background:var(--c);box-shadow:0 0 0 1px rgba(0,0,0,.55)}
 #cross i:nth-child(1){width:2px;height:8px;left:-1px;bottom:var(--g)}
 #cross i:nth-child(2){width:2px;height:8px;left:-1px;top:var(--g)}
@@ -198,6 +201,8 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .item .p{font-family:var(--f-display);color:var(--good);font-size:15px}
 .item .s{font-size:12px;color:var(--dim)}
 .item.own{border-color:var(--good)}
+.item .rf{align-self:flex-start;margin-top:2px;padding:3px 8px;border-radius:4px;border:1px solid rgba(242,181,68,.55);color:var(--atk);font-size:12px;font-weight:700}
+.item.canSell:hover .rf{background:rgba(242,181,68,.14)}
 
 #kc{position:fixed;left:50%;top:calc(96px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:rgba(14,13,11,.82);border:1px solid rgba(255,91,74,.55);border-radius:6px;padding:8px 14px;pointer-events:none;white-space:nowrap}
 #kc .tag{font-family:var(--f-display);font-size:13px;letter-spacing:.18em;background:var(--bad);color:#1a0d0b;border-radius:3px;padding:2px 6px}
@@ -485,6 +490,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
   <div id="feed"></div>
   <div id="scope" hidden></div>
   <div id="cross"><i></i><i></i><i></i><i></i></div>
+  <div id="pickTip" hidden><b>+</b><span id="pickTxt"></span></div>
   <div id="hit"></div>
   <div id="dmgDir"></div>
   <div id="perf" hidden></div>
@@ -1591,6 +1597,7 @@ function sfxWhiz(){ if (!ac) return; const t0 = ac.currentTime, s = ac.createBuf
 function sfxRicochet(pos){ noiseHit(spatial(pos), .18, .06, 3500, 4); }
 function sfxBeep(){ if (!ac) return; toneHit(spatial(bomb.pos), 1900, .45, .09, 'sine'); }
 function sfxBoom(){ if (!ac) return; const sp = spatial(null); noiseHit(sp, 1.2, 2.6, 180, .4); noiseHit(sp, .8, 1.2, 900, .5); toneHit(sp, 60, 1, 1.6, 'sine', 25); }
+function sfxZap(pos){ if (!ac) return; const sp = spatial(pos); noiseHit(sp, .55, .24, 4200, 1.1); toneHit(sp, 92, .14, .26, 'sawtooth'); toneHit(sp, 1850, .05, .09, 'square'); noiseHit(sp, .3, .12, 9000, .8, .06); }
 function sfxKnife(){ if (!ac) return; const t0 = ac.currentTime, s = ac.createBufferSource(); s.buffer = noiseBuf; const f = ac.createBiquadFilter(); f.type='bandpass'; f.Q.value=3; f.frequency.setValueAtTime(1800,t0); f.frequency.exponentialRampToValueAtTime(5000,t0+.15); s.connect(f); chain(f, spatial(null), .3, t0, .18); s.start(t0); s.stop(t0+.25); }
 /* ---------- the Uzbek announcer (voice lines recorded once, played through the same mixer) ---------- */
 // VO_DATA is filled only in the Claude version; the game server serves the same lines from /vo/*.mp3
@@ -1645,6 +1652,7 @@ const W = {
   lmg:    { name:"Tog'", slot:1, kind:'rifle', dmg:32, pen:.8, rate:.08, auto:true, mag:100, res:200, reload:5.0, spread:.006, move:.1, air:.35, rise:.7, sway:1.3, speed:3.8, price:5000, kill:300, fall:.97, shot:'lmg', draw:1.0, desc:"100 o'q · og'ir, sekin yuradi" },
   scout:  { name:'Sayyod', slot:1, kind:'sniper', dmg:88, pen:.85, rate:1.2, auto:false, mag:10, res:90, reload:3.0, spread:.05, scoped:.0008, move:.08, air:.12, rise:0, sway:0, speed:4.6, price:1700, kill:300, fall:.99, shot:'scout', draw:.7, desc:"10 o'q · yengil, harakatda ham aniq" },
   sniper: { name:"Qirg'iy-50", slot:1, kind:'sniper', dmg:115, pen:.97, rate:1.45, auto:false, mag:5, res:30, reload:3.6, spread:.07, scoped:.0006, move:.2, air:.4, rise:0, sway:0, speed:3.9, price:4750, kill:100, fall:.99, shot:'sniper', draw:.9, desc:"5 o'q · bir o'qda o'ldiradi" },
+  taser:  { name:'Uchqun', slot:3, kind:'taser', dmg:500, pen:1, rate:1, range:4.6, price:200, kill:100, speed:5.0, draw:.5, desc:"Elektroshoker: 4,6 m gacha bitta urishda o'ldiradi · bir martalik" },
   bomb:   { name:'Bomba', slot:5, kind:'bomb', speed:4.8, draw:.4 },
   he:     { name:'Portlovchi', slot:4, kind:'nade', price:300, max:1, speed:4.9, kill:300, draw:.45, desc:"Portlaydi: 6 metrgacha zarar" },
   flash:  { name:"Ko'r qiluvchi", slot:4, kind:'nade', price:200, max:2, speed:4.9, kill:300, draw:.45, desc:"Qaraganlarni bir necha soniya ko'r qiladi" },
@@ -1653,7 +1661,7 @@ const W = {
 };
 const NADE_IDS = ['he','flash','smoke','molly'], NADE_MAX = 4;
 const GEAR = { kevlar:{ name:'Bronejilet', price:650, desc:'100 zirh' }, helmet:{ name:"Bronejilet + dubulg'a", price:1000, desc:'Boshni ham himoya qiladi' }, kit:{ name:'Zararsizlantirish to\'plami', price:400, team:'CT', desc:'Bomba 7 emas, 4 soniyada zararsizlanadi' } };
-const SHOP = [ ['Pistolettlar',['pistol','mpistol','deagle']], ['Pistolet-pulemyot va drobovik',['smg','shotgun']], ['Avtomatlar va pulemyot',['carbine','rifle','lmg']], ['Snayper miltiqlari',['scout','sniper']], ['Granatalar',NADE_IDS], ['Jihozlar',['kevlar','helmet','kit']] ];
+const SHOP = [ ['Pistolettlar',['pistol','mpistol','deagle']], ['Pistolet-pulemyot va drobovik',['smg','shotgun']], ['Avtomatlar va pulemyot',['carbine','rifle','lmg']], ['Snayper miltiqlari',['scout','sniper']], ['Granatalar',NADE_IDS], ['Jihozlar',['kevlar','helmet','taser','kit']] ];
 // spray patterns: cumulative [x,y] degrees per shot
 function makePattern(n, rise, sway){ const out = []; let x = 0, y = 0; for (let i=0;i<n;i++){ const dy = i === 0 ? 0 : i < 10 ? rise*(1.3 - i*.075) : rise*.14*Math.sin(i*1.3); const dx = i < 8 ? Math.sin(i*1.7)*.07*sway : sway*Math.sin((i-8)/4.2)*.55; y += dy; x += dx; out.push([x,y]); } return out; }
 Object.values(W).forEach(w => { if (w.mag) w.pattern = makePattern(w.mag + 2, w.rise, w.sway); });
@@ -1669,7 +1677,7 @@ const GM = {
   metal:std(0x2a2c2f, { metalness:.72, roughness:.38 }), metal2:std(0x3d4044, { metalness:.55, roughness:.46 }), poly:std(0x1f2022, { roughness:.62, metalness:.05 }),
   wood:std(0xffffff, { map:WOOD, roughness:.48 }), silver:std(0xb2b6bc, { metalness:.9, roughness:.24 }), green:std(0x4a5538, { roughness:.7 }), steel:std(0xd3d7dc, { metalness:.95, roughness:.18 }),
   tan:std(0x8f8566, { roughness:.92 }), tape:std(0x2b2b27, { roughness:.8 }), glass:std(0x0d1520, { metalness:.3, roughness:.04 }),
-  bottle:std(0x4b3416, { roughness:.12, metalness:.15 }), fire:std(0xff8a20, { emissive:lin(0xff7010), emissiveIntensity:4 }),
+  bottle:std(0x4b3416, { roughness:.12, metalness:.15 }), ylw:std(0xe0b030, { roughness:.42, metalness:.05 }), arc:std(0x9fdcff, { emissive:lin(0x7fc8ff), emissiveIntensity:2.5 }), fire:std(0xff8a20, { emissive:lin(0xff7010), emissiveIntensity:4 }),
   lens:std(0xff2a1a, { emissive:lin(0xff2a1a), emissiveIntensity:3 }), screen:std(0x2ce06a, { emissive:lin(0x1ac255), emissiveIntensity:1.6 }), red:std(0xa8321f, { roughness:.6 }), yellow:std(0xc9a227, { roughness:.6 }),
 };
 /* ---------- weapon finishes (unlocked by level; original procedural patterns) ---------- */
@@ -1765,6 +1773,13 @@ const GUNS = {
     P(G, rbox(.03,.17,.038,.006), GM.metal2, 0, -.11, -.05, .08); P(G, prof(GRIP_PROF, .032), GM.poly, 0, -.035, .07); P(G, rbox(.03,.08,.03,.008), GM.poly, 0, -.07, -.15);
     P(G, rbox(.01,.01,.2,.002), GM.metal, .018, -.005, .23); P(G, rbox(.01,.01,.2,.002), GM.metal, -.018, -.005, .23); P(G, rbox(.05,.08,.014,.004), GM.poly, 0, -.03, .33);
     return { G, muzzle:new V3(0,.005,-.31), grip:new V3(0,-.085,.1), support:new V3(0,-.1,-.15), supportTP:new V3(0,-.1,-.15) }; },
+  // stun gun: stubby yellow body, black grip, two electrodes in a clear cartridge at the front
+  taser(){ const G = new THREE.Group();
+    P(G, rbox(.034,.044,.15,.01), GM.ylw, 0, .02, -.01); P(G, rbox(.036,.02,.1,.006), GM.poly, 0, .049, .01); P(G, rbox(.03,.03,.045,.006), GM.glass, 0, .02, -.105);
+    P(G, rbox(.004,.004,.012,.001), GM.steel, .008, .028, -.132); P(G, rbox(.004,.004,.012,.001), GM.steel, -.008, .028, -.132); P(G, sph(.003), GM.arc, 0, .012, -.128);
+    P(G, prof([[-.005,0],[.04,0],[.065,-.1],[.022,-.106]], .03), GM.poly, 0, -.002, .04); P(G, rbox(.006,.012,.03,.002), GM.ylw, 0, -.022, .0);
+    P(G, rbox(.02,.006,.02,.002), GM.metal2, 0, .062, .045);
+    return { G, muzzle:new V3(0,.024,-.14), grip:new V3(0,-.05,.075), support:new V3(-.03,-.056,.07), supportTP:new V3(-.03,-.056,.07) }; },
   pistol(){ const G = new THREE.Group();
     P(G, rbox(.031,.036,.19,.006), GM.metal, 0, .02, 0); for (let i=0;i<6;i++) P(G, rbox(.033,.026,.003,.001), GM.metal2, 0, .022, .06 + i*.006);
     P(G, rbox(.029,.024,.17,.006), GM.poly, 0, -.006, .006); P(G, prof([[-.005,0],[.045,0],[.07,-.105],[.026,-.112]], .03), GM.poly, 0, -.014, .035);
@@ -1885,14 +1900,14 @@ function vmHand(G, at, side){ const h = new THREE.Group(); h.position.copy(at); 
 function vmArm(G, wrist, dir){ const end = wrist.clone().add(dir); between(G, wrist, end, .032, .043, VMM.sleeve); between(G, wrist, wrist.clone().lerp(end, .09), .034, .035, VMM.cuff); }
 function buildVM(){
   const cfg = { rifle:[.135,-.142,-.43], carbine:[.135,-.142,-.43], smg:[.135,-.135,-.41], sniper:[.135,-.142,-.45], pistol:[.15,-.142,-.5], deagle:[.15,-.148,-.52],
-    shotgun:[.135,-.145,-.43], lmg:[.14,-.152,-.42], scout:[.135,-.142,-.45], mpistol:[.15,-.142,-.5], knife:[.16,-.15,-.37], bomb:[.03,-.2,-.4], he:[.15,-.15,-.42], flash:[.15,-.155,-.42], smoke:[.15,-.155,-.42], molly:[.15,-.17,-.43] };
+    shotgun:[.135,-.145,-.43], lmg:[.14,-.152,-.42], scout:[.135,-.142,-.45], mpistol:[.15,-.142,-.5], taser:[.15,-.14,-.46], knife:[.16,-.15,-.37], bomb:[.03,-.2,-.4], he:[.15,-.15,-.42], flash:[.15,-.155,-.42], smoke:[.15,-.155,-.42], molly:[.15,-.17,-.43] };
   Object.keys(cfg).forEach(id => {
     const gun = GUNS[id](), g = new THREE.Group(); g.add(gun.G); const R = gun.grip, S2 = gun.support;
     if (id === 'bomb'){ vmHand(g, new V3(.112,-.01,.02), 1); vmHand(g, new V3(-.112,-.01,.02), -1);
       vmArm(g, new V3(.13,-.03,.07), new V3(.1,-.3,.42)); vmArm(g, new V3(-.13,-.03,.07), new V3(-.1,-.3,.42)); }
     else {
       vmHand(g, R, 1); vmArm(g, R.clone().add(new V3(.012,-.035,.055)), new V3(.11,-.3,.46));
-      if (id !== 'knife' && W[id].kind !== 'nade'){ const pist = W[id].kind === 'pistol'; vmHand(g, S2, -1); vmArm(g, S2.clone().add(new V3(-.012,-.035,.055)), pist ? new V3(-.12,-.3,.42) : new V3(-.05,-.34,.4)); }
+      if (id !== 'knife' && W[id].kind !== 'nade'){ const pist = W[id].kind === 'pistol' || id === 'taser'; vmHand(g, S2, -1); vmArm(g, S2.clone().add(new V3(-.012,-.035,.055)), pist ? new V3(-.12,-.3,.42) : new V3(-.05,-.34,.4)); }
     }
     g.traverse(o => { if (o.isMesh) o.frustumCulled = false; });
     const fl = flashSprite(id === 'sniper' || id === 'shotgun' || id === 'lmg' ? .3 : .18); fl.position.copy(gun.muzzle); g.add(fl);
@@ -2137,7 +2152,7 @@ function solveArm(a, S, T, pole, L1, L2){
   a.el.quaternion.setFromUnitVectors(new V3(0,-1,0), dir);
 }
 const HOLD = { long:new V3(.1,.38,.33), pistol:new V3(.04,.42,.4), low:new V3(.17,.17,.18) };
-const holdOf = id => ['rifle','carbine','smg','sniper','shotgun','lmg','scout'].includes(id) ? 'long' : (W[id] && W[id].kind === 'pistol') ? 'pistol' : 'low';
+const holdOf = id => ['rifle','carbine','smg','sniper','shotgun','lmg','scout'].includes(id) ? 'long' : (W[id] && (W[id].kind === 'pistol' || W[id].kind === 'taser')) ? 'pistol' : 'low';
 function setSoldierWeapon(m, id, fn){
   if (!GUNS[id]) id = 'pistol';
   fn = FINISHES[fn] ? fn : '';
@@ -2178,8 +2193,8 @@ const player = { team:'T', pos:new V3(cw(21), 0, cw(37)), vel:new V3(), yaw:0, p
   inv:{ 1:null, 2:{ id:'pistol', mag:20, res:120 }, 3:{ id:'knife' } }, bomb:true, slot:2, lastSlot:3, fireCd:0, reloadT:0, drawT:0, recoil:0, lastShot:-9,
   scope:0, kills:0, deaths:0, hs:0, dmg:0, stepT:0, planting:0, punchY:0, punchX:0, knifeT:0, kick:0, bobT:0, killer:null, deathPos:new V3(), hitT:-9, tagT:0,
   nades:{ he:0, flash:0, smoke:0, molly:0 }, nadeSel:null, nadeHold:null, nadeT:0, nadeNext:false, kit:false, spawnT:-9, ggLv:-1 };
-const BOMB_IT = { id:'bomb' }, NADE_IT = { he:{ id:'he' }, flash:{ id:'flash' }, smoke:{ id:'smoke' }, molly:{ id:'molly' } };
-function curItem(){ return player.slot === 5 ? BOMB_IT : player.slot === 4 ? (player.nadeSel ? NADE_IT[player.nadeSel] : null) : player.inv[player.slot]; }
+const TASER_IT = { id:'taser' }, BOMB_IT = { id:'bomb' }, NADE_IT = { he:{ id:'he' }, flash:{ id:'flash' }, smoke:{ id:'smoke' }, molly:{ id:'molly' } };
+function curItem(){ return player.slot === 5 ? BOMB_IT : player.slot === 4 ? (player.nadeSel ? NADE_IT[player.nadeSel] : null) : player.slot === 3 && player.taser && player.tsel ? TASER_IT : player.inv[player.slot]; }
 function nadeTotal(){ const n = player.nades; return n.he + n.flash + n.smoke + n.molly; }
 function nextNade(from){ const i0 = NADE_IDS.indexOf(from); for (let k=1;k<=4;k++){ const id = NADE_IDS[(i0 + k + 4) % 4]; if (player.nades[id] > 0) return id; } return null; }
 function curW(){ const it = curItem(); return it ? W[it.id] : W.knife; }
@@ -2188,7 +2203,7 @@ function eyeH(){ return 1.62 - player.crouch*.48; }
 /* ================= BOTS ================= */
 const BOT_NAMES = ['Sardor','Jasur','Diyor','Bekzod','Otabek'];
 function buildBot(pal){ return buildSoldier(pal || PAL_CT); }
-const HB = [ { part:'head', min:[-.13,1.48,-.13], max:[.13,1.8,.15] }, { part:'chest', min:[-.25,1.12,-.16], max:[.25,1.49,.16] }, { part:'stomach', min:[-.22,.88,-.13], max:[.22,1.12,.13] }, { part:'legs', min:[-.22,0,-.12], max:[.22,.88,.12] } ];
+const HB = [ { part:'head', min:[-.13,1.48,-.13], max:[.13,1.8,.15] }, { part:'chest', min:[-.25,1.12,-.16], max:[.25,1.49,.16] }, { part:'arms', min:[-.33,1.12,-.12], max:[.33,1.42,.56] }, { part:'stomach', min:[-.22,.88,-.13], max:[.22,1.12,.13] }, { part:'legs', min:[-.22,0,-.12], max:[.22,.88,.12] } ];
 const bots = BOT_NAMES.map((n,i) => { const m = buildBot(); scene.add(m.g); return { i, name:'Bot '+n, mCT:m, side:'CT', hasBomb:false, planting:0, pos:new V3(), yaw:Math.PI, alive:true, hp:100, armor:0, helmet:false, weapon:'pistol', mag:20, m,
   mode:'hold', path:null, pi:0, pathGoal:new V3(), replan:0, hold:null, seeing:false, vis:null, react:0, seenFor:0, fireCd:0, burst:0, pause:0, reloadT:0,
   lastKnown:null, lastSeen:-99, alertPos:null, alertT:-99, investigate:false, spotT:-99, kills:0, deaths:0, defuse:0, walk:0, deadT:0, visT:i*.03, stepT:0, flashT:0, moving:false, stuck:0, strafe:0, kneel:0, blindT:0 }; });
@@ -2272,7 +2287,7 @@ function updatePips(){ if (MODE === 'online') return netPips(); const bs = botsS
 function updateSlots(){
   const rows = []; const add = (k, name, cur) => rows.push(`<div class="${cur ? 'cur' : ''}"><span>${name}</span><span class="k">${k}</span></div>`);
   if (player.inv[1]) add(1, W[player.inv[1].id].name, player.slot === 1);
-  if (player.inv[2]) add(2, W[player.inv[2].id].name, player.slot === 2); add(3, W.knife.name, player.slot === 3);
+  if (player.inv[2]) add(2, W[player.inv[2].id].name, player.slot === 2); add(3, player.taser ? (player.tsel ? W.taser.name + ' · ' + W.knife.name : W.knife.name + ' · ' + W.taser.name) : W.knife.name, player.slot === 3);
   if (nadeTotal()) add(4, NADE_IDS.filter(id => player.nades[id]).map(id => W[id].name + (player.nades[id] > 1 ? ' ×' + player.nades[id] : '')).join(', '), player.slot === 4);
   if (player.bomb) add(5, W.bomb.name, player.slot === 5);
   H.slots.innerHTML = rows.join('');
@@ -2286,9 +2301,10 @@ function updateHUD(){
   const it = curItem(), w = curW();
   H.wname.textContent = w.name;
   if (w.kind === 'nade' && player.nadeSel){ H.mag.textContent = player.nades[player.nadeSel]; H.res.textContent = ''; H.mag.classList.remove('low'); }
+  else if (w.kind === 'taser'){ H.mag.textContent = '1'; H.res.textContent = ''; H.mag.classList.remove('low'); }
   else if (it && it.mag !== undefined){ H.mag.textContent = it.mag; H.res.textContent = '/ ' + it.res; H.mag.classList.toggle('low', it.mag <= Math.ceil(w.mag*.2)); } else { H.mag.textContent = '—'; H.res.textContent = ''; H.mag.classList.remove('low'); }
   H.money.firstChild.nodeValue = '$' + player.money;
-  const key = [player.slot, player.inv[1] && player.inv[1].id, player.inv[2] && player.inv[2].id, player.bomb, player.nadeSel, player.nades.he, player.nades.flash, player.nades.smoke, player.nades.molly].join('|');
+  const key = [player.slot, player.taser, player.tsel, player.inv[1] && player.inv[1].id, player.inv[2] && player.inv[2].id, player.bomb, player.nadeSel, player.nades.he, player.nades.flash, player.nades.smoke, player.nades.molly].join('|');
   if (key !== lastHudKey){ updateSlots(); lastHudKey = key; }
   H.buyHint.style.visibility = canBuy() ? 'visible' : 'hidden';
   if (MODE === 'online') netHUD(); else { $('teamTag').hidden = true; H.scT.textContent = sideScore('T'); H.scCT.textContent = sideScore('CT'); }
@@ -2896,7 +2912,9 @@ function armorCalc(dmg, part, armor, helmet, pen){
   if (!prot) return { dmg, armorLoss:0 };
   const red = dmg*pen; return { dmg:red, armorLoss:(dmg-red)*.5 };
 }
-const MULT = { head:4, chest:1, stomach:1.25, legs:.75 };
+const MULT = { head:4, chest:1, stomach:1.25, arms:1, legs:.75 };
+// damage falls off per 12.7 m of distance (the classic 500-unit step), not per 10 m — pistols and SMGs keep their bite at mid range
+const RANGE_U = 12.7;
 
 function drawWeapon(){ const w = curW(); player.drawT = w.draw || .4; player.reloadT = 0; player.scope = 0; player.recoil = 0; player.nadeHold = null; updateHUD(); }
 function switchSlot(s){
@@ -2907,6 +2925,7 @@ function switchSlot(s){
     if (player.slot === 4){ const n = nextNade(player.nadeSel); if (n && n !== player.nadeSel && !player.nadeHold && player.nadeT <= 0){ player.nadeSel = n; drawWeapon(); } return; }
     if (!player.nadeSel || !player.nades[player.nadeSel]) player.nadeSel = nextNade(player.nadeSel);
   } else if (s !== 5 && !player.inv[s]) return;
+  if (s === 3 && player.slot === 3){ if (player.taser){ player.tsel = !player.tsel; drawWeapon(); } return; }   // 3 again: knife ⇄ stun gun
   if (s === player.slot) return;
   player.lastSlot = player.slot; player.slot = s; player.planting = 0; drawWeapon();
 }
@@ -2932,6 +2951,7 @@ function inaccuracy(w){
 function playerFire(){
   const it = curItem(), w = curW();
   if (w.kind === 'knife') return knifeAttack(false);
+  if (w.kind === 'taser') return taserFire();
   if (player.fireCd > 0 || player.drawT > 0 || player.reloadT > 0) return;
   if (it.mag <= 0){ sfxClick(); player.fireCd = .25; if (it.res > 0) startReload(); return; }
   it.mag--; player.fireCd = w.rate; if (MODE !== 'online' && TRAIN(S.md)) TR.shots++;
@@ -2950,7 +2970,7 @@ function playerFire(){
     if (best){
       if (pel === 1){ if (MODE === 'online') netHit(best.b, w, best.h.part, best.h.t, e); else damageBot(best.b, w, best.h.part, best.h.t, e); }
       else { const t = agg.get(best.b) || { b:best.b, d:0, n:0, part:best.h.part, dist:best.h.t, pos:e.clone() };
-        t.d += w.dmg * MULT[best.h.part] * Math.pow(w.fall, best.h.t/10); t.n++; if (best.h.part === 'head') t.part = 'head'; agg.set(best.b, t); }
+        t.d += w.dmg * MULT[best.h.part] * Math.pow(w.fall, best.h.t/RANGE_U); t.n++; if (best.h.part === 'head') t.part = 'head'; agg.set(best.b, t); }
     }
     else if (wall.n){ addDecal(e, wall.n); if (k < 3) puff(e, 0xb39e7c, .35, .45, 2.2); if (rand() < .3/pel) puff(e, 0xffd890, .12, .08, 1, true); if (rand() < .15/pel) sfxRicochet(e); }
     if (!end) end = e.clone();
@@ -2973,6 +2993,40 @@ function playerFire(){
 }
 let flashOffT = 0;
 
+// stun gun: one charge, 4.6 m, kills through armour; the arc is drawn for everyone
+function taserFire(){
+  if (player.fireCd > 0 || player.drawT > 0 || !player.taser) return;
+  const w = W.taser; player.fireCd = 1; player.lastShot = S.time;
+  viewDir(_d, player.yaw, player.pitch); _o.copy(camera.position);
+  const wall = rayGrid(_o, _d, w.range), reach = Math.min(w.range, wall.t);
+  let best = null; for (const b of targetList()){ const h = rayHitBot(_o, _d, b, reach); if (h && (!best || h.t < best.h.t)) best = { b, h }; }
+  const end = _hp.copy(_o).addScaledVector(_d, best ? best.h.t : reach).clone(), from = muzzleWorld(_mz).clone();
+  if (best){ const part = best.h.part === 'head' ? 'head' : 'chest';
+    if (MODE === 'online') netHit(best.b, w, part, best.h.t, end, true); else damageBot(best.b, w, part, best.h.t, end, true); }
+  zapFX(from, end, !!best); sfxZap(null); player.kick = 1.2; player.punchY += .6;
+  if (MODE === 'online') NET.shot = { n:++NET.shotN, w:'taser', sx:r2(from.x), sy:r2(from.y), sz:r2(from.z), ex:r2(end.x), ey:r2(end.y), ez:r2(end.z) };
+  noise(player.pos, 18, true);
+  // spent: the knife comes back up a moment later
+  setTimeout(() => { player.taser = player.tsel = false; if (player.alive && player.slot === 3) drawWeapon(); updateHUD(); }, 380);
+}
+// the arc: a jagged chain of small glowing sprites (WebGL lines are 1 px — invisible in daylight) plus a thin core line
+const ZAP_N = 26, zapTex = canvasTex(32, 32, (g) => { const r = g.createRadialGradient(16, 16, 0, 16, 16, 16); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.35, 'rgba(170,225,255,.9)'); r.addColorStop(1, 'rgba(90,170,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 32, 32); }, false, true);
+const zapDots = [], zapLine = (() => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(new Array(ZAP_N*3).fill(0), 3));
+  const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color:0xffffff, transparent:true, opacity:.9, depthWrite:false })); l.frustumCulled = false; l.visible = false; l.renderOrder = 9; scene.add(l); return l; })();
+for (let i=0;i<ZAP_N;i++){ const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:zapTex, color:0x4ea4ff, transparent:true, opacity:.9, depthWrite:false })); sp.visible = false; sp.renderOrder = 9; scene.add(sp); zapDots.push(sp); }
+let zapT = 0;
+function zapFX(a, b, hit){
+  const d = b.clone().sub(a), id = ++zapT;
+  const draw = () => { if (id !== zapT) return; const p = zapLine.geometry.attributes.position;
+    for (let i=0;i<ZAP_N;i++){ const t = i/(ZAP_N-1), j = (i === 0 || i === ZAP_N-1) ? 0 : .16*Math.sin(t*Math.PI) + .02;
+      const x = a.x + d.x*t + (rand()-.5)*j, y = a.y + d.y*t + (rand()-.5)*j, z = a.z + d.z*t + (rand()-.5)*j;
+      p.setXYZ(i, x, y, z); const sp = zapDots[i]; sp.position.set(x, y, z); const sc = (.018 + rand()*.024)*(.5 + t*1.3); sp.scale.set(sc, sc, 1); sp.visible = true; }
+    p.needsUpdate = true; zapLine.visible = true; };
+  draw(); [40, 80, 120, 160, 200].forEach(t => setTimeout(draw, t));
+  setTimeout(() => { if (id !== zapT) return; zapLine.visible = false; zapDots.forEach(sp => sp.visible = false); }, 240);
+  puff(b, 0xcfeeff, hit ? .3 : .18, .22, hit ? 3 : 1.4, true);
+}
+
 function knifeAttack(heavy){
   if (player.fireCd > 0 || player.drawT > 0) return;
   player.fireCd = heavy ? 1.0 : .45; player.knifeT = heavy ? .5 : .3; sfxKnife();
@@ -2981,7 +3035,7 @@ function knifeAttack(heavy){
   if (MODE === 'online') NET.shot = { n:++NET.shotN, w:'knife', sx:0, sy:0, sz:0, ex:0, ey:0, ez:0 };
   if (best){
     const b = best.b, behind = Math.cos(wrapA(Math.atan2(player.pos.x-b.pos.x, player.pos.z-b.pos.z) - b.yaw)) < -.3;
-    const base = heavy ? (behind ? 180 : 65) : (behind ? 90 : 40);
+    const base = behind ? 180 : heavy ? 65 : 40;   // from behind: one stab, light or heavy
     const pos = _hp.copy(_o).addScaledVector(_d, best.h.t);
     const kw = { name:W.knife.name, dmg:base, pen:.85, fall:1, kind:'knife', kill:1500, id:'knife' };
     if (MODE === 'online') netHit(b, kw, 'chest', 1, pos, true); else damageBot(b, kw, 'chest', 1, pos, true);
@@ -3005,7 +3059,7 @@ function botKilled(b, w, hs){
 function damageBot(b, w, part, dist, pos, flat){
   if (b.protT > S.time && RM(S.md)) return;   // just respawned
   if (TRAIN(S.md)){ TR.hits++; if (part === 'head') TR.hsHits++; }
-  let dmg = flat ? w.dmg : w.dmg * MULT[part] * Math.pow(w.fall, dist/10);
+  let dmg = flat ? w.dmg : w.dmg * MULT[part] * Math.pow(w.fall, dist/RANGE_U);
   const r = armorCalc(dmg, part, b.armor, b.helmet, w.pen); dmg = r.dmg; b.armor = Math.max(0, b.armor - r.armorLoss);
   const dealt = Math.min(b.hp, dmg); b.hp -= dmg; player.dmg += dealt;
   puff(pos, 0x7a0d08, part === 'head' ? .45 : .32, .35, 1.8);
@@ -3031,7 +3085,7 @@ function noise(pos, radius, gun){
 
 function damagePlayer(bt, w, part, dist){
   if (!player.alive || shielded()) return;
-  let dmg = w.dmg * MULT[part] * Math.pow(w.fall, dist/10);
+  let dmg = w.dmg * MULT[part] * Math.pow(w.fall, dist/RANGE_U);
   const r = armorCalc(dmg, part, player.armor, player.helmet, w.pen); dmg = r.dmg; player.armor = Math.max(0, player.armor - r.armorLoss);
   player.hp -= dmg; player.hitT = S.time; player.tagT = .35;
   if (part === 'head' && player.helmet && player.hp > 0) sfxHeadshot(true); else sfxHurt();
@@ -3559,7 +3613,7 @@ function spawnDrop(id, w, mag, res, pos, vel){
   if (drops.size > DROP_MAX){ const first = drops.keys().next().value; removeDrop(first); }
   return d;
 }
-function removeDrop(id){ const d = drops.get(id); if (!d) return; scene.remove(d.g); drops.delete(id); if (pickTarget === d) pickTarget = null; }
+function removeDrop(id){ const d = drops.get(id); if (!d) return; scene.remove(d.g); drops.delete(id); if (pickTarget === d){ pickTarget = null; pickTipShow(); } }
 function clearDrops(){ [...drops.keys()].forEach(removeDrop); NET_PICKED.clear(); }
 function dropStep(d, h){
   if (d.ground) return;
@@ -3572,26 +3626,33 @@ function dropStep(d, h){
 }
 function updateDrops(dt){
   for (const d of drops.values()){ d.acc += dt; while (d.acc >= DROP_H && !d.ground){ d.acc -= DROP_H; dropStep(d, DROP_H); } d.g.position.set(d.p.x, d.p.y + .04, d.p.z); }
-  if (!player.alive || S.phase === 'menu' || S.phase === 'over'){ pickTarget = null; return; }
+  if (!player.alive || S.phase === 'menu' || S.phase === 'over'){ if (pickTarget){ pickTarget = null; pickTipShow(); } return; }
   // the gun under your crosshair (or at your feet)
   viewDir(_d, player.yaw, player.pitch); let best = null, bs = 0;
   for (const d of drops.values()){
     _tmp.set(d.p.x - camera.position.x, d.p.y + .05 - camera.position.y, d.p.z - camera.position.z);
     const dist = _tmp.length(), flat = Math.hypot(d.p.x - player.pos.x, d.p.z - player.pos.z);
-    if (dist > 2.6 || Math.abs(d.p.y - player.pos.y) > 1.4) continue;
-    const aim = _tmp.dot(_d)/Math.max(dist, .01), score = flat < .9 ? 2 : aim > .9 ? aim : 0;
+    if (dist > 3.2 || Math.abs(d.p.y - player.pos.y) > 1.4) continue;
+    const aim = _tmp.dot(_d)/Math.max(dist, .01), score = flat < .9 ? 2 : aim > .88 ? aim : 0;
     if (score > bs && los(camera.position, _tmp2.set(d.p.x, d.p.y + .1, d.p.z))){ bs = score; best = d; }
   }
   // auto pick-up into an empty slot when walking over it (not a gun you just threw)
   if (best && !player.inv[W[best.w].slot] && Math.hypot(best.p.x - player.pos.x, best.p.z - player.pos.z) < 1 && S.time - (best.mine || -9) > 1.2) return pickUp(best);
-  if (best !== pickTarget){ pickTarget = best; if (best && !isTouch) hint(KB('E', 'OLISH') + ' — ' + W[best.w].name + ' (' + best.mag + '/' + best.res + ') ni olish', 1800); }
+  if (best !== pickTarget){ pickTarget = best; pickTipShow(); }
+}
+function pickTipShow(){
+  const d = pickTarget, el = $('pickTip'); if (!d || !player.alive){ el.hidden = true; return; }
+  const w = W[d.w], cur = player.inv[w.slot];
+  $('pickTxt').innerHTML = `${escH(w.name)} <small>${d.mag}/${d.res}</small> · ` + (isTouch ? 'OLISH tugmasi'
+    : cur ? `<kbd>E</kbd> yoki <kbd>G</kbd> — ${escH(W[cur.id].name)} bilan almashtirish` : `<kbd>E</kbd> — olish`);
+  el.hidden = false;
 }
 function pickUp(d){
   if (!d || !player.alive || !drops.has(d.id)) return false;
   const w = W[d.w], cur = player.inv[w.slot];
   if (cur) throwGun(w.slot, .5);   // swap: what you held lands at your feet
   removeDrop(d.id);
-  player.inv[w.slot] = { id:d.w, mag:d.mag, res:d.res }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); sfxClick();
+  player.inv[w.slot] = { id:d.w, mag:d.mag, res:d.res }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); sfxClick(); pickTipShow();
   if (MODE === 'online'){ NET.pickW[d.id] = d.w; NET.picks.push({ n:++NET.pickN, id:d.id }); if (NET.picks.length > 6) NET.picks.shift(); }
   return true;
 }
@@ -3662,7 +3723,7 @@ document.addEventListener('keydown', e => {
     case 'KeyQ': switchSlot(player.lastSlot); break;
     case 'KeyR': startReload(); break;
     case 'KeyL': if (MODE !== 'online' && S.md === 'nade' && inGame()) trainLineup(); break;
-    case 'KeyG': dropCurrent(); break;
+    case 'KeyG': if (pickTarget && player.alive) pickUp(pickTarget); else dropCurrent(); break;   // standing at a gun: swap
     case 'KeyE': if (!e.repeat && pickTarget) pickUp(pickTarget); break;
     case 'Space': if (!e.repeat) jumpQ = true; break;
     case 'Tab': showBoard(true); break;
@@ -3889,7 +3950,7 @@ syncSegs();
 function openBuy(){ S.buyOpen = true; mouseL = false; renderBuy(); $('buy').hidden = false; if (document.pointerLockElement) document.exitPointerLock(); }
 function closeBuy(silent){ S.buyOpen = false; $('buy').hidden = true; if (!silent && inGame() && !S.paused) requestLock(); else if (silent && inGame() && !noLock) hint('Davom etish uchun ekranni bosing', 2500); }
 $('buyClose').addEventListener('click', () => closeBuy());
-function owns(id){ if (W[id] && W[id].kind === 'nade') return player.nades[id] >= W[id].max; if (id === 'kit') return player.kit;
+function owns(id){ if (W[id] && W[id].kind === 'nade') return player.nades[id] >= W[id].max; if (id === 'kit') return player.kit; if (id === 'taser') return !!player.taser;
   return (player.inv[1] && player.inv[1].id === id) || (player.inv[2] && player.inv[2].id === id) || (id === 'kevlar' && player.armor >= 100) || (id === 'helmet' && player.armor >= 100 && player.helmet); }
 function dmFree(){ return curMode() === 'dm' && S.phase === 'live'; }
 function priceOf(id){ if (dmFree()) return 0; if (id === 'helmet' && player.armor >= 100 && !player.helmet) return 350; return (W[id] || GEAR[id]).price; }
@@ -3903,21 +3964,49 @@ function renderBuy(){
     ids.forEach(id => {
       const d = W[id] || GEAR[id], price = priceOf(id), own = owns(id), nade = d.kind === 'nade', full = nade && !own && nadeTotal() >= NADE_MAX;
       if (d.team && d.team !== player.team) return;
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'item' + (own ? ' own' : ''); b.disabled = own || full || player.money < price;
-      b.innerHTML = `<span class="n"></span><span class="p">$${price}</span><span class="s"></span>`;
+      const rf = refundOf(id), b = document.createElement('button'); b.type = 'button'; b.className = 'item' + (own ? ' own' : '') + (rf ? ' canSell' : ''); b.disabled = !rf && (own || full || player.money < price);
+      b.innerHTML = `<span class="n"></span><span class="p">$${price}</span><span class="s"></span>` + (rf ? `<span class="rf" title="Qaytarib sotish (o'ng tugma ham)">↩ Qaytarish +$${rf.price}</span>` : '');
       b.querySelector('.n').textContent = d.name + (own ? ' · bor' : full ? ' · joy yo\'q' : nade && player.nades[id] ? ' · ' + player.nades[id] + ' ta' : ''); b.querySelector('.s').textContent = d.desc || '';
-      b.addEventListener('click', () => { buy(id); });
+      b.addEventListener('click', e => { if (rf && (own || full || e.target.closest('.rf') || player.money < price)) sell(id); else buy(id); });
+      b.addEventListener('contextmenu', e => { e.preventDefault(); if (rf) sell(id); });
       g.appendChild(b);
     });
   });
+}
+// what counts as "this round" for refunds
+function buyKey(){ return MODE === 'online' ? (NET.g ? (NET.g.e || '') + ':' + (NET.g.r|0) : '') : (S.md || 'comp') + ':' + S.round; }
+// the purchase that can still be sold back for this item (null if none)
+function refundOf(id){
+  const k = buyKey(), L = (player.bought || []).filter(b => b.k === k);
+  if (id === 'kevlar' || id === 'helmet'){ const last = L.filter(b => b.id === 'kevlar' || b.id === 'helmet').pop(); return last && last.id === id && player.armor >= 100 ? last : null; }   // undamaged, newest first
+  for (let i=L.length-1;i>=0;i--){ const b = L[i]; if (b.id !== id) continue;
+    if (W[id] && W[id].kind === 'nade') return player.nades[id] > 0 ? b : null;
+    if (id === 'kit') return player.kit ? b : null;
+    if (id === 'taser') return player.taser ? b : null;
+    if (W[id]){ const it = player.inv[W[id].slot]; return it && it.bk === b ? b : null; } }
+  return null;
+}
+function sell(id){
+  if (!canBuy()) return; const b = refundOf(id); if (!b) return;
+  if (W[id] && W[id].kind === 'nade'){ player.nades[id]--; if (player.nadeSel === id && !player.nades[id]) player.nadeSel = nextNade(id); if (player.slot === 4 && !nadeTotal()){ player.slot = bestSlot(); drawWeapon(); } }
+  else if (id === 'kit') player.kit = false;
+  else if (id === 'taser'){ player.taser = player.tsel = false; if (player.slot === 3) drawWeapon(); }
+  else if (id === 'kevlar' || id === 'helmet'){ player.armor = b.armor; player.helmet = b.helmet; }
+  else if (W[id]){ const sl = W[id].slot; player.inv[sl] = null; if (player.slot === sl){ player.slot = bestSlot(); drawWeapon(); } }
+  player.bought.splice(player.bought.indexOf(b), 1);
+  player.money += b.price; sfxClick(); renderBuy(); updateHUD();
+  if (MODE === 'online'){ NET.buys.push({ n:++NET.buyN, id, s:1 }); if (NET.buys.length > 8) NET.buys.shift(); NET.buyLog[NET.buyN] = { id, sell:true }; }
 }
 function buy(id){
   if (!canBuy()) { closeBuy(); return; }
   const prevArmor = player.armor, prevHelmet = player.helmet;
   const price = priceOf(id); if (player.money < price || owns(id)) return;
+  const k = buyKey(), entry = { id, price, armor:prevArmor, helmet:prevHelmet, k };
+  player.bought = (player.bought || []).filter(b => b.k === k); player.bought.push(entry);
   if (W[id] && W[id].kind === 'nade'){ if (nadeTotal() >= NADE_MAX) return; player.nades[id]++; if (!player.nadeSel || !player.nades[player.nadeSel]) player.nadeSel = id; }
   else if (id === 'kit'){ if (player.team !== 'CT') return; player.kit = true; }
-  else if (W[id]){ const w = W[id]; if (player.inv[w.slot] && !respawnMode()) throwGun(w.slot, .7); player.inv[w.slot] = { id, mag:w.mag, res:w.res }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); }
+  else if (id === 'taser'){ player.taser = true; }
+  else if (W[id]){ const w = W[id]; if (player.inv[w.slot] && !respawnMode()) throwGun(w.slot, .7); player.inv[w.slot] = { id, mag:w.mag, res:w.res, bk:entry }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); }
   else if (id === 'kevlar'){ player.armor = 100; }
   else if (id === 'helmet'){ player.armor = 100; player.helmet = true; }
   player.money -= price; sfxClick(); renderBuy(); updateHUD();
@@ -4203,7 +4292,7 @@ function recomputeSpawns(){ const free = ([x,z]) => [[1,0],[-1,0],[0,1],[0,-1]].
   SPAWNS.ALL = []; for (let z=0;z<GH;z++) for (let x=0;x<GW;x++) if (!botSolid(x, z) && free([x, z])) SPAWNS.ALL.push([x, z]); }
 recomputeSpawns();
 function spawnAt(team){ const list = SPAWNS[team] || SPAWNS.T, c = list[(rand()*list.length)|0]; player.pos.set(cw(c[0]) + (rand()-.5)*.6, 0, cw(c[1]) + (rand()-.5)*.6); player.vel.set(0,0,0); player.yaw = team === 'CT' ? Math.PI : 0; player.pitch = 0; }
-function resetInv(){ player.inv = { 1:null, 2:{ id:'pistol', mag:20, res:120 }, 3:{ id:'knife' } }; player.slot = 2; player.armor = 0; player.helmet = false;
+function resetInv(){ player.taser = player.tsel = false; player.bought = []; player.inv = { 1:null, 2:{ id:'pistol', mag:20, res:120 }, 3:{ id:'knife' } }; player.slot = 2; player.armor = 0; player.helmet = false;
   player.nades = { he:0, flash:0, smoke:0, molly:0 }; player.nadeSel = null; player.nadeHold = null; player.nadeT = 0; player.nadeNext = false; player.kit = false; }
 function refill(){ [1,2].forEach(k => { const it = player.inv[k]; if (it){ it.mag = W[it.id].mag; it.res = W[it.id].res; } }); if (player.slot === 5 || (player.slot === 4 ? !nadeTotal() : !player.inv[player.slot])) player.slot = bestSlot(); }
 
@@ -4244,6 +4333,7 @@ function updateRemote(r, pr, dt){
         for (let i=0;i<cnt;i++) setTimeout(() => sfxShot(wd.shot, at), i*45);
         tracer(a, b); r.flashT = .06; puff(b, 0xb39e7c, .3, .4, 2);
         if (foe(r) && player.alive && segDist(camera.position, a, b) < 2.2) sfxWhiz(); }
+      else if (sh.w === 'taser'){ zapFX(new V3(num(sh.sx), num(sh.sy), num(sh.sz)), new V3(num(sh.ex), num(sh.ey), num(sh.ez)), false); sfxZap(r.pos); }
       else if (sh.w === 'knife') { const sp = spatial(r.pos); noiseHit(sp, .25, .15, 3000, 2); } } }
     // their grenades (every client simulates the same throw; each one applies only its own damage)
     const gn = pr.gn;
@@ -4288,8 +4378,10 @@ function hurtFX(src, part){
 // the server's purse, a refused purchase, or a gun somebody else picked up first
 function netEco(m){
   if (MODE !== 'online') return;
-  if (m.deny !== undefined){ const b = NET.buyLog[num(m.deny)], id = b ? b.id : String(m.id || '');
-    if (W[id] && W[id].kind === 'nade'){ player.nades[id] = Math.max(0, player.nades[id] - 1); if (player.nadeSel === id && !player.nades[id]) player.nadeSel = nextNade(id); if (player.slot === 4 && !nadeTotal()){ player.slot = bestSlot(); drawWeapon(); } }
+  if (m.deny !== undefined && NET.buyLog[num(m.deny)] && NET.buyLog[num(m.deny)].sell){ hint('Qaytarib sotish rad etildi', 2400); if (S.buyOpen) renderBuy(); }
+  else if (m.deny !== undefined){ const b = NET.buyLog[num(m.deny)], id = b ? b.id : String(m.id || '');
+    if (id === 'taser'){ player.taser = player.tsel = false; if (player.slot === 3) drawWeapon(); }
+    else if (W[id] && W[id].kind === 'nade'){ player.nades[id] = Math.max(0, player.nades[id] - 1); if (player.nadeSel === id && !player.nades[id]) player.nadeSel = nextNade(id); if (player.slot === 4 && !nadeTotal()){ player.slot = bestSlot(); drawWeapon(); } }
     else if (W[id] && W[id].slot){ const sl = W[id].slot; if (player.inv[sl] && player.inv[sl].id === id){ player.inv[sl] = null; if (player.slot === sl){ player.slot = bestSlot(); drawWeapon(); } } }
     else if (b && (id === 'kevlar' || id === 'helmet')){ player.armor = b.armor; player.helmet = b.helmet; }
     else if (id === 'kit') player.kit = false;
@@ -4303,7 +4395,7 @@ function netEco(m){
 function netServerKill(m){ if (!player.alive || MODE !== 'online') return; const k = NET.remotes.get(String(m.by || '')); playerDie(k || null, W[m.w] || W.pistol, !!m.hs); }
 function netApplyHit(r, h){
   if (!player.alive || !foe(r) || shielded()) return;
-  const part = ({ h:'head', c:'chest', s:'stomach', l:'legs' })[h.p] || 'chest';
+  const part = ({ h:'head', c:'chest', s:'stomach', a:'arms', l:'legs' })[h.p] || 'chest';
   const a = armorCalc(clamp(num(h.d), 0, 600), part, player.armor, player.helmet, clamp(num(h.pn, .5), 0, 1));
   player.armor = Math.max(0, player.armor - a.armorLoss); player.hp -= a.dmg;
   hurtFX(r.pos, part);
@@ -4311,7 +4403,7 @@ function netApplyHit(r, h){
 }
 function netNadeHit(r, dmg, w){ NET.hits.push({ i:++NET.hitSeq, t:r.peer, d:Math.round(dmg), pn:1, p:'c', w }); if (NET.hits.length > 8) NET.hits.shift(); player.dmg += Math.min(dmg, r.hp); hitMark(false); }
 function netHit(r, w, part, dist, pos, flat, pc){
-  const dmg = flat ? w.dmg : w.dmg * MULT[part] * Math.pow(w.fall, dist/10);
+  const dmg = flat ? w.dmg : w.dmg * MULT[part] * Math.pow(w.fall, dist/RANGE_U);
   const h = { i:++NET.hitSeq, t:r.peer, d:Math.round(dmg), pn:w.pen, p:part[0], w:w.id || 'knife' }; if (pc > 1) h.pc = pc;
   NET.hits.push(h); if (NET.hits.length > 8) NET.hits.shift();
   player.dmg += Math.min(dmg, r.hp);
@@ -5063,7 +5155,7 @@ function touchFrame(){
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
 setTimeout(linkBoot, 0);
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){

@@ -19,6 +19,10 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Jamoadoshga qurol berish (sotib olib, G bilan tashlab berish)
 - [ ] Jamoadoshga pul berish
 - [ ] Botlar ham granata otishi (tutun bilan yopish, ko'r qilib kirish)
+- ✅ CS'dagi zarar: masofa birligi 12,7 m, qo'llar zonasi (×1, zirh himoya qiladi); orqadan pichoq bitta urishda
+- ✅ Elektroshoker «Uchqun» ($200): 4,6 m, bitta urishda, bir martalik; server masofa va qo'ldaligini tekshiradi
+- ✅ Yerdagi qurol: «+» belgisi, E — olish, G — almashtirish; botlarning quroli ham yerda qoladi
+- ✅ Qaytarib sotish: shu raund xaridlari xarid vaqtida to'liq narxiga
 
 ## 3. Server hakamligi (anti-cheat)
 - ✅ Zarba tekshiruvi serverda (zarar, otish tezligi, devor, kechikishni hisobga olib), jonni server hisoblaydi

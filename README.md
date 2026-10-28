@@ -20,6 +20,7 @@ zarba-server/
 ├── telegram.go        Telegram orqali kirish, hisobni ulash, parolni tiklash
 ├── spectate.go        kuzatuvchilar (o'yinchilarga ko'rinmaydi, chati faqat kuzatuvchilarga)
 ├── tournaments.go     klanlar turniri: setka, o'yin xonalari, natijalar
+├── metrics.go         /metrics — Prometheus ko'rsatkichlari (token bilan)
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── social.go          do'stlar, xonaga chaqiriqlar, klanlar (/api/social, /api/friends, /api/clan, /api/clans)
 ├── queue.go           «O'yin topish»: reytingli navbat, partiyalar, mm- xonalar (/api/queue)
@@ -200,6 +201,7 @@ Profilda (reyting jadvalida istalgan o'yinchi) uch bo'lim: «O'yinlar» (so'nggi
 | `TURN_PORT` | `3478` | TURN porti |
 | `TELEGRAM_BOT_TOKEN` | bo'sh (Docker'da `.env` dagi `ZARBA_TG_TOKEN`) | Telegram orqali kirish uchun bot tokeni. Bo'sh bo'lsa Telegram tugmasi chiqmaydi |
 | `TELEGRAM_BOT_NAME` | bo'sh (Docker'da `.env` dagi `ZARBA_TG_BOT`) | Botning nomi (`@` siz yoki bilan) |
+| `METRICS_TOKEN` | bo'sh (Docker'da `.env` dagi `ZARBA_METRICS_TOKEN`) | `/metrics` (Prometheus) uchun token. Bo'sh bo'lsa `/metrics` yopiq |
 | `OFFICIAL_ROOMS` | `registon:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4,maydon:arena:10,zavod:comp:10` | Doimiy (rasmiy) xonalar: `xarita:rejim:chegara`, vergul bilan. Kodi — `<xarita>-<rejim>`. `-` — o'chirish |
 
 Bitta IP manzildan bir vaqtda ko'pi bilan 8 ta ulanish qabul qilinadi. Bir o'yinchidan soniyasiga 60 tadan ortiq xabar kelsa, ortiqchasi tashlanadi. Bitta xabar 8 KB dan oshmaydi.
@@ -284,6 +286,18 @@ Drobovik o'qi serverga bitta tegish sifatida yuboriladi (nishonga tekkan saochma
 Botlar serverda ishlaydi: yo'l topadi, himoyachilar o'z joylarini qo'riqlaydi, hujumchilar nuqtaga borib bomba qo'yadi, himoyachilar uni zararsizlantiradi, raqibni ko'rsa otadi. Ular boshqa o'yinchilar kabi server hakami orqali o'ynaydi. Bot qatnashgan o'yin reytingga yozilmaydi.
 
 **Botlarning granatalari** (`botnades.go`, brauzerdagi botlarda ham xuddi shunday): raundli rejimlarda raund boshida har botga tasodifiy granatalar beriladi (hujumchilarga ko'r qiluvchi va portlovchi, himoyachilarga yondiruvchi, portlovchi va ko'r qiluvchi; to'pponcha raundida kamroq, oson botlarda kamroq, qiyinlarida ko'proq). Hujumchilardan biri ko'pincha o'z nuqtasining tayyor tutun joyiga (granata mashqidagi o'sha joylar) boradi va jamoa kirganda tutun otadi — tutun aynan mashqdagi joyga tushadi. Nuqtaga kirishdan oldin hujumchi nuqta ustiga ko'r qiluvchi otadi (bot jamoadoshini ko'r qilmaydi). Raqibni hozirgina ko'rgan bot o'sha joyga portlovchi otadi (himoyachi — yondiruvchi); brauzerdagi himoyachi bot qadam tovushini eshitsa, o'sha yerga yondiruvchi otadi. Otish o'yinchinikiday hisoblanadi: bot kerakli joyga tushadigan burchakni o'yin fizikasi bilan qidiradi. Server botining granatasi uning holatida (`gn`) brauzerlarga boradi, portlash, tutun va olovni server o'zi hisoblaydi. Aim, deathmatch va qurol poygasida botlarda granata yo'q. `MAX_PLAYERS` (standart 64) — bitta xonadagi o'yinchilar va botlar uchun umumiy yuqori chegara.
+
+## Monitoring (Prometheus)
+
+O'yin serveri `GET /metrics` da Prometheus formatidagi ko'rsatkichlarni beradi (`metrics.go`): xonalar (turi va rejimi bo'yicha), odam o'yinchilar, botlar, kuzatuvchilar, reytingli navbatdagilar; ulanishlar, tugagan o'yinlar, server xatolari (500), hakam rad etgan harakatlar, sekin mijozlarga yetmay qolgan xabarlar; eng uzun xona takti (50 ms dan oshsa — server sekinlashgan); baza holati; goroutine, xotira, ishlash vaqti, versiya. Manzil token bilan himoyalangan; token berilmasa — yopiq.
+
+Yoqish (bir marta, serverda, loyiha papkasida):
+```bash
+echo "ZARBA_METRICS_TOKEN=$(openssl rand -hex 24)" >> .env      # .env ga qo'shiladi (fayldagi boshqa qatorlarga tegmaydi)
+docker compose up -d                                              # o'yin serveri tokenni oladi
+docker compose --profile monitoring up -d prometheus              # Prometheus (har 15 s, 30 kun saqlaydi)
+```
+Ko'rish: kompyuteringizdan `ssh -L 9090:127.0.0.1:9090 <server>`, so'ng brauzerda `http://localhost:9090`. Foydali so'rovlar: `zarba_players`, `zarba_players_by_mode`, `zarba_rooms_by_kind`, `rate(zarba_api_errors_total[5m])`, `rate(zarba_referee_warnings_total[5m])`, `max_over_time(zarba_tick_max_seconds[10m])`, `zarba_db_up`. Tezkor tekshiruv: `curl -s -H "Authorization: Bearer $(grep ZARBA_METRICS_TOKEN .env | cut -d= -f2)" http://127.0.0.1:8080/metrics`. Nginx shablonida (`deploy/nginx.conf`) `/metrics` tashqaridan yopilgan; serverdagi nginx'ga ham shu `location = /metrics` blokini qo'shib qo'ysangiz bo'ladi (token baribir himoya qiladi).
 
 ## Matnli chat
 

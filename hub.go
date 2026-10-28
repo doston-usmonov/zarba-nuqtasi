@@ -284,6 +284,7 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 		c.send <- jsonMsg(map[string]any{"t": "side", "sq": c.fixSq}) // turnir: jamoani server belgilaydi
 	}
 	r.clients[c.id] = c
+	mtr.conns.Add(1)
 	if acct != nil && !c.spec {
 		h.joinedLocked(acct.id, r)
 		r.mmPresentLocked(acct.id)
@@ -354,6 +355,7 @@ func (r *room) broadcast(msg []byte, except string) {
 		select {
 		case o.send <- msg:
 		default:
+			mtr.dropped.Add(1)
 		}
 	}
 }
@@ -522,6 +524,8 @@ func (h *hub) finishMatch(r *room, res *matchResult) {
 	if len(changes) == 0 {
 		return
 	}
+	mtr.matches.Add(1)
+	mtr.rated.Add(int64(len(changes)))
 	log.Printf("o'yin tugadi: xona=%s hisob=%d:%d g'olib=%s reytingli o'yinchilar=%d", r.name, res.ScoreT, res.ScoreCT, res.Winner, len(changes))
 	fresh := map[int64]json.RawMessage{}
 	for id := range changes {

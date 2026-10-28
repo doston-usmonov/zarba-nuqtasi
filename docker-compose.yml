@@ -63,6 +63,8 @@ services:
       # Telegram orqali kirish (ixtiyoriy): .env ga ZARBA_TG_TOKEN va ZARBA_TG_BOT yozing (README → Telegram orqali kirish)
       TELEGRAM_BOT_TOKEN: ${ZARBA_TG_TOKEN:-}
       TELEGRAM_BOT_NAME: ${ZARBA_TG_BOT:-}
+      # monitoring (ixtiyoriy): /metrics shu token bilan ochiladi (README → Monitoring)
+      METRICS_TOKEN: ${ZARBA_METRICS_TOKEN:-}
     volumes:
       - zarba-data:/data
 
@@ -88,7 +90,30 @@ services:
           --denied-peer-ip=192.168.0.0-192.168.255.255 --denied-peer-ip=::1 \
           --denied-peer-ip=fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
 
+  # Monitoring (ixtiyoriy, odatda o'chiq): docker compose --profile monitoring up -d
+  # Prometheus o'yin serverining /metrics manzilini har 15 soniyada o'qiydi va 30 kun saqlaydi.
+  # Faqat lokal portda: brauzerda ko'rish uchun  ssh -L 9090:127.0.0.1:9090 server  (README → Monitoring).
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    depends_on:
+      - zarba
+    environment:
+      METRICS_TOKEN: ${ZARBA_METRICS_TOKEN:-}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ -z "$$METRICS_TOKEN" ]; then echo ".env da ZARBA_METRICS_TOKEN yo'q — README → Monitoring"; exec sleep infinity; fi
+        printf 'global:\n  scrape_interval: 15s\nscrape_configs:\n  - job_name: zarba\n    authorization:\n      credentials: %s\n    static_configs:\n      - targets: ["zarba:8080"]\n' "$$METRICS_TOKEN" > /prometheus/prometheus.yml
+        exec /bin/prometheus --config.file=/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=30d
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - zarba-prom:/prometheus
+
 volumes:
   zarba-pg:
   zarba-backups:
   zarba-data:
+  zarba-prom:

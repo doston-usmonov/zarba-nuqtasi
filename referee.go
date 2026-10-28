@@ -248,6 +248,7 @@ func (p *pstate) recent(now time.Time, win time.Duration) []sample {
 func (c *client) warnLocked(what string, now time.Time) {
 	p := c.ps
 	p.warn++
+	mtr.refWarns.Add(1)
 	if now.Sub(p.lastWarnAt) > 10*time.Second {
 		p.lastWarnAt = now
 		name := cleanGuestName(c.info.Nm)
@@ -888,6 +889,7 @@ func (r *room) run(h *hub) {
 			dt := math.Min(now.Sub(last).Seconds(), 1)
 			last = now
 			r.mu.Lock()
+			t0 := time.Now()
 			if r.mm != nil { // navbat o'yini: qaytmagan o'yinchilar (bo'sh xonada ham)
 				if l := r.mmLeaversLocked(now, h.grace()); len(l) > 0 {
 					go h.punishLeavers(r.name, l)
@@ -917,6 +919,7 @@ func (r *room) run(h *hub) {
 			}
 			gains := r.gains
 			r.gains = nil
+			noteTick(time.Since(t0))
 			r.mu.Unlock()
 			if res != nil && h.store.Ready() {
 				go h.finishMatch(r, res)

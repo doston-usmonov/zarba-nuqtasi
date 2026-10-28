@@ -93,6 +93,7 @@ func main() {
 		h.serve(ws, room, clientIP(r), r.Host, acct, parseRoomOpts(r.URL.Query()))
 	})
 	a.routes(mux)
+	mux.Handle("GET /metrics", metricsSrc{h: h, st: st, queue: a.queue, token: strings.TrimSpace(os.Getenv("METRICS_TOKEN"))})
 	mux.HandleFunc("/api/rooms", h.roomsHandler)
 	mux.HandleFunc("GET /api/rooms/{code}", h.roomHandler)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {

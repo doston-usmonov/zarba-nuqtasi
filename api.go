@@ -103,6 +103,7 @@ func writeErr(w http.ResponseWriter, code int, msg string) {
 }
 
 func serverErr(w http.ResponseWriter, what string, err error) {
+	mtr.apiErrors.Add(1)
 	log.Printf("%s: %v", what, err)
 	writeErr(w, http.StatusInternalServerError, "Server xatosi, keyinroq urinib ko'ring")
 }

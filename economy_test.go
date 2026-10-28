@@ -281,3 +281,74 @@ func TestBotDropsGun(t *testing.T) {
 		t.Fatal("deathmatch'da bot qurol tashlamasligi kerak")
 	}
 }
+
+// TestGiveMoney: jamoadoshga pul — faqat o'z jamoasiga, xarid vaqtida, bazada, pul yetsa va $16 000 dan oshmasa.
+func TestGiveMoney(t *testing.T) {
+	r, a, b := newRefRoom()
+	c := &client{id: "c", room: r, send: make(chan []byte, 64), ps: newPState(), joined: time.Now()}
+	r.clients["c"] = c
+	*r.gs = gameState{R: 1, Ph: "freeze", Md: modeComp, Fm: 12, E: "e1", Bm: -1, T: 5}
+	pres := func(cl *client, sq, tm string, z float64, extra map[string]any) {
+		d := map[string]any{"v": 1, "hc": 1, "sq": sq, "tm": tm, "in": 1, "al": 1, "x": 43, "y": 0, "z": z, "w": "pistol", "nm": cl.id}
+		for k, v := range extra {
+			d[k] = v
+		}
+		refPres(r, cl, d)
+	}
+	pres(a, "A", "T", 75, nil)
+	pres(b, "A", "T", 75, nil)
+	pres(c, "B", "CT", 9, nil)
+	give := func(n int, to string, amt int) {
+		pres(a, "A", "T", 75, map[string]any{"bu": []map[string]any{{"n": n, "id": "$", "s": 2, "t": to, "a": amt}}})
+	}
+	drain(a)
+	drain(b)
+	give(1, "b", 500)
+	if a.ps.money != 300 || b.ps.money != 1300 {
+		t.Fatalf("pul berilmadi: %d %d", a.ps.money, b.ps.money)
+	}
+	var gift bool
+	for _, m := range drain(b) {
+		if g, _ := m["gift"].(map[string]any); m["t"] == "eco" && g != nil && g["a"] == float64(500) && g["from"] == "a" && m["m"] == float64(1300) {
+			gift = true
+		}
+	}
+	if !gift {
+		t.Fatal("oluvchiga xabar kelmadi")
+	}
+	denied := func(n int) bool {
+		for _, m := range drain(a) {
+			if m["t"] == "eco" && m["deny"] == float64(n) && m["id"] == "$" {
+				return true
+			}
+		}
+		return false
+	}
+	give(2, "c", 100) // raqibga
+	if c.ps.money != 800 || !denied(2) {
+		t.Fatal("raqibga pul berildi")
+	}
+	give(3, "b", 400) // pul yetmaydi
+	if a.ps.money != 300 || !denied(3) {
+		t.Fatal("pul yetmasa ham berildi")
+	}
+	give(4, "b", 150) // 100 ga karrali emas
+	if !denied(4) {
+		t.Fatal("noto'g'ri miqdor o'tdi")
+	}
+	b.ps.money = 15900
+	give(5, "b", 200)
+	if b.ps.money != 15900 || !denied(5) {
+		t.Fatal("$16 000 dan oshib ketdi")
+	}
+	b.ps.money = 1000
+	r.gs.Ph, r.gs.liveAt = "live", time.Now().Add(-30*time.Second) // xarid vaqti tugagan
+	give(6, "b", 100)
+	if b.ps.money != 1000 || !denied(6) {
+		t.Fatal("xarid vaqtidan keyin berildi")
+	}
+	give(6, "b", 100) // takror raqam e'tiborga olinmaydi
+	if a.ps.money != 300 {
+		t.Fatal("takror hodisa")
+	}
+}

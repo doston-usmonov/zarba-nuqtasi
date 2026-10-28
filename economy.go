@@ -263,7 +263,9 @@ func matchWinner2(g *gameState) bool { return matchWinner(g.SA, g.SB, g.R, g.Fm)
 type buyEvent struct {
 	N  int    `json:"n"`
 	ID string `json:"id"`
-	S  int    `json:"s,omitempty"` // 1 — qaytarib sotish
+	S  int    `json:"s,omitempty"` // 1 — qaytarib sotish, 2 — jamoadoshga pul berish
+	T  string `json:"t,omitempty"` // pul kimga (o'yinchi id)
+	A  int    `json:"a,omitempty"` // qancha
 }
 
 // boughtItem: xarid — shu raundning xarid vaqtida to'liq narxiga qaytarib sotsa bo'ladi.
@@ -294,6 +296,12 @@ func (r *room) checkBuysLocked(c *client, f map[string]json.RawMessage, now time
 		p.buyN = b.N
 		if !r.ecoOn() {
 			continue // isinish va boshqa rejimlar: hamma narsa bepul
+		}
+		if b.S == 2 {
+			if why := r.giveLocked(c, b.T, b.A, now); why != "" {
+				c.sendEco(map[string]any{"deny": b.N, "id": "$", "why": why})
+			}
+			continue
 		}
 		what, do := "xarid", r.buyLocked
 		if b.S == 1 {
@@ -366,6 +374,34 @@ func (r *room) buyLocked(c *client, id string, now time.Time) string {
 	}
 	p.bought = append(keep, boughtItem{id: id, price: price, armor0: a0, helmet0: h0, e: g.E, r: g.R})
 	c.sendEco(nil)
+	return ""
+}
+
+// giveLocked: jamoadoshga pul — xarid vaqtida, o'z bazasida, tirik odam jamoadoshga, $100 dan $5000 gacha
+// (100 ga karrali), uning puli $16 000 dan oshmaydi. Bo'sh qator — bajarildi, aks holda sababi.
+func (r *room) giveLocked(c *client, to string, a int, now time.Time) string {
+	g, p := r.gs, c.ps
+	t := r.clients[to]
+	switch {
+	case a < 100 || a > 5000 || a%100 != 0:
+		return "noto'g'ri miqdor"
+	case t == nil || t == c || t.bot != nil || t.info.Tm == "" || t.info.Tm != c.info.Tm || !t.ps.alive:
+		return "jamoadosh topilmadi"
+	case !p.alive:
+		return "o'lik"
+	case !inBuyTime(g, now):
+		return "xarid vaqti tugagan"
+	case !r.nearSpawnLocked(p.pos, c.info.Tm):
+		return "bazadan tashqarida"
+	case a > p.money:
+		return "pul yetmaydi"
+	case t.ps.money+a > moneyMax:
+		return "jamoadoshning puli to'la"
+	}
+	p.money -= a
+	t.ps.money += a
+	c.sendEco(map[string]any{"gave": map[string]any{"to": clientName(t), "a": a}})
+	t.sendEco(map[string]any{"gift": map[string]any{"from": clientName(c), "a": a}})
 	return ""
 }
 

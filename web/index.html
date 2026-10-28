@@ -214,6 +214,11 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .item.own{border-color:var(--good)}
 .item .rf{align-self:flex-start;margin-top:2px;padding:3px 8px;border-radius:4px;border:1px solid rgba(242,181,68,.55);color:var(--atk);font-size:12px;font-weight:700}
 .item.canSell:hover .rf{background:rgba(242,181,68,.14)}
+.giveRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(243,239,230,.05);border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-width:0}
+.giveRow b{flex:1 1 120px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px}
+.giveRow button{background:transparent;color:var(--good);border:1px solid rgba(127,224,138,.45);border-radius:5px;padding:5px 10px;font-family:var(--f-display);font-size:14px}
+.giveRow button:hover:not(:disabled){background:rgba(127,224,138,.12)}
+.giveRow button:disabled{opacity:.35;cursor:not-allowed}
 
 #kc{position:fixed;left:50%;top:calc(96px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:rgba(14,13,11,.82);border:1px solid rgba(255,91,74,.55);border-radius:6px;padding:8px 14px;pointer-events:none;white-space:nowrap}
 #kc .tag{font-family:var(--f-display);font-size:13px;letter-spacing:.18em;background:var(--bad);color:#1a0d0b;border-radius:3px;padding:2px 6px}
@@ -4296,6 +4301,26 @@ function renderBuy(){
       g.appendChild(b);
     });
   });
+  // money for teammates (online rooms with the server economy)
+  const mates = giveMates();
+  if (mates.length && !dmFree()){
+    const h = document.createElement('div'); h.className = 'buyCat'; h.textContent = 'Jamoadoshga pul'; g.appendChild(h);
+    mates.forEach(r => { const row = document.createElement('div'); row.className = 'giveRow';
+      row.innerHTML = '<b></b>' + GIVE_STEPS.map(a => `<button type="button" data-a="${a}"${player.money < a ? ' disabled' : ''}>+$${a}</button>`).join('');
+      row.querySelector('b').textContent = r.name;
+      row.addEventListener('click', e => { const bt = e.target.closest('button[data-a]'); if (bt) give(r, +bt.dataset.a); });
+      g.appendChild(row); });
+  }
+}
+// money to a teammate: alive human on my team, while buying (the server checks everything again)
+const GIVE_STEPS = [100, 500, 1000, 2000];
+function giveMates(){ if (!srvEco() || !player.team || !['comp', 'wm'].includes(curMode())) return [];
+  return [...NET.remotes.values()].filter(r => r.alive && !r.bot && r.team === player.team && r.peer); }
+function give(r, a){
+  if (!canBuy() || player.money < a) return;
+  player.money -= a; sfxClick();
+  NET.buys.push({ n:++NET.buyN, id:'$', s:2, t:r.peer, a }); if (NET.buys.length > 8) NET.buys.shift(); NET.buyLog[NET.buyN] = { id:'$', give:a, to:r.name };
+  renderBuy(); updateHUD();
 }
 // what counts as "this round" for refunds
 function buyKey(){ return MODE === 'online' ? (NET.g ? (NET.g.e || '') + ':' + (NET.g.r|0) : '') : (S.md || 'comp') + ':' + S.round; }
@@ -4702,7 +4727,8 @@ function hurtFX(src, part){
 // the server's purse, a refused purchase, or a gun somebody else picked up first
 function netEco(m){
   if (MODE !== 'online') return;
-  if (m.deny !== undefined && NET.buyLog[num(m.deny)] && NET.buyLog[num(m.deny)].sell){ hint('Qaytarib sotish rad etildi', 2400); if (S.buyOpen) renderBuy(); }
+  if (m.deny !== undefined && NET.buyLog[num(m.deny)] && NET.buyLog[num(m.deny)].give){ const b = NET.buyLog[num(m.deny)]; hint(b.to + 'ga pul berilmadi' + (m.why ? ': ' + String(m.why).slice(0, 40) : ''), 2600); }
+  else if (m.deny !== undefined && NET.buyLog[num(m.deny)] && NET.buyLog[num(m.deny)].sell){ hint('Qaytarib sotish rad etildi', 2400); if (S.buyOpen) renderBuy(); }
   else if (m.deny !== undefined){ const b = NET.buyLog[num(m.deny)], id = b ? b.id : String(m.id || '');
     if (id === 'taser'){ player.taser = player.tsel = false; if (player.slot === 3) drawWeapon(); }
     else if (W[id] && W[id].kind === 'nade'){ player.nades[id] = Math.max(0, player.nades[id] - 1); if (player.nadeSel === id && !player.nades[id]) player.nadeSel = nextNade(id); if (player.slot === 4 && !nadeTotal()){ player.slot = bestSlot(); drawWeapon(); } }
@@ -4710,6 +4736,8 @@ function netEco(m){
     else if (b && (id === 'kevlar' || id === 'helmet')){ player.armor = b.armor; player.helmet = b.helmet; }
     else if (id === 'kit') player.kit = false;
     hint('Xarid rad etildi: ' + ((W[id] || GEAR[id] || {}).name || id), 2400); if (S.buyOpen) renderBuy(); }
+  if (m.gift && typeof m.gift === 'object'){ hint(socStr(m.gift.from, 16) + ' sizga $' + (num(m.gift.a)|0) + ' berdi', 3000); sfxClick(); }
+  if (m.gave && typeof m.gave === 'object') hint(socStr(m.gave.to, 16) + 'ga $' + (num(m.gave.a)|0) + ' berildi', 2000);
   if (m.take !== undefined){ const w = NET.pickW[String(m.take)];
     for (const sl of [1, 2]) if (w && player.inv[sl] && player.inv[sl].id === w){ player.inv[sl] = null; if (player.slot === sl){ player.slot = bestSlot(); drawWeapon(); } break; }
     hint("Bu qurolni boshqa o'yinchi oldinroq oldi", 2200); }
@@ -5579,7 +5607,7 @@ function touchFrame(){
 }
 setTimeout(linkBoot, 0);
 setTimeout(mmInit, 0);
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){

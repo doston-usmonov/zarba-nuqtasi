@@ -339,6 +339,14 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .tabs button{background:transparent;color:var(--dim);border:1px solid var(--line);border-radius:6px;padding:7px 12px;font-size:14px;font-weight:600}
 .tabs button[aria-pressed="true"]{color:var(--ink);border-color:var(--atk);background:rgba(242,181,68,.12)}
 #authForm{display:flex;flex-direction:column;gap:10px}
+.tgBox{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.tgBox .or{display:flex;align-items:center;gap:10px;color:var(--dim);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+.tgBox .or::before,.tgBox .or::after{content:"";flex:1;height:1px;background:var(--line)}
+.tgWidget{min-height:40px}
+.tgLine{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:#d6cfc0}
+.tgLine b{color:var(--ink)}
+.pwBox summary{cursor:pointer;font-size:14px;color:#d6cfc0}
+.pwBox form{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .rk{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap}
 .rk i{flex:none;width:9px;height:9px;border-radius:2px;transform:rotate(45deg);background:var(--c,#8d8778);box-shadow:0 0 0 2px rgba(0,0,0,.35)}
 .me{display:flex;align-items:center;gap:12px;min-width:0}
@@ -628,12 +636,24 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
             <p class="note" id="authHint" hidden>Login: 3–16 ta lotin harfi, raqam yoki _. Parol kamida 6 belgi.</p>
             <p class="note warn" id="authErr" role="alert" hidden></p>
             <div class="row"><button class="cta" type="submit" id="authBtn">Kirish</button><button class="ghost" type="button" data-lb="1">Reyting jadvali</button></div>
+            <button class="link" type="button" id="forgotBtn" style="font-size:13px;color:var(--dim)">Parolni unutdingizmi?</button>
+            <p class="note" id="forgotNote" hidden></p>
           </form>
+          <div class="tgBox" id="tgBox" hidden><span class="or">yoki</span><div id="tgLogin" class="tgWidget"></div><p class="note" style="margin:0;font-size:12px">Telegram orqali kirsangiz, parolsiz kirasiz; birinchi marta kirganda hisob o'zi ochiladi.</p></div>
         </div>
         <div id="accIn" hidden>
           <div class="me"><div class="who"><b id="meName"></b><span id="meRank"></span></div><div class="pts"><b id="meRating">1000</b><span>reyting</span></div></div>
           <div class="xpbar" id="meXP"></div>
           <div class="mini" id="meStats"></div>
+          <div class="tgLine" id="tgLine" hidden></div>
+          <details class="pwBox" id="pwBox"><summary>Parolni o'zgartirish</summary>
+            <form id="pwForm" novalidate>
+              <label class="field" for="pwOld" id="pwOldF"><span>Joriy parol</span><input id="pwOld" type="password" maxlength="72" autocomplete="current-password"></label>
+              <label class="field" for="pwNew"><span>Yangi parol (kamida 6 belgi)</span><input id="pwNew" type="password" maxlength="72" autocomplete="new-password"></label>
+              <p class="note" id="pwNote" role="status" hidden></p>
+              <div class="row"><button class="cta sm" type="submit" id="pwBtn">Saqlash</button></div>
+            </form>
+          </details>
           <div class="row"><button class="cta" type="button" data-prog="1">Vazifalar va bo'yoqlar</button><button class="ghost" type="button" data-soc="1">Do'stlar va klan<span class="socBadge" id="socBadge" hidden></span></button><button class="ghost" type="button" data-lb="1">Reyting</button><button class="ghost" type="button" id="logoutBtn">Chiqish</button></div>
         </div>
       </div>
@@ -5237,7 +5257,7 @@ async function apiCall(path, body){
 async function accInit(){
   if (IN_ARTIFACT || !/^https?:$/.test(location.protocol)) return;   // hisoblar faqat o'yin serverida
   const r = await apiCall('/api/me');
-  if (r.status === 200 || r.status === 401){ ACC.on = true; ACC.me = r.status === 200 ? r.data.user : null; renderAcc(); if (ACC.me){ loadProgress(); socLoad(); } }
+  if (r.status === 200 || r.status === 401){ ACC.on = true; ACC.me = r.status === 200 ? r.data.user : null; renderAcc(); tgLoad(); if (ACC.me){ loadProgress(); socLoad(); } }
 }
 function xpBarHTML(lv, cur, need, xp){ lv = lv || 1; const k = need ? clamp(cur/need, 0, 1) : 1;
   return `<div class="top"><span><b>${lv}</b>-daraja</span><span>${need ? (cur|0) + ' / ' + (need|0) + ' XP' : 'eng yuqori daraja · ' + (xp|0) + ' XP'}</span></div><div class="bar"><i style="width:${(k*100).toFixed(1)}%"></i></div>`; }
@@ -5279,6 +5299,7 @@ function netXP(m){
 }
 function renderAcc(){
   $('accPanel').hidden = !ACC.on; if (!ACC.on) return;
+  setTimeout(tgRender, 0);
   const me = ACC.me, nick = $('nick');
   $('accOut').hidden = !!me; $('accIn').hidden = !me;
   if (me){
@@ -5294,6 +5315,51 @@ function renderAcc(){
     if (!LINK.want) $('onlineNote').textContent = DEFAULT_NOTE + " Reyting faqat hisobga kirgan o'yinchilarga yoziladi.";
   }
 }
+/* ---------- Telegram: sign in, link the account, set a password without the old one after a Telegram sign-in ---------- */
+const TG = { bot:'', linked:'', noOld:false, shown:'' };
+async function tgLoad(){
+  const r = await apiCall('/api/telegram'); if (!r.ok || !r.data) return;
+  TG.bot = String(r.data.bot || ''); TG.linked = String(r.data.linked || ''); TG.noOld = !!r.data.noOld; tgRender();
+}
+function tgWidget(box, cb){
+  const key = cb + ':' + TG.bot; if (box.dataset.w === key) return; box.dataset.w = key; box.innerHTML = '';
+  const sc = document.createElement('script'); sc.async = true; sc.src = 'https://telegram.org/js/telegram-widget.js?22';
+  [['data-telegram-login', TG.bot], ['data-size', 'large'], ['data-radius', '6'], ['data-request-access', 'write'], ['data-userpic', 'false'], ['data-onauth', cb + '(user)']].forEach(([k, v]) => sc.setAttribute(k, v));
+  sc.onerror = () => { box.dataset.w = ''; box.innerHTML = `<p class="note" style="margin:0">Telegram tugmasi yuklanmadi (telegram.org ochilmadi). Sahifani yangilab ko'ring.</p>`; };
+  box.appendChild(sc);
+}
+function tgRender(){
+  const on = !!TG.bot && ACC.on;
+  $('tgBox').hidden = !on || !!ACC.me; if (!$('tgBox').hidden) tgWidget($('tgLogin'), 'znTgLogin');
+  const line = $('tgLine'); line.hidden = !on || !ACC.me;
+  if (!line.hidden){
+    if (TG.linked) line.innerHTML = `<span>Telegram: <b>${escH(TG.linked)}</b> ulangan — parolni unutsangiz ham u orqali kirasiz.</span><button class="ghost sm" type="button" id="tgUnlink">Uzish</button>`;
+    else { line.innerHTML = `<span>Telegram'ni ulang — parolni unutsangiz ham kira olasiz:</span><div id="tgLink" class="tgWidget"></div>`; tgWidget($('tgLink'), 'znTgLink'); }
+    const ub = $('tgUnlink'); if (ub) ub.addEventListener('click', tgUnlink);
+  }
+  $('pwOldF').hidden = TG.noOld;
+}
+async function tgAuthDone(path, user){
+  const r = await apiCall(path, user || {});
+  if (!r.ok){ hint((r.data && r.data.error) || "Telegram orqali bo'lmadi", 3200); return null; }
+  return r.data;
+}
+window.znTgLogin = async user => { const d = await tgAuthDone('/api/telegram/login', user); if (!d || !d.user) return;
+  ACC.me = d.user; renderAcc(); loadProgress(); socLoad(); await tgLoad();
+  hint(d.created ? 'Xush kelibsiz, ' + d.user.username + "! Hisob ochildi. Xohlasangiz, «Parolni o'zgartirish»da parol qo'ying." : 'Telegram orqali kirdingiz', 4200); };
+window.znTgLink = async user => { const d = await tgAuthDone('/api/telegram/link', user); if (!d) return; TG.linked = String(d.linked || ''); tgRender(); hint("Telegram ulandi", 2400); };
+async function tgUnlink(){ const r = await apiCall('/api/telegram/unlink', {}); if (!r.ok){ hint((r.data && r.data.error) || "Uzib bo'lmadi", 3600); return; } TG.linked = ''; tgRender(); }
+$('pwForm').addEventListener('submit', async e => {
+  e.preventDefault(); const n = $('pwNote'), nw = $('pwNew').value;
+  const say = (m, bad) => { n.textContent = m; n.hidden = false; n.classList.toggle('warn', !!bad); };
+  if (nw.length < 6) return say("Yangi parol kamida 6 belgidan iborat bo'lsin", true);
+  $('pwBtn').disabled = true; const r = await apiCall('/api/password', { old:$('pwOld').value, new:nw }); $('pwBtn').disabled = false;
+  if (!r.ok) return say((r.data && r.data.error) || 'Saqlanmadi', true);
+  $('pwOld').value = $('pwNew').value = ''; TG.noOld = false; tgRender(); say("Parol o'zgartirildi. Boshqa qurilmalardagi kirishlar yopildi.");
+});
+$('forgotBtn').addEventListener('click', () => { const n = $('forgotNote'); n.hidden = !n.hidden;
+  n.textContent = TG.bot ? "Hisobingiz Telegram'ga ulangan bo'lsa: pastdagi Telegram tugmasi bilan kiring, keyin hisob panelidagi «Parolni o'zgartirish»da eski parolsiz yangisini qo'ying. Ulanmagan bo'lsa, parolni tiklab bo'lmaydi — keyingi safar uchun kirgach Telegram'ni ulab qo'ying."
+    : "Parolni tiklash Telegram orqali ishlaydi, lekin bu serverda Telegram yoqilmagan. Sayt egasiga murojaat qiling."; });
 function setAuthMode(m){
   ACC.mode = m;
   $('tabLogin').setAttribute('aria-pressed', m === 'login'); $('tabReg').setAttribute('aria-pressed', m === 'reg');
@@ -5313,10 +5379,10 @@ $('authForm').addEventListener('submit', async e => {
   $('authBtn').disabled = true; err.hidden = true;
   const r = await apiCall(ACC.mode === 'login' ? '/api/login' : '/api/register', { username:u, password:pw });
   $('authBtn').disabled = false;
-  if (r.ok && r.data && r.data.user){ ACC.me = r.data.user; $('authPass').value = ''; renderAcc(); loadProgress(); socLoad(); }
+  if (r.ok && r.data && r.data.user){ ACC.me = r.data.user; $('authPass').value = ''; renderAcc(); loadProgress(); socLoad(); tgLoad(); }
   else fail((r.data && r.data.error) || 'Xatolik yuz berdi, qayta urinib ko\'ring');
 });
-$('logoutBtn').addEventListener('click', async () => { await apiCall('/api/logout', {}); ACC.me = null; ACC.lo = {}; ACC.prog = null; SOC.d = null; SOC.live = []; socBadge(); socInvites(); renderAcc(); setAuthMode('login'); });
+$('logoutBtn').addEventListener('click', async () => { await apiCall('/api/logout', {}); ACC.me = null; TG.linked = ''; TG.noOld = false; ACC.lo = {}; ACC.prog = null; SOC.d = null; SOC.live = []; socBadge(); socInvites(); renderAcc(); setAuthMode('login'); });
 async function accRefresh(){ const r = await apiCall('/api/me'); if (r.status === 200){ ACC.me = r.data.user; renderAcc(); } else if (r.status === 401){ ACC.me = null; renderAcc(); } }
 
 // rating change after an online match (sent by the game server)

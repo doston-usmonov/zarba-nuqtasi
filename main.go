@@ -51,6 +51,10 @@ func main() {
 	a.onLoadout = h.setLoadout
 	a.hub = h
 	a.queue.open = h.openMM
+	a.tg = tgConfig{token: strings.TrimSpace(os.Getenv("TELEGRAM_BOT_TOKEN")), bot: strings.TrimPrefix(strings.TrimSpace(os.Getenv("TELEGRAM_BOT_NAME")), "@")}
+	if a.tg.on() {
+		log.Printf("Telegram orqali kirish yoqilgan: @%s", a.tg.bot)
+	}
 	h.voice = voiceFromEnv()
 	h.debug = os.Getenv("ZARBA_DEBUG") == "1"
 	h.startOfficial(parseOfficialRooms(os.Getenv("OFFICIAL_ROOMS")))

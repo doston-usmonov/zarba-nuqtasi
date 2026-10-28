@@ -17,6 +17,7 @@ zarba-server/
 ├── nadesim.go         granatalar va bomba portlashi serverda
 ├── progress.go        XP, darajalar, kunlik vazifalar, qurol bo'yoqlari (/api/progress, /api/loadout)
 ├── medals.go          batafsil statistika (qurollar, xaritalar, rejimlar) va medallar
+├── telegram.go        Telegram orqali kirish, hisobni ulash, parolni tiklash
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── social.go          do'stlar, xonaga chaqiriqlar, klanlar (/api/social, /api/friends, /api/clan, /api/clans)
 ├── queue.go           «O'yin topish»: reytingli navbat, partiyalar, mm- xonalar (/api/queue)
@@ -122,7 +123,7 @@ O'q qayerga tekkanini otgan o'yinchining brauzeri aniqlaydi, server esa har bir 
 
 ### Ma'lumotlar bazasi (PostgreSQL 17)
 
-Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanadi), `matches`, `match_players`, `daily_progress`, `friends`, `clans`, `clan_members`, `clan_invites`, `leaver_bans`, `player_stats`, `achievements`. Sxema `migrations/NNN_*.sql` fayllarida. Server ishga tushganda yangi migratsiyalar avtomatik qo'llanadi: har biri o'z tranzaksiyasida, `pg_advisory_lock` bilan himoyalangan. O'yin natijasi va barcha o'yinchilarning reytingi bitta tranzaksiyada yoziladi.
+Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanadi), `matches`, `match_players`, `daily_progress`, `friends`, `clans`, `clan_members`, `clan_invites`, `leaver_bans`, `player_stats`, `achievements` (Telegram: `users.tg_id`). Sxema `migrations/NNN_*.sql` fayllarida. Server ishga tushganda yangi migratsiyalar avtomatik qo'llanadi: har biri o'z tranzaksiyasida, `pg_advisory_lock` bilan himoyalangan. O'yin natijasi va barcha o'yinchilarning reytingi bitta tranzaksiyada yoziladi.
 
 - **Baza paroli:** `.env` faylidagi `ZARBA_DB_PASSWORD`. Fayl git'ga tushmaydi. `deploy/deploy.sh` uni birinchi marta o'zi yaratadi. **`.env` ni o'chirmang:** baza shu parol bilan yaratilgan.
 - **Port:** tashqariga ochilmaydi, bazaga faqat compose ichidagi xizmatlar ulanadi.
@@ -137,6 +138,25 @@ Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanad
 - **Oldingi versiyadan ko'chish:** baza bo'sh bo'lsa, server `/data/snapshot.json` va `matches.jsonl` ni (fayl bazasini) avtomatik import qiladi. Hisoblar, parollar, sessiyalar, reyting va tarix saqlanib qoladi, fayllar `*.imported-<sana>` deb qayta nomlanadi.
 
 API: `POST /api/register`, `POST /api/login`, `POST /api/logout`, `GET /api/me`, `GET /api/leaderboard`, `GET /api/players/{login}`, `GET /api/progress`, `POST /api/loadout`, `GET /api/social`, `POST /api/friends`, `POST /api/clan`, `GET /api/clans`.
+
+### Telegram orqali kirish va parolni tiklash
+
+Yoqish uchun (bir marta):
+1. Telegram'da @BotFather → `/newbot` — bot yarating, tokenini oling.
+2. @BotFather → `/setdomain` → botni tanlang → `game.telegap.uz` (o'yin domeni). Busiz Telegram tugmasi «Bot domain invalid» deydi.
+3. Serverdagi `.env` fayliga ikki qator qo'shing (faylning qolganiga tegmang — unda baza paroli bor):
+   ```
+   ZARBA_TG_TOKEN=123456789:AA...      # BotFather bergan token
+   ZARBA_TG_BOT=ZarbaNuqtasiBot        # botning nomi
+   ```
+4. `docker compose up -d` (yoki keyingi avtomatik deploy). Server logida «Telegram orqali kirish yoqilgan» chiqadi.
+
+Shundan keyin kirish panelida «Log in with Telegram» tugmasi chiqadi:
+- **Kirish:** Telegram ulangan hisobga kiradi. Ulangan hisob bo'lmasa, yangi hisob ochiladi (login — Telegram nomidan, band bo'lsa raqam qo'shiladi). Bunday hisobga keyin «Parolni o'zgartirish»da parol qo'yish mumkin.
+- **Ulash:** parol bilan kirgan o'yinchi hisob panelida Telegram'ini ulaydi. Bir Telegram — bitta hisob.
+- **Parolni tiklash:** «Parolni unutdingizmi?» → Telegram bilan kirasiz → «Parolni o'zgartirish»da eski parolsiz yangisini qo'yasiz. Oddiy (parol bilan) kirishda eski parol so'raladi. Parol o'zgarganda boshqa qurilmalardagi kirishlar yopiladi.
+- **Uzish:** faqat parol bilan kirilgan bo'lsa (aks holda hisobga kira olmay qolasiz).
+- Xavfsizlik: Telegram bergan ma'lumotning imzosi server tomonida bot tokeni bilan tekshiriladi (HMAC-SHA256), 24 soatdan eski ma'lumot qabul qilinmaydi. API: `GET /api/telegram`, `POST /api/telegram/login`, `POST /api/telegram/link`, `POST /api/telegram/unlink`, `POST /api/password`.
 
 ### Medallar va batafsil statistika
 
@@ -166,6 +186,8 @@ Profilda (reyting jadvalida istalgan o'yinchi) uch bo'lim: «O'yinlar» (so'nggi
 | `TURN_SECRET` | bo'sh (Docker'da `.env` dan) | coturn bilan bir xil kalit. Bo'sh bo'lsa TURN ishlatilmaydi |
 | `TURN_HOST` | bo'sh | TURN domeni. Bo'sh bo'lsa o'yin ochilgan domen olinadi |
 | `TURN_PORT` | `3478` | TURN porti |
+| `TELEGRAM_BOT_TOKEN` | bo'sh (Docker'da `.env` dagi `ZARBA_TG_TOKEN`) | Telegram orqali kirish uchun bot tokeni. Bo'sh bo'lsa Telegram tugmasi chiqmaydi |
+| `TELEGRAM_BOT_NAME` | bo'sh (Docker'da `.env` dagi `ZARBA_TG_BOT`) | Botning nomi (`@` siz yoki bilan) |
 | `OFFICIAL_ROOMS` | `registon:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4,maydon:arena:10` | Doimiy (rasmiy) xonalar: `xarita:rejim:chegara`, vergul bilan. Kodi — `<xarita>-<rejim>`. `-` — o'chirish |
 
 Bitta IP manzildan bir vaqtda ko'pi bilan 8 ta ulanish qabul qilinadi. Bir o'yinchidan soniyasiga 60 tadan ortiq xabar kelsa, ortiqchasi tashlanadi. Bitta xabar 8 KB dan oshmaydi.

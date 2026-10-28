@@ -60,6 +60,9 @@ services:
       DATA_DIR: /data        # oldingi versiyaning fayl bazasi: birinchi ishga tushishda Postgres'ga import qilinadi
       TURN_SECRET: ${ZARBA_TURN_SECRET:-}   # ovozli chat uchun TURN (pastdagi "turn" xizmati bilan bir xil)
       TURN_PORT: "3478"
+      # Telegram orqali kirish (ixtiyoriy): .env ga ZARBA_TG_TOKEN va ZARBA_TG_BOT yozing (README → Telegram orqali kirish)
+      TELEGRAM_BOT_TOKEN: ${ZARBA_TG_TOKEN:-}
+      TELEGRAM_BOT_NAME: ${ZARBA_TG_BOT:-}
     volumes:
       - zarba-data:/data
 

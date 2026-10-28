@@ -25,6 +25,7 @@ type api struct {
 	onLoadout func(uid int64, lo map[string]string)
 	hub       *hub        // do'stlarning onlayn holati va xonaga chaqiriqlar (social.go); testlarda nil bo'lishi mumkin
 	queue     *matchmaker // «O'yin topish» navbati (queue.go)
+	tg        tgConfig    // Telegram orqali kirish (telegram.go); bo'sh — o'chiq
 }
 
 func newAPI(st *Store, allowed []string) *api {
@@ -60,6 +61,7 @@ func (a *api) routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/clans", h(a.clansGet))
 	mux.HandleFunc("GET /api/queue", h(a.queueGet))
 	mux.HandleFunc("POST /api/queue", h(a.queuePost))
+	a.telegramRoutes(mux, h)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeErr(w, http.StatusNotFound, "Topilmadi") })
 }
 

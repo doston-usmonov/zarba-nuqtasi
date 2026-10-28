@@ -50,6 +50,7 @@ func main() {
 	h := newHub(maxPlayers, st)
 	a.onLoadout = h.setLoadout
 	a.hub = h
+	a.queue.open = h.openMM
 	h.voice = voiceFromEnv()
 	h.debug = os.Getenv("ZARBA_DEBUG") == "1"
 	h.startOfficial(parseOfficialRooms(os.Getenv("OFFICIAL_ROOMS")))

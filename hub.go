@@ -61,6 +61,8 @@ type room struct {
 	bans    map[string]time.Time
 	// official: doimiy xona (officials.go) — egasi yo'q, bo'shasa ham yo'qolmaydi
 	official *officialRoom
+	// mm: navbatdan ochilgan xona (queue.go) — faqat topilgan o'yinchilar, egasiz, botsiz
+	mm *mmRoom
 	// statistika (stats.go)
 	st               map[string]*pstat
 	stE              string
@@ -186,13 +188,16 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 	if r.bannedLocked(ip, acct, time.Now()) {
 		reject = "kicked"
 	}
+	if r.mm != nil && (acct == nil || r.mm.sq[acct.id] == "") {
+		reject = "mm_only" // navbat o'yiniga faqat topilganlar
+	}
 	for _, o := range r.clients {
 		if acct != nil && o.acct != nil && o.acct.id == acct.id {
 			reject = "already_in_room"
 		}
 	}
 	if reject != "" {
-		empty := len(r.clients) == 0 && r.official == nil
+		empty := len(r.clients) == 0 && r.official == nil && r.mm == nil // rasmiy va navbat xonalari o'chmaydi
 		r.mu.Unlock()
 		if empty {
 			delete(h.rooms, roomName)
@@ -220,7 +225,7 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 	if acct != nil {
 		h.joinedLocked(acct.id, r)
 	}
-	if r.owner == "" && r.official == nil {
+	if r.owner == "" && !r.ownerless() {
 		r.owner = c.id
 	}
 	r.fillBotsLocked(time.Now())
@@ -256,6 +261,9 @@ func (h *hub) leave(c *client) {
 			r.broadcast(r.infoMsgLocked(), "")
 		}
 		empty = false // rasmiy xona yo'qolmaydi
+	} else if r.mm != nil && empty {
+		empty = false // navbat o'yini: kimdir qayta ulanishi mumkin — bir necha daqiqa kutiladi
+		go h.reapMM(r)
 	} else if !empty && r.pickOwnerLocked() {
 		r.broadcast(r.infoMsgLocked(), "")
 	}
@@ -379,6 +387,11 @@ func (h *hub) reader(c *client) {
 
 		r := c.room
 		r.mu.Lock()
+		if r.mm != nil && c.acct != nil { // navbat o'yinida jamoani server belgilaydi
+			if sq := r.mm.sq[c.acct.id]; sq != "" && info.Sq != "" && info.Sq != sq {
+				info.Sq, fields["sq"] = sq, jsonMsg(sq)
+			}
+		}
 		c.info = info
 		r.refereeLocked(c, fields, info, now)
 		c.deSeen = true

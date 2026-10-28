@@ -379,6 +379,21 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 #invBar{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;
   background:rgba(16,14,11,.96);border:1px solid var(--atk);border-radius:10px;padding:10px 14px;width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;font-size:14px}
 #invBar[hidden]{display:none}
+/* matchmaking: find box in the online panel, status bar while searching (top centre, menu only) */
+.findBox{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid rgba(242,181,68,.45);border-radius:10px;background:linear-gradient(180deg,rgba(242,181,68,.09),rgba(242,181,68,.02))}
+.findBox .seg button{padding:9px 8px;font-size:14px}
+.findBtn{align-self:stretch;text-align:center;font-size:20px;padding:16px 20px}
+.findBox .note{margin:0;font-size:13px}
+.findParty{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--dim)}
+.findParty button{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:5px 11px;font-size:13px}
+.findParty button[aria-pressed="true"]{border-color:var(--atk);background:rgba(242,181,68,.14)}
+#mmBar{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:61;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;
+  background:rgba(16,14,11,.96);border:1px solid var(--atk);border-radius:10px;padding:10px 14px;width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;font-size:14px}
+#mmBar[hidden]{display:none}
+#mmBar small{color:var(--dim)}
+#mmBar .spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(242,181,68,.3);border-top-color:var(--atk);animation:mmspin .9s linear infinite;flex:none}
+@keyframes mmspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){ #mmBar .spin{animation:none} }
 #invBar small{color:var(--dim)}
 .tbl td.wrap{white-space:normal;color:var(--dim);padding:14px}
 .lbWrap{width:min(1040px,100%);display:flex;flex-direction:column;gap:16px}
@@ -613,6 +628,12 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
       <div class="panel" id="onlinePanel">
         <h3>Onlayn o'yin</h3>
         <label class="field" for="nick"><span>Ismingiz</span><input id="nick" maxlength="16" autocomplete="nickname" placeholder="Masalan, Lochin"></label>
+        <div class="srv-only findBox" id="findBox">
+          <div class="seg" id="findMode" role="group" aria-label="Rejim"><button type="button" data-v="comp">Raqobat</button><button type="button" data-v="wm">Wingman</button><button type="button" data-v="dm">Deathmatch</button></div>
+          <div class="findParty" id="findParty" hidden></div>
+          <button class="cta findBtn" id="findBtn" type="button">O'yin topish</button>
+          <p class="note" id="findNote"></p>
+        </div>
         <div class="srv-only subh"><span>Xaritalar</span></div>
         <div class="srv-only mapCards" id="mapCards"></div>
         <div class="srv-only subh"><span>Serverlar</span><button type="button" id="roomsRefresh">Yangilash</button></div>
@@ -801,6 +822,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
   </div>
 </section>
 <div id="invBar" role="status" hidden></div>
+<div id="mmBar" role="status" aria-live="polite" hidden></div>
 
 <section id="over" class="overlay" hidden>
   <div class="sheet narrow">
@@ -2497,6 +2519,7 @@ function checkRoundEnd(){
 }
 
 function startMatch(){
+  if (MM.st && MM.st.state === 'searching') mmLeave();
   MODE = 'bots'; player.team = 'T'; H.progBar.style.background = ''; bots.forEach(b => b.m.g.visible = true);
   DIFF = DIFFS[SET.diff] || DIFFS.normal; setMap(SET.map);
   Object.assign(S, { round:0, sA:0, sB:0, H:fmtH(), loss:0, paused:false, md:TR.pick || (MODES[SET.mode] ? SET.mode : 'comp') });
@@ -4629,10 +4652,11 @@ function clientPhase(dt){
 function netSide(){ const g = NET.g; return g && g.r > 0 && g.ph !== 'warmup' ? sideOfSquad(NET.sq, g.r, g.fm) : (NET.sq === 'B' ? 'CT' : 'T'); }
 function pickTeam(){ let a = 0, b = 0; NET.remotes.forEach(r => { if (!r.team) return; if (r.sq === 'B') b++; else a++; });
   const pw = SOC.partyWith.toLowerCase(), pal = pw && !isFFA() ? [...NET.remotes.values()].find(r => r.team && r.acc && r.acc.u.toLowerCase() === pw) : null; SOC.partyWith = '';
-  NET.sq = pal ? pal.sq : a < b ? 'A' : b < a ? 'B' : (rand() < .5 ? 'A' : 'B'); player.team = netSide();
+  NET.sq = NET.mmSq || (pal ? pal.sq : a < b ? 'A' : b < a ? 'B' : (rand() < .5 ? 'A' : 'B')); player.team = netSide();
   hint((pal ? pal.name + ' bilan bir jamoadasiz: ' : 'Siz ') + TEAM_NAME[player.team] + ' jamoasidasiz · ' + KB('M', 'Jamoa tugmasi') + ' — almashtirish', 3500); }
 function switchTeam(){
   if (!player.team) return; const g = NET.g;
+  if (NET.mmSq){ hint("Navbat o'yinida jamoalarni server tuzgan — almashtirib bo'lmaydi", 2600); return; }
   if (g && (g.ph === 'live' || g.ph === 'post') && player.alive && NET.inRound === g.r){ hint("Raund davomida jamoani almashtirib bo'lmaydi"); return; }
   NET.sq = NET.sq === 'A' ? 'B' : 'A'; player.team = netSide(); hint('Endi siz ' + TEAM_NAME[player.team] + ' jamoasidasiz', 2200);
   if (!g || g.ph === 'warmup') respawnWarm(); else if (g.ph === 'freeze') spawnAt(player.team);
@@ -4747,6 +4771,7 @@ function netBoardHTML(){
   return `<h3>Xona: ${esc(NET.code)} · ${g.r ? g.r + '-raund · ' + fmtLabel(g.fm) + (g.r > 2*g.fm ? " · qo'shimcha vaqt" : '') : 'Isinish'}</h3><table><tr><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">PUL / HOLAT</th></tr>` + sec('T') + sec('CT') + '</table>';
 }
 async function joinOnline(create, codeOverride){
+  if (MM.st && MM.st.state === 'searching'){ mmLeave(); hint("Navbatdan chiqdingiz", 2000); }
   const btn = create ? $('createBtn') : $('onlineBtn'), note = $('onlineNote'); initAudio();
   const raw = codeOverride || (create ? $('newCode').value : $('roomCode').value);
   NET.name = cleanName($('nick').value); NET.code = cleanCode(raw); $('nick').value = NET.name; SET.nick = NET.name;
@@ -4764,11 +4789,11 @@ async function joinOnline(create, codeOverride){
       named = { peers:() => room.peers(), presence:p => room.presence(p), connected:() => room.connected(), leave:() => room.presence({ v:null }) };
       NET.code = 'umumiy'; $('roomCode').value = 'umumiy';
     } else {
-      const why = { room_exists:"Bu kodli o'yin allaqachon bor. Boshqa kod tanlang yoki unga «Kirish» orqali qo'shiling.", kicked:"Xona egasi sizni chiqarib yuborgan — 10 daqiqadan keyin qayta urinib ko'ring.", room_full:"Xona to'la. Boshqa o'yinni tanlang yoki yangisini yarating.", already_in_room:"Bu hisob bilan siz allaqachon shu xonadasiz (boshqa oyna yoki qurilmada).", too_many_connections:"Bu manzildan juda ko'p ulanish bor." }[e && e.code];
+      const why = { mm_only:"Bu navbatdan topilgan o'yin — unga faqat navbat orqali tushgan o'yinchilar kira oladi.", room_exists:"Bu kodli o'yin allaqachon bor. Boshqa kod tanlang yoki unga «Kirish» orqali qo'shiling.", kicked:"Xona egasi sizni chiqarib yuborgan — 10 daqiqadan keyin qayta urinib ko'ring.", room_full:"Xona to'la. Boshqa o'yinni tanlang yoki yangisini yarating.", already_in_room:"Bu hisob bilan siz allaqachon shu xonadasiz (boshqa oyna yoki qurilmada).", too_many_connections:"Bu manzildan juda ko'p ulanish bor." }[e && e.code];
       btn.disabled = false; note.textContent = why || ("Xonaga ulanib bo'lmadi (" + ((e && e.code) || 'xato') + "). Birozdan keyin qayta urinib ko'ring."); return; }
   }
   btn.disabled = false; note.textContent = DEFAULT_NOTE; LINK.want = null;
-  goOnline(named); linkSync();
+  goOnline(named); linkSync(); mmRender();
   if (voiceMode() && voiceAvailable()) voiceMic();
 }
 function goOnline(named){
@@ -4788,6 +4813,7 @@ function leaveOnline(){
   killcamStop(); recClear(); $('result').hidden = true;
   voiceStop(); if (CHAT.open) chatClose(); $('chatLog').innerHTML = ''; NET.chats = []; NET.roomInfo = null; $('adminPanel').hidden = true;
   if (NET.room){ const r = NET.room; NET.room = null; r.leave().catch(() => {}); }
+  NET.mmSq = null;
   NET.remotes.forEach(removeRemote); NET.remotes.clear(); NET.g = null;
   MODE = 'bots'; player.team = 'T'; bots.forEach(b => b.m.g.visible = true); $('teamTag').hidden = true; bomb.mesh.visible = false; bomb.planted = false;
   linkSync();
@@ -4893,10 +4919,12 @@ function renderAcc(){
     $('meXP').innerHTML = xpBarHTML(me.level, me.lvCur, me.lvNeed, me.xp);
     $('meStats').innerHTML = `<div><b>${me.matches}</b><span>O'yin</span></div><div><b>${pct(me.wins, me.matches)}%</b><span>G'alaba</span></div><div><b>${kdOf(me)}</b><span>K/D</span></div><div><b>${pct(me.hs, me.kills)}%</b><span>Boshga</span></div>` + (me.pos ? `<div><b>#${me.pos}</b><span>O'rin</span></div>` : '');
     nick.value = me.username; nick.disabled = true;
-    $('onlineNote').textContent = "Reytingli o'yin: natijalar hisobingizga yoziladi. Do'stlaringiz shu havolani ochib, bir xil xona kodini kiritsin.";
+    // opened from a room link before the account loaded: now there is a name — go straight in
+    if (LINK.want && !LINK.auto && MODE !== 'online'){ LINK.auto = true; joinOnline(false, LINK.want.code); }
+    else if (!LINK.want) $('onlineNote').textContent = "Reytingli o'yin: natijalar hisobingizga yoziladi. Do'stlaringiz shu havolani ochib, bir xil xona kodini kiritsin.";
   } else {
     nick.disabled = false; nick.value = SET.nick || '';
-    $('onlineNote').textContent = DEFAULT_NOTE + " Reyting faqat hisobga kirgan o'yinchilarga yoziladi.";
+    if (!LINK.want) $('onlineNote').textContent = DEFAULT_NOTE + " Reyting faqat hisobga kirgan o'yinchilarga yoziladi.";
   }
 }
 function setAuthMode(m){
@@ -4979,6 +5007,90 @@ $('lbClose').addEventListener('click', () => { $('lb').hidden = true; });
 document.addEventListener('keydown', e => { if (e.code === 'Escape' && !$('lb').hidden){ $('lb').hidden = true; } });
 /* ---------- friends, party invites, clans ---------- */
 const SOC = { d:null, top:null, busy:false, live:[], dismissed:{}, partyWith:'', sure:'' };
+/* ---------- «O'yin topish» ----------
+   Deathmatch: straight into the busiest open deathmatch room. Raqobat / Wingman: the rated queue on the server
+   (accounts only, optionally with friends as a party); while searching the browser asks every 2 s, and when a
+   game is found it joins the new private room on the team the server picked. */
+const MM = { mode:'comp', st:null, poll:0, party:new Set(), busy:false, inv:null, invOff:'' };
+const MM_NAME = { comp:'Raqobat', wm:'Wingman', dm:'Deathmatch' };
+function mmInit(){
+  if (IN_ARTIFACT || !/^https?:$/.test(location.protocol)) return;
+  MM.mode = MM_NAME[SET.findMode] ? SET.findMode : 'comp';
+  $('findMode').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b || MM.st) return; MM.mode = SET.findMode = b.dataset.v; saveSet(); mmRender(); });
+  $('findParty').addEventListener('click', e => { const b = e.target.closest('button[data-f]'); if (!b) return; const n = b.dataset.f;
+    if (MM.party.has(n)) MM.party.delete(n); else if (MM.party.size + 1 < (MM.mode === 'wm' ? 2 : 5)) MM.party.add(n); mmRender(); });
+  $('findBtn').addEventListener('click', () => MM.st ? mmLeave() : mmFind());
+  $('mmBar').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.mm === 'leave') mmLeave(); else if (b.dataset.mm === 'accept') mmAccept(); else if (b.dataset.mm === 'decline') mmDecline(); });
+  mmRender();
+  setInterval(() => { if (ACC.me && !document.hidden && (MM.st || S.phase === 'menu')) mmPoll(); }, 2000);
+}
+const mmTime = s => Math.floor(s/60) + ':' + String(s % 60).padStart(2, '0');
+function mmRender(){
+  if (IN_ARTIFACT || !/^https?:$/.test(location.protocol)) return;
+  const st = MM.st, rated = MM.mode !== 'dm';
+  $('findMode').querySelectorAll('button').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.v === (st ? st.mode : MM.mode))); b.disabled = !!st; });
+  // party: online friends in the menu (rated modes, account needed)
+  const fr = rated && ACC.me && SOC.d ? (SOC.d.friends || []).filter(f => friendState(f) === 'menu') : [];
+  [...MM.party].forEach(n => { if (!fr.some(f => f.name === n)) MM.party.delete(n); });
+  const pb = $('findParty'); pb.hidden = !fr.length || !!st;
+  if (!pb.hidden) pb.innerHTML = `<span>Partiyaga chaqirish:</span>` + fr.slice(0, 8).map(f => `<button type="button" data-f="${escH(f.name)}" aria-pressed="${MM.party.has(f.name)}">${escH(f.name)}</button>`).join('');
+  const btn = $('findBtn'), note = $('findNote');
+  btn.textContent = st ? 'Bekor qilish' : "O'yin topish"; btn.classList.toggle('ghost', !!st); btn.classList.toggle('cta', !st);
+  note.textContent = st ? '' : !rated ? "Eng ko'p odam o'ynayotgan deathmatch xonasiga darhol kirasiz."
+    : !ACC.me ? 'Reytingli navbat uchun hisobga kiring (yuqoridagi «Hisob va reyting» paneli).'
+    : (MM.mode === 'wm' ? '2 ga 2' : '5 ga 5') + ", reytingingizga yaqin o'yinchilar bilan, botsiz — natija reytingga yoziladi." + (MM.party.size ? ' Partiya: siz + ' + [...MM.party].join(', ') + '.' : '');
+  // the bar
+  const bar = $('mmBar'), inv = MM.inv && MM.invOff !== MM.inv.from + MM.inv.mode ? MM.inv : null;
+  const inMatch = st && st.state === 'found' && MODE === 'online' && NET.code === st.found.room;
+  if (inMatch || (S.phase !== 'menu' && !(st && st.state === 'found'))){ bar.hidden = true; return; }
+  if (st && st.state === 'found'){ const f = st.found;
+    bar.innerHTML = `<span>✓ <b>O'yin topildi</b> <small>· ${escH(MM_NAME[f.mode] || f.mode)} · ${escH(mapName(f.map))} · xonaga ulanilmoqda…</small></span>`; bar.hidden = false; return; }
+  if (st && st.state === 'searching'){
+    bar.innerHTML = `<span class="spin" aria-hidden="true"></span><span><b>${escH(MM_NAME[st.mode] || st.mode)}</b> · o'yinchi qidirilmoqda <b>${mmTime(st.wait|0)}</b> <small>· reyting ±${st.range|0} · navbatda ${(st.inQueue && st.inQueue[st.mode])|0} kishi${st.party && st.party.length > 1 ? ' · partiya: ' + st.party.map(escH).join(', ') : ''}</small></span>`
+      + (st.leader || !st.party || st.party.length < 2 ? `<button class="ghost sm" type="button" data-mm="leave">Bekor qilish</button>` : `<button class="ghost sm" type="button" data-mm="leave">Partiyadan chiqish</button>`);
+    bar.hidden = false; return; }
+  if (inv){ bar.innerHTML = `<span><b>${escH(inv.from)}</b> sizni ${escH(MM_NAME[inv.mode] || inv.mode)} navbatiga partiyaga chaqiryapti</span><button class="cta sm" type="button" data-mm="accept">Qo'shilish</button><button class="ghost sm" type="button" data-mm="decline">Rad etish</button>`; bar.hidden = false; return; }
+  bar.hidden = true;
+}
+function mmApply(r){
+  if (!r || !r.ok || !r.data){ return; }
+  const d = r.data; MM.inv = d.invite || null;
+  const was = MM.st; MM.st = d.state === 'searching' || d.state === 'found' ? d : null;
+  if (d.state === 'found' && d.found && !(was && was.state === 'found' && MODE === 'online' && NET.code === d.found.room)) mmGo(d.found);
+  mmRender();
+}
+async function mmPoll(){ if (MM.busy) return; MM.busy = true; const r = await apiCall('/api/queue'); MM.busy = false;
+  if (r.status === 401){ MM.st = null; MM.inv = null; mmRender(); return; }
+  if (MM.st && MM.st.state === 'found' && r.ok && r.data && r.data.state === 'found') { MM.inv = r.data.invite || null; return; }
+  mmApply(r); }
+async function mmFind(){
+  if (MM.mode === 'dm') return mmQuickDM();
+  if (!ACC.me){ const p = $('accPanel'); if (p && !p.hidden) p.scrollIntoView({ block:'center' }); mmRender(); return; }
+  if (!cleanName($('nick').value)) $('nick').value = ACC.me.username;
+  $('findBtn').disabled = true;
+  const r = await apiCall('/api/queue', { action:'join', mode:MM.mode, party:[...MM.party] });
+  $('findBtn').disabled = false;
+  if (!r.ok){ $('findNote').textContent = (r.data && r.data.error) || "Navbatga turib bo'lmadi"; return; }
+  MM.party.clear(); mmApply(r); sfxClick();
+}
+async function mmLeave(){ MM.st = null; mmRender(); await apiCall('/api/queue', { action:'leave' }); }
+async function mmAccept(){ const r = await apiCall('/api/queue', { action:'accept' }); if (!r.ok){ hint((r.data && r.data.error) || "Qo'shilib bo'lmadi", 2600); MM.inv = null; mmRender(); return; } mmApply(r); }
+async function mmDecline(){ if (MM.inv) MM.invOff = MM.inv.from + MM.inv.mode; mmRender(); await apiCall('/api/queue', { action:'decline' }); }
+// a game was found: join its room on the team the server picked
+function mmGo(f){
+  if (MODE === 'online'){ if (NET.code === f.room) return; toMenu(); }
+  sfxChord(true); NET.mmSq = f.sq === 'B' ? 'B' : 'A';
+  if (!cleanName($('nick').value) && ACC.me) $('nick').value = ACC.me.username;
+  LINK.want = { map:f.map, code:f.room, mode:f.mode }; $('roomCode').value = f.room;
+  setTimeout(() => joinOnline(false, f.room), 600);
+}
+// deathmatch: the busiest open DM room (official ones count), or a fresh one
+function mmQuickDM(){
+  const c = (RB.list || []).filter(r => r.mode === 'dm' && !rbFull(r)).sort((a, b) => (b.humans|0) - (a.humans|0) || (b.official ? 1 : 0) - (a.official ? 1 : 0))[0];
+  if (c){ rbJoin(String(c.code)); return; }
+  LINK.want = { map:SET.map || 'qumtepa', code:'dm-ochiq', mode:'dm' }; $('roomCode').value = 'dm-ochiq'; joinOnline(false, 'dm-ochiq');
+}
 const clTagHTML = cl => cl ? `<span class="clTag">[${escH(cl)}]</span>` : '';
 const modeName = md => modeInfo(md).name, mapName = m => (MAPS[m] || MAPS.qumtepa).name;
 const socStr = (v, n) => String(v == null ? '' : v).slice(0, n || 32);
@@ -4986,7 +5098,7 @@ async function socLoad(){
   if (!ACC.me || SOC.busy) return null;
   SOC.busy = true; const r = await apiCall('/api/social'); SOC.busy = false;
   if (!r.ok || !r.data || !ACC.me) return null;
-  SOC.d = r.data; socBadge(); socInvites();
+  SOC.d = r.data; socBadge(); socInvites(); if (r.data.party !== undefined || MM.inv) { MM.inv = r.data.party || null; } mmRender();
   if (!$('socOv').hidden) socRender();
   if (!$('pause').hidden) pauseFriends();
   return r.data;
@@ -5195,7 +5307,8 @@ function touchFrame(){
   if (!player.alive && TOUCH.crouch){ TOUCH.crouch = false; document.querySelector('#touch [data-t="crouch"]').classList.remove('on'); }
 }
 setTimeout(linkBoot, 0);
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+setTimeout(mmInit, 0);
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){

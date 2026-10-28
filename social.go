@@ -162,6 +162,7 @@ type socialOut struct {
 	Invites     []roomInvite `json:"invites"`
 	Clan        *clanInfo    `json:"clan"`
 	ClanInvites []clanInvite `json:"clanInvites"`
+	Party       *partyInvite `json:"party,omitempty"` // navbatga partiya chaqirig'i (queue.go)
 }
 
 func (s *Store) Social(ctx context.Context, me int64) (*socialOut, error) {
@@ -498,6 +499,9 @@ func (a *api) socialGet(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		h.mu.Unlock()
+	}
+	if a.queue != nil {
+		out.Party = a.queue.status(u.ID).Invite
 	}
 	sort.SliceStable(out.Friends, func(i, j int) bool { // avval onlayn
 		return (out.Friends[i].Online != "") && (out.Friends[j].Online == "")

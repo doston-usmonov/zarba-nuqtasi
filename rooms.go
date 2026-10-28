@@ -72,8 +72,11 @@ func (r *room) bannedLocked(ip string, acct *account, now time.Time) bool {
 }
 
 // pickOwnerLocked: egasi chiqib ketgan bo'lsa, eng oldin kirgan odamni ega qiladi.
+// ownerless: rasmiy va navbat xonalarida ega yo'q — xona buyruqlari ishlamaydi.
+func (r *room) ownerless() bool { return r.official != nil || r.mm != nil }
+
 func (r *room) pickOwnerLocked() bool {
-	if r.official != nil {
+	if r.ownerless() {
 		return false
 	}
 	if o := r.clients[r.owner]; o != nil && o.bot == nil {
@@ -94,12 +97,12 @@ func (r *room) pickOwnerLocked() bool {
 
 func (r *room) infoMsgLocked() []byte {
 	bots, humans := r.botCountLocked()
-	return jsonMsg(map[string]any{"t": "room", "owner": r.owner, "pub": r.pub, "max": r.max, "bots": bots, "humans": humans, "official": r.official != nil})
+	return jsonMsg(map[string]any{"t": "room", "owner": r.owner, "pub": r.pub, "max": r.max, "bots": bots, "humans": humans, "official": r.official != nil, "mm": r.mm != nil})
 }
 
 // adminLocked: xona egasining buyruqlari.
 func (h *hub) adminLocked(r *room, c *client, d json.RawMessage, now time.Time) {
-	if r.official != nil || c.id != r.owner { // rasmiy xonada egasi yo'q — buyruqlar ishlamaydi
+	if r.ownerless() || c.id != r.owner { // rasmiy va navbat xonalarida egasi yo'q — buyruqlar ishlamaydi
 		return
 	}
 	var m struct {

@@ -18,6 +18,9 @@ zarba-server/
 ├── progress.go        XP, darajalar, kunlik vazifalar, qurol bo'yoqlari (/api/progress, /api/loadout)
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── social.go          do'stlar, xonaga chaqiriqlar, klanlar (/api/social, /api/friends, /api/clan, /api/clans)
+├── queue.go           «O'yin topish»: reytingli navbat, partiyalar, mm- xonalar (/api/queue)
+├── officials.go       doimiy (rasmiy) xonalar va ularni botlar bilan to'ldirish
+├── deeplink.go        /x/<xarita>/<kod> xona havolalari va og: teglari
 ├── modes.go           o'yin rejimlari: deathmatch (hamma hammaga yoki jamoaviy), qurol poygasi, Wingman, Retake
 ├── gamemap.go         xaritalar panjarasi: ko'rinish, devorlar, bazalar, nuqtalar
 ├── mapsdata.go        xaritalar (web/index.html dagi MAPS dan tools/genmaps.py yasaydi)
@@ -165,6 +168,14 @@ Bosh sahifadagi **server brauzeri** (har 5 soniyada yangilanadi, telefonda ham q
 - Qatorni bossangiz darhol kirmaysiz — **xona oynasi** ochiladi: kim o'ynayapti (ism, klan tegi, jamoa, o'ldirish/o'lim), joriy hisob, «Kirish» va «Havolani nusxalash». Esc yoki «Yopish» — orqaga.
 
 API: `GET /api/rooms` → `{rooms:[…], byMap:{qumtepa:3, …}}` (har qatorda `official` va hozircha bo'sh `region` maydoni ham bor); `GET /api/rooms/{kod}` → ro'yxatdagi maydonlar + `players:[{name, tag, team, k, d, bot}]` — yopiq xona uchun ham ishlaydi (kodni bilgan ko'radi), xona bo'lmasa 404.
+
+**O'yin topish** — onlayn panelning tepasidagi katta tugma. Rejimni tanlaysiz:
+- *Deathmatch* — darhol eng ko'p odam o'ynayotgan ochiq deathmatch xonasiga (rasmiy xonalar ham) kirasiz; hisob shart emas.
+- *Raqobat* (5 ga 5) va *Wingman* (2 ga 2) — **reytingli navbat**, faqat hisobga kirganlar. Reytingingizga yaqin o'yinchilar qidiriladi: farq boshida ±150, har 20 soniyada ±50 kengayadi. Yetarli odam (10 yoki 4) yig'ilganda yangi yopiq xona `mm-<tasodifiy>` ochiladi, o'yinchilar reyting yig'indisi iloji boricha teng bo'lgan ikki jamoaga bo'linadi va hamma avtomatik shu xonaga tushadi. Xonaga faqat topilgan o'yinchilar kira oladi, egasi yo'q, bot qo'shib bo'lmaydi, jamoani server belgilaydi (M ishlamaydi) — shuning uchun natija reytingga yoziladi. Ekranning tepasida qidiruv holati: kutish vaqti, reyting oralig'i, navbatdagi o'yinchilar soni, «Bekor qilish».
+- **Partiya:** navbatga turishdan oldin menyudagi onlayn do'stlaringizni belgilaysiz (Raqobatda 4 tagacha, Wingman'da 1). Ularga chaqiriq keladi; «Qo'shilish»ni bosganlar siz bilan navbatda turadi va doim bitta jamoaga tushadi (partiya buzilmaydi). Boshliq chiqsa partiya ham navbatdan chiqadi.
+- Navbat server xotirasida: `POST /api/queue` (`join` + `mode` va `party`, `leave`, `accept`, `decline`), `GET /api/queue` — holat; brauzer navbatda turganda har 2 soniyada so'raydi, 15 soniya so'ramagan o'yinchi navbatdan chiqariladi. Partiya chaqirig'i `/api/social` javobida ham keladi. Hech kim kirmagan yoki hamma chiqib ketgan navbat xonasi 3 daqiqadan keyin o'chiriladi (shu vaqt ichida qayta ulanish mumkin).
+
+Wingman o'yinlari ham (botsiz bo'lsa) endi Raqobat kabi reytingga yoziladi.
 
 **Rasmiy xonalar** (`OFFICIAL_ROOMS`) — har doim ochiq, ro'yxatning tepasida «RASMIY» belgisi bilan, odam bo'lmasa ham ko'rinadi: `registon-comp`, `qumtepa-dm`, `bozor-comp`, `saroy-gg`, `karvon-wm`. Kirgan odam hech qachon bo'sh xonaga tushmaydi: odam + bot soni `min(chegara, 10)` ga yetguncha o'rta darajadagi botlar qo'shiladi, har yangi odam kirganda bitta bot chiqadi, jamoalar teng saqlanadi (odam jamoa tanlagach, raundlar orasida bot boshqa jamoaga o'tadi). Hamma chiqib ketsa botlar ham chiqadi, xona o'z xaritasida boshidan boshlanadi va bo'sh turganda hech narsa hisoblamaydi. Egasi yo'q: bot qo'shish/chiqarish, chegara, ommaviylik va rejimni hech kim o'zgartira olmaydi; xaritani faqat o'yin oxiridagi ovoz almashtiradi (kod o'zgarmaydi). Bot qatnashgani uchun bu o'yinlar reytingga yozilmaydi — ular tez o'ynash uchun. Chegara botlarni emas, odamlarni sanaydi.
 

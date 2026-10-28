@@ -142,22 +142,8 @@ func roundInHalf(r, h int) int {
 	return (r-2*h-1)%otHalf + 1
 }
 
-// pickAimWeapon: aim xaritasida bot quroli (hammasi bepul).
-func pickAimWeapon() string {
-	switch x := rand.Float64(); {
-	case x < .35:
-		return "rifle"
-	case x < .55:
-		return "carbine"
-	case x < .7:
-		return "sniper"
-	case x < .8:
-		return "scout"
-	case x < .9:
-		return "deagle"
-	}
-	return "smg"
-}
+// pickAimWeapon: Aim rejimida faqat snayper (va pichoq).
+func pickAimWeapon() string { return "sniper" }
 
 func pickBotWeapon(rih int) string {
 	switch {
@@ -300,7 +286,7 @@ func (r *room) botDieLocked(v, killer *client, w string, hs bool, now time.Time)
 		}
 	}
 	b.de = &deathClaim{N: b.deN, By: by, W: w, HS: map[bool]int{true: 1}[hs]}
-	if !r.gs.respawns() && weaponMag[b.weapon] > 0 {
+	if !r.gs.respawns() && r.gs.Md != modeAim && weaponMag[b.weapon] > 0 { // aim'da hamma bir xil qurolda — tashlanmaydi
 		r.botDropLocked(v)
 	}
 	r.tr.death(r, v, killer, hs)

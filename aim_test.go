@@ -77,8 +77,8 @@ func TestAimRounds(t *testing.T) {
 		r.addBotLocked("A", "hard", now)
 		r.addBotLocked("B", "hard", now)
 	}
-	dt, rounds, sawLive := .05, 0, false
-	aimW := map[string]bool{"rifle": true, "carbine": true, "sniper": true, "scout": true, "deagle": true, "smg": true}
+	dt, rounds, sawLive, maxScore := .05, 0, false, 0
+	aimW := map[string]bool{"sniper": true}
 	for i := 0; i < 20*240; i++ {
 		now = now.Add(50 * time.Millisecond)
 		for _, c := range r.clients {
@@ -100,9 +100,10 @@ func TestAimRounds(t *testing.T) {
 		if r.gs.R > prev && prev > 0 {
 			rounds++
 		}
+		maxScore = max(maxScore, r.gs.SA+r.gs.SB)
 	}
-	if rounds < 2 || r.gs.SA+r.gs.SB < 2 {
-		t.Fatalf("4 daqiqada raundlar o'ynalmadi: %d raund, hisob %d:%d, bosqich %s", rounds, r.gs.SA, r.gs.SB, r.gs.Ph)
+	if rounds < 2 || maxScore < 2 {
+		t.Fatalf("4 daqiqada raundlar o'ynalmadi: %d raund, eng katta hisob %d, bosqich %s", rounds, maxScore, r.gs.Ph)
 	}
 	// vaqt tugasa: tirik qolganlar ko'p jamoa yutadi
 	r.gs.Ph, r.gs.T, r.gs.R = "live", .01, 5
@@ -119,5 +120,44 @@ func TestAimRounds(t *testing.T) {
 	r.tickLocked(now, dt)
 	if r.gs.W != "CT" || r.gs.Y != "time" || r.gs.SA+r.gs.SB != sa+sb+1 {
 		t.Fatalf("vaqt tugaganda g'olib: %s %s", r.gs.W, r.gs.Y)
+	}
+}
+
+// TestAimHits: Aim xonasida snayper o'qi qabul qilinadi (avval server qurolni «sizda yo'q» deb rad etardi),
+// boshqa qurollar esa qabul qilinmaydi — faqat snayper va pichoq.
+func TestAimHits(t *testing.T) {
+	r, x, y := newRefRoom()
+	*r.gs = gameState{R: 2, Ph: "live", Md: modeAim, Fm: 8, E: "a1", Bm: -1, T: 50, M: "maydon"}
+	r.gs.liveAt = time.Now()
+	pres := func(c *client, sq, tm string, z float64) {
+		refPres(r, c, map[string]any{"v": 1, "hc": 1, "sq": sq, "tm": tm, "in": 2, "al": 1, "x": 31, "y": 0, "z": z, "w": "sniper", "ar": 100, "hm": 1})
+	}
+	pres(x, "A", "T", 40)
+	pres(y, "B", "CT", 30)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	x.ps.pos, y.ps.pos = vec3{31, 0, 40}, vec3{31, 0, 30}
+	x.ps.alive, y.ps.alive = true, true
+	for range 3 {
+		x.ps.push(sample{t: time.Now(), p: x.ps.pos})
+		y.ps.push(sample{t: time.Now(), p: y.ps.pos})
+	}
+	now := time.Now()
+	if r.ecoOn() {
+		t.Fatal("Aim rejimida iqtisod (va qurol inventari) bo'lmasligi kerak")
+	}
+	if why := r.validHitLocked(x, hitClaim{I: 1, T: y.id, D: 115, Pn: .97, P: "c", W: "sniper"}, now); why != "" {
+		t.Fatalf("snayper o'qi rad etildi: %s", why)
+	}
+	if why := r.validHitLocked(x, hitClaim{I: 2, T: y.id, D: 36, Pn: .775, P: "c", W: "rifle"}, now); why == "" {
+		t.Fatal("Aim'da avtomat o'qi qabul qilindi")
+	}
+	if why := r.validHitLocked(x, hitClaim{I: 3, T: y.id, D: 500, Pn: 1, P: "c", W: "taser"}, now); why == "" {
+		t.Fatal("Aim'da elektroshoker qabul qilindi")
+	}
+	y.ps.hp = 100
+	r.applyHitLocked(x, hitClaim{I: 1, T: y.id, D: 115, Pn: .97, P: "c", W: "sniper"}, now)
+	if y.ps.hp > 0 {
+		t.Fatalf("snayper ko'krakka: jon %v (zirh %v)", y.ps.hp, y.ps.armor)
 	}
 }

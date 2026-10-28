@@ -481,6 +481,9 @@ func (r *room) validHitLocked(c *client, h hitClaim, now time.Time) string {
 	if ok && spec.nade {
 		return "~granata zararini server o'zi hisoblaydi"
 	}
+	if g.Md == modeAim && h.W != "sniper" && h.W != "knife" {
+		return "aim'da faqat snayper va pichoq: " + h.W
+	}
 	if !ok || !okp {
 		return "noma'lum qurol"
 	}

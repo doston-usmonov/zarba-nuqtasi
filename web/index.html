@@ -2434,7 +2434,7 @@ function rayHitBot(o, d, b, maxT){
    har 2 o'ldirishda keyingi qurol, oxiri pichoq). Server versiyasida hisobni server yuritadi (g.sc). */
 const MODES = { comp:{ name:'Raqobat', desc:"Raundlar, bomba va iqtisod. Jamoa bo'lib o'ynaladi." },
   wm:{ name:'Wingman', desc:"2 ga 2, faqat A nuqta, 9 g'alabagacha. Raundlar qisqa (1,5 daqiqa), iqtisod raqobatdagidek." },
-  arena:{ name:'Aim', desc:"Faqat nishon olish: kichik xaritada jamoa jamoaga, bomba yo'q, raund raqib yo'q qilinganda tugaydi. Qurollar bepul — raund boshida B bilan tanlaysiz. 9 g'alabagacha." },
+  arena:{ name:'Aim', desc:"Faqat nishon olish: kichik xaritada jamoa jamoaga, faqat snayper va pichoq, bomba yo'q, raund raqib yo'q qilinganda tugaydi. 9 g'alabagacha." },
   rt:{ name:'Retake', desc:"Har raund boshida bomba allaqachon o'rnatilgan: hujum uni himoya qiladi, himoya bazadan kelib zararsizlantiradi. Qurollar beriladi." }, dm:{ name:'Deathmatch', desc:"Har kim har kimga qarshi, o'lgan zahoti qayta tug'ilasiz. 6 daqiqada eng ko'p o'ldirgan yutadi. Qurollar bepul." }, gg:{ name:'Qurol poygasi', desc:"Eng kuchli quroldan (snayper, pulemyot) boshlanadi, har 2 o'ldirishda kuchsizrog'i beriladi. Oxirgi bosqich — pichoq: u bilan birinchi o'ldirgan yutadi." } };
 // gun game ladder: the strongest weapon first, then weaker ones, the knife last
 const GG_LADDER = ['sniper','lmg','rifle','carbine','shotgun','smg','deagle','mpistol','pistol','knife'], GG_PER = 2, GG_WIN = (GG_LADDER.length - 1)*GG_PER + 1;
@@ -2550,7 +2550,7 @@ function liveTime(){ return MODE === 'online' ? NET.liveT : S.liveT; }
 function canBuy(){ if (!player.alive || S.phase === 'menu' || S.phase === 'over' || !player.team || TRAIN(curMode())) return false;
   if (respawnMode() && S.phase !== 'warmup') return curMode() === 'dm' && S.phase === 'live';
   if (curMode() === 'rt' && S.phase !== 'warmup') return false;
-  if (curMode() === 'arena' && S.phase === 'live' && liveTime() >= 10) return false;   /* Retake: loadouts are handed out */   /* deathmatch: anywhere, any time; gun game: never */ const inZone = cellT(wc(player.pos.x), wc(player.pos.z)) === (player.team === 'CT' ? CTSP : TSP); return inZone && (S.phase === 'warmup' || S.phase === 'freeze' || (S.phase === 'live' && liveTime() < 20)); }
+  if (curMode() === 'arena') return false;   /* Aim: sniper and knife only — no buying */   /* Retake: loadouts are handed out */   /* deathmatch: anywhere, any time; gun game: never */ const inZone = cellT(wc(player.pos.x), wc(player.pos.z)) === (player.team === 'CT' ? CTSP : TSP); return inZone && (S.phase === 'warmup' || S.phase === 'freeze' || (S.phase === 'live' && liveTime() < 20)); }
 
 /* match format: halves, side swap and overtime (the same rules online and against bots) */
 const FMT = { short:8, long:12 }, OT_HALF = 3;
@@ -2610,7 +2610,7 @@ function startRound(){
   bots.forEach((b, i) => {
     if (b.off) return;
     b.alive = true; b.hp = 100; b.armor = rih > 1 ? 100 : (rand() < .3 ? 100 : 0); b.helmet = rih > 2 || (rih === 2 && rand() < .4);
-    b.weapon = S.md === 'arena' ? ['rifle','rifle','carbine','sniper','scout','deagle','smg'][(rand()*7)|0] : botWeaponFor(rih, i); b.mag = W[b.weapon].mag; b.reloadT = 0;
+    b.weapon = S.md === 'arena' ? 'sniper' : botWeaponFor(rih, i); b.mag = W[b.weapon].mag; b.reloadT = 0;
     if (S.md === 'arena'){ b.armor = 100; b.helmet = true; }
     b.mode = 'hold'; b.path = null; b.seeing = false; b.vis = null; b.lastKnown = null; b.lastSeen = -99; b.alertPos = null; b.alertT = -99; b.investigate = false; b.spotT = -99; b.defuse = 0; b.deadT = 0; b.deadT0 = -99; b.kneel = 0; b.stuck = 0; b.blindT = 0;
     b.hasBomb = false; b.planting = 0; b.atStage = false; b.postPos = null;
@@ -2636,7 +2636,7 @@ function startRound(){
   if (S.md === 'arena') aimLoadout();
   $('dead').hidden = true; H.scope.hidden = true; H.cross.style.display = ''; H.progBar.style.background = '';
   updatePips(); updateHUD();
-  if (S.md === 'arena'){ showMsg('Aim · ' + S.round + '-raund', 'Raqiblarni yo\'q qiling. ' + KB('B', 'Xarid') + ' — qurolni tanlash (bepul, keyingi raundlarda ham shu).', teamMsg(player.team), 3000); return; }
+  if (S.md === 'arena'){ showMsg('Aim · ' + S.round + '-raund', "Faqat snayper va pichoq. Raqiblarni yo'q qiling.", teamMsg(player.team), 3000); return; }
   if (S.md === 'rt'){ showMsg('Retake · ' + S.round + '-raund', 'Bomba ' + S.tSite + ' nuqtada. ' + (player.team === 'T' ? "Uni zararsizlantirishga yo'l qo'ymang!" : KB('E ni', 'BOMBA tugmasini') + ' bosib turib zararsizlantiring.'), teamMsg(player.team), 3600); return; }
   voMatchPoint(S.sA, S.sB, S.round, HH);
   const T = player.team === 'T', pistol = S.round === 1 || (newHalf && !isOT(S.round, HH)), swapped = newHalf && sideOfSquad('A', S.round - 1, HH) !== player.team;
@@ -2696,11 +2696,9 @@ function startMatch(){
 /* ---------- Wingman and Retake ---------- */
 const roundTimeOf = md => md === 'wm' ? 90 : md === 'rt' ? 40 : md === 'arena' ? 60 : 115;
 const fixedFm = md => md === 'wm' || md === 'arena' ? 8 : md === 'rt' ? 6 : 0;
-// Aim: the gun you picked (B, free) comes back every round, with a Burgut .50 and full armour
-const AIM_PRIM = ['rifle','carbine','smg','shotgun','lmg','scout','sniper'], AIM_SEC = ['deagle','pistol','mpistol'];
+// Aim: only the sniper rifle and the knife, full armour, every round (nothing to buy, nothing to pick up)
 function aimLoadout(){
-  const prim = AIM_PRIM.includes(SET.aimW) ? SET.aimW : 'rifle', sec = AIM_SEC.includes(SET.aimS) ? SET.aimS : 'deagle';
-  player.inv = { 1:{ id:prim, mag:W[prim].mag, res:W[prim].res }, 2:{ id:sec, mag:W[sec].mag, res:W[sec].res }, 3:{ id:'knife' } };
+  player.inv = { 1:{ id:'sniper', mag:W.sniper.mag, res:W.sniper.res }, 2:null, 3:{ id:'knife' } };
   player.nades = { he:0, flash:0, smoke:0, molly:0 }; player.nadeSel = null; player.taser = player.tsel = false;
   player.armor = 100; player.helmet = true; player.kit = false; player.bomb = false; player.slot = 1; drawWeapon();
 }
@@ -3269,7 +3267,7 @@ function knifeAttack(heavy){
 
 function botKilled(b, w, hs){
   const tr = TRAIN(S.md);
-  if (!RM(S.md) && !tr) botDropGun(b);
+  if (!RM(S.md) && !tr && S.md !== 'arena') botDropGun(b);
   if (b.hasBomb) dropBomb(b);
   b.alive = false; if (bomb.picker === b) assignPicker(); b.deadT = 0; b.deadT0 = S.time; b.deaths++; player.kills++; S.rk = (S.rk || 0) + 1; if (hs) player.hs++; if (!tr) voKill();
   if (tr) return trainKill(b, hs);
@@ -3322,7 +3320,7 @@ function damagePlayer(bt, w, part, dist){
 }
 function playerDie(bt, w, hs){
   player.alive = false; player.hp = 0; player.deaths++; player.deathPos.copy(camera.position); player.killer = bt; S.deathT = 0;
-  if (!respawnMode()) dropOnDeath();
+  if (!respawnMode() && curMode() !== 'arena') dropOnDeath();
   player.planting = 0; H.prog.hidden = true;
   killcamStart(bt, w, hs);
   if (MODE === 'online'){ NET.death = { n:++NET.deathN, by: bt ? bt.peer : '', w: w.id || 'pistol', hs: hs ? 1 : 0 }; NET.deadT = 0; if (bt) feed(bt.name, teamCls(bt.team), w.name, 'Siz', teamCls(player.team), hs, true); else if (w.kind === 'nade') feed('Siz', teamCls(player.team), w.name, 'Siz', teamCls(player.team), false, true); else feed('Bomba', 'a', '', 'Siz', teamCls(player.team), false, true); }
@@ -3896,7 +3894,7 @@ function throwGun(slot, speed){
   return d;
 }
 function dropCurrent(){
-  if (respawnMode() && S.phase !== 'warmup') return;
+  if ((respawnMode() || curMode() === 'arena') && S.phase !== 'warmup') return;
   if (!player.alive || S.paused || player.reloadT > 0 || (player.slot !== 1 && player.slot !== 2) || !player.inv[player.slot]) return;
   throwGun(player.slot, 4.2); player.slot = bestSlot(); drawWeapon(); sfxThrow();
 }
@@ -4200,7 +4198,7 @@ function closeBuy(silent){ S.buyOpen = false; $('buy').hidden = true; if (!silen
 $('buyClose').addEventListener('click', () => closeBuy());
 function owns(id){ if (W[id] && W[id].kind === 'nade') return player.nades[id] >= W[id].max; if (id === 'kit') return player.kit; if (id === 'taser') return !!player.taser;
   return (player.inv[1] && player.inv[1].id === id) || (player.inv[2] && player.inv[2].id === id) || (id === 'kevlar' && player.armor >= 100) || (id === 'helmet' && player.armor >= 100 && player.helmet); }
-function dmFree(){ return (curMode() === 'dm' && S.phase === 'live') || curMode() === 'arena'; }
+function dmFree(){ return curMode() === 'dm' && S.phase === 'live'; }
 function priceOf(id){ if (dmFree()) return 0; if (id === 'helmet' && player.armor >= 100 && !player.helmet) return 350; return (W[id] || GEAR[id]).price; }
 function renderBuy(){
   const g = $('buyGrid'); g.innerHTML = '';
@@ -4254,8 +4252,7 @@ function buy(id){
   if (W[id] && W[id].kind === 'nade'){ if (nadeTotal() >= NADE_MAX) return; player.nades[id]++; if (!player.nadeSel || !player.nades[player.nadeSel]) player.nadeSel = id; }
   else if (id === 'kit'){ if (player.team !== 'CT') return; player.kit = true; }
   else if (id === 'taser'){ player.taser = true; }
-  else if (W[id]){ const w = W[id]; if (curMode() === 'arena'){ if (w.slot === 1) SET.aimW = id; else if (w.slot === 2) SET.aimS = id; saveSet(); }
-    if (player.inv[w.slot] && !respawnMode() && curMode() !== 'arena') throwGun(w.slot, .7); player.inv[w.slot] = { id, mag:w.mag, res:w.res, bk:entry }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); }
+  else if (W[id]){ const w = W[id]; if (player.inv[w.slot] && !respawnMode()) throwGun(w.slot, .7); player.inv[w.slot] = { id, mag:w.mag, res:w.res, bk:entry }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); }
   else if (id === 'kevlar'){ player.armor = 100; }
   else if (id === 'helmet'){ player.armor = 100; player.helmet = true; }
   player.money -= price; sfxClick(); renderBuy(); updateHUD();
@@ -4762,7 +4759,7 @@ function showNetResult(g){
   setTimeout(() => { H.msg.className = ''; }, 0);   // the table says it all
   setTimeout(() => { if (!NET.g || NET.g.ph !== 'over') $('result').hidden = true; }, 10500);
 }
-function respawnWarm(){ killcamStop(); $('result').hidden = true; NET.myVote = ''; spawnAt(player.team); player.alive = true; player.hp = 100; player.money = 16000; refill(); NET.inRound = 0; NET.deadT = 0; S.deathT = 0; player.planting = 0; $('dead').hidden = true; H.cross.style.display = ''; drawWeapon(); }
+function respawnWarm(){ killcamStop(); $('result').hidden = true; NET.myVote = ''; spawnAt(player.team); player.alive = true; player.hp = 100; player.money = 16000; refill(); if (curMode() === 'arena') aimLoadout(); NET.inRound = 0; NET.deadT = 0; S.deathT = 0; player.planting = 0; $('dead').hidden = true; H.cross.style.display = ''; drawWeapon(); }
 function enterWarmup(){ clearDrops(); respawnWarm(); const md = curMode();
   showMsg('Isinish · ' + modeInfo(md).name, isFFA() ? "O'yin xonada kamida 2 kishi bo'lganda boshlanadi." : "O'yin har ikki jamoada kamida bittadan o'yinchi bo'lganda boshlanadi. " + KB('M', 'Jamoa tugmasi') + " — jamoani almashtirish.", teamMsg(player.team), 4200); }
 function spawnRound(g){

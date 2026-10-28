@@ -81,6 +81,9 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 ## Ovoz
 - ✅ O'zbekcha diktor: raund boshi, bomba o'rnatildi/zararsizlantirildi, 10 soniya qoldi, g'olib tomon, ketma-ket o'ldirishlar, yarim vaqt, hal qiluvchi raund, o'yin tugadi (sozlamalarda o'chiriladi)
 
+## Sozlamalar
+- ✅ Tugmalarni qayta sozlash (21 ta amal, band tugma almashtiriladi), grafika sifati (Avto/Juda past/Past/O'rta/Yuqori), ko'rish burchagi
+
 ## Texnik
 - ✅ PostgreSQL: hisoblar, reyting va o'yinlar tarixi, migratsiyalar, kunlik zaxira
 - [ ] O'yin yozuvlari (demo) va qayta ko'rish

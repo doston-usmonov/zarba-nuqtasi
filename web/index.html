@@ -186,6 +186,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .set input[type=range]{width:100%;accent-color:var(--atk)}
 .seg{display:flex;gap:4px;flex-wrap:wrap}
 .seg button{flex:1;min-width:0;background:transparent;color:var(--ink);border:1px solid var(--line);padding:6px 8px;border-radius:5px;font-size:13px;font-weight:600;white-space:nowrap}
+.seg[data-set="gfx"] button{flex:1 0 auto}
 .modeSeg{display:grid;grid-template-columns:repeat(3,1fr)} .modeSeg button{padding:8px 6px;font-size:14px}
 .seg button[aria-pressed="true"]{border-color:var(--atk);background:rgba(242,181,68,.12)}
 .set output{font-family:var(--f-display);text-align:right;color:var(--dim)}
@@ -196,6 +197,16 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .xPick{width:30px;height:30px;padding:0;border:2px solid var(--line);border-radius:50%;background:none;cursor:pointer;overflow:hidden}
 .xPick::-webkit-color-swatch-wrapper{padding:0} .xPick::-webkit-color-swatch{border:0;border-radius:50%} .xPick::-moz-color-swatch{border:0;border-radius:50%}
 .xPick.on{border-color:var(--ink)}
+.keysSet{border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.keysSet summary{cursor:pointer;font-weight:600;font-size:15px}
+.keysSet[open] summary{margin-bottom:10px}
+.keysSet>*:not(summary){margin-top:8px}
+.keyGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 14px}
+.keyRow{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px;min-width:0}
+.keyRow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.keyRow button{min-width:74px;background:rgba(243,239,230,.06);color:var(--ink);border:1px solid var(--line);border-radius:5px;padding:4px 8px;font-family:var(--f-display);font-size:13px;font-weight:600}
+.keyRow button.changed{border-color:rgba(242,181,68,.6);color:var(--atk)}
+.keyRow button.wait{border-color:var(--atk);background:rgba(242,181,68,.15)}
 .note{font-size:13px;color:var(--dim);margin:0;line-height:1.45}
 .warn{color:var(--bad)}
 
@@ -524,7 +535,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
   <div id="tl">
     <canvas id="radar" width="368" height="368" aria-label="Radar"></canvas>
     <div id="money">$800<span id="moneyDelta"></span></div>
-    <div id="buyHint"><kbd>B</kbd> xarid menyusi</div>
+    <div id="buyHint"><kbd data-act="buy">B</kbd> xarid menyusi</div>
     <div id="teamTag" hidden></div>
     <div id="voiceList" aria-live="off"></div>
   </div>
@@ -701,23 +712,23 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
       <div class="panel desk-only">
         <h3>Boshqaruv</h3>
         <dl class="keys">
-          <dt><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></dt><dd>Harakat</dd>
+          <dt><kbd data-act="fwd">W</kbd> <kbd data-act="left">A</kbd> <kbd data-act="back">S</kbd> <kbd data-act="right">D</kbd></dt><dd>Harakat</dd>
           <dt>Sichqoncha</dt><dd>Nishonga olish, chap tugma — otish</dd>
           <dt>O'ng tugma</dt><dd>Optika (snayper) yoki kuchli pichoq zarbasi</dd>
-          <dt><kbd>Shift</kbd></dt><dd>Sekin, ovozsiz yurish</dd>
-          <dt><kbd>C</kbd> <kbd>Ctrl</kbd></dt><dd>Cho'kkalash va cho'kkalab yurish (Ctrl — to'liq ekranda)</dd>
-          <dt><kbd>Bo'shliq</kbd></dt><dd>Sakrash</dd>
-          <dt><kbd>R</kbd></dt><dd>Qayta o'qlash</dd>
-          <dt><kbd>G</kbd></dt><dd>Qurolni tashlash (jamoadoshga berish uchun ham)</dd>
-          <dt><kbd>E</kbd> qurolga qarab</dt><dd>Yerdagi qurolni olish (bo'sh slotga ustidan yurganda o'zi olinadi)</dd>
-          <dt><kbd>E</kbd> bosib turing</dt><dd>Bombani o'rnatish yoki zararsizlantirish</dd>
-          <dt><kbd>B</kbd></dt><dd>Xarid menyusi</dd>
-          <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>5</kbd> <kbd>Q</kbd></dt><dd>Qurol tanlash</dd>
-          <dt><kbd>4</kbd></dt><dd>Granata (yana bosing — keyingi turi)</dd>
+          <dt><kbd data-act="walk">Shift</kbd></dt><dd>Sekin, ovozsiz yurish</dd>
+          <dt><kbd data-act="crouch">C</kbd> <kbd>Ctrl</kbd></dt><dd>Cho'kkalash va cho'kkalab yurish (Ctrl — to'liq ekranda)</dd>
+          <dt><kbd data-act="jump">Bo'shliq</kbd></dt><dd>Sakrash</dd>
+          <dt><kbd data-act="reload">R</kbd></dt><dd>Qayta o'qlash</dd>
+          <dt><kbd data-act="drop">G</kbd></dt><dd>Qurolni tashlash (jamoadoshga berish uchun ham)</dd>
+          <dt><kbd data-act="use">E</kbd> qurolga qarab</dt><dd>Yerdagi qurolni olish (bo'sh slotga ustidan yurganda o'zi olinadi)</dd>
+          <dt><kbd data-act="use">E</kbd> bosib turing</dt><dd>Bombani o'rnatish yoki zararsizlantirish</dd>
+          <dt><kbd data-act="buy">B</kbd></dt><dd>Xarid menyusi</dd>
+          <dt><kbd data-act="s1">1</kbd> <kbd data-act="s2">2</kbd> <kbd data-act="s3">3</kbd> <kbd data-act="s5">5</kbd> <kbd data-act="last">Q</kbd></dt><dd>Qurol tanlash</dd>
+          <dt><kbd data-act="s4">4</kbd></dt><dd>Granata (yana bosing — keyingi turi)</dd>
           <dt>Granata bilan</dt><dd>Chap tugma — uzoqqa, o'ng tugma — yaqinga otish (qo'yib yuborganda uchadi)</dd>
-          <dt><kbd>Tab</kbd></dt><dd>Hisob jadvali</dd>
-          <dt><kbd>M</kbd></dt><dd>Jamoani almashtirish (onlayn)</dd>
-          <dt><kbd>Y</kbd> / <kbd>U</kbd></dt><dd>Chat: hammaga / faqat jamoaga (onlayn)</dd>
+          <dt><kbd data-act="board">Tab</kbd></dt><dd>Hisob jadvali</dd>
+          <dt><kbd data-act="team">M</kbd></dt><dd>Jamoani almashtirish (onlayn)</dd>
+          <dt><kbd data-act="chatAll">Y</kbd> / <kbd data-act="chatTeam">U</kbd></dt><dd>Chat: hammaga / faqat jamoaga (onlayn)</dd>
           <dt><kbd class="pttKey">K</kbd> bosib turing</dt><dd>Ovozli chatda gapirish (onlayn, sozlamalarda o'zgartiriladi)</dd>
           <dt><kbd>Esc</kbd></dt><dd>Pauza</dd>
         </dl>
@@ -740,6 +751,11 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <div class="row" style="gap:8px"><button class="ghost sm" type="button" id="xReset">Asl holiga qaytarish</button></div>
         </div>
         <div class="set"><span>Grafika</span><div class="seg" data-set="gfx"><button type="button" data-v="auto">Avto</button><button type="button" data-v="min">Juda past</button><button type="button" data-v="low">Past</button><button type="button" data-v="mid">O'rta</button><button type="button" data-v="high">Yuqori</button></div><span></span></div>
+        <details class="keysSet desk-only" id="keysSet"><summary>Tugmalarni sozlash</summary>
+          <div class="keyGrid" id="keyGrid"></div>
+          <p class="note" style="margin:0;font-size:13px">Amalni bosing, keyin klaviaturada yangi tugmani. Band tugmani tanlasangiz, ikki amal tugmalarini almashtiradi. Esc — bekor qilish.</p>
+          <div class="row"><button class="ghost sm" type="button" id="keysReset">Asl holiga qaytarish</button></div>
+        </details>
         <div class="set"><span>Diktor ovozi</span><div class="seg" data-set="vo"><button type="button" data-v="on">Yoqilgan</button><button type="button" data-v="off">O'chiq</button></div><span></span></div>
         <div class="set"><span>Killcam</span><div class="seg" data-set="kc"><button type="button" data-v="on">Ko'rsatish</button><button type="button" data-v="off">O'chiq</button></div><span></span></div>
         <div class="set"><span>FPS va ping</span><div class="seg" data-set="perf"><button type="button" data-v="off">Yashirish</button><button type="button" data-v="on">Ko'rsatish</button></div><span></span></div>
@@ -4028,14 +4044,15 @@ document.addEventListener('pointerlockerror', lockFailed);
 document.addEventListener('keydown', e => {
   if (!inGame()) return;
   if (MODE === 'online' && NET.g && NET.g.ph === 'over' && /^Digit[1-9]$/.test(e.code)){ castVote(voteIds()[+e.code.slice(5) - 1]); return; }   // vote for the next map
-  keys[e.code] = true;
-  if (['Space','Tab','ArrowUp','ArrowDown'].includes(e.code) || (KBLOCK && e.ctrlKey)) e.preventDefault();
+  const code = gameCode(e.code);
+  if (code) keys[code] = true;
+  if (['Space','Tab','ArrowUp','ArrowDown'].includes(e.code) || code === 'Tab' || code === 'Space' || (KBLOCK && e.ctrlKey)) e.preventDefault();
   if ((e.code === 'ControlLeft' || e.code === 'ControlRight') && !KBLOCK && !e.repeat && S.time - (S.ctrlHint || -99) > 8){ S.ctrlHint = S.time; hint(IN_ARTIFACT ? "Cho'kkalash — C. Brauzerda Ctrl+W yorliqni yopib qo'yadi" : "Cho'kkalash — C. Ctrl ishlashi uchun to'liq ekranga o'ting (F11 emas, o'yin tugmasi orqali)", 3200); }
   if (e.code === 'Escape' && KBLOCK && document.pointerLockElement){ document.exitPointerLock(); return; }
   if (S.paused) return;
   initAudio();
   if (e.code === SET.ptt && !e.repeat) voicePTT(true);
-  switch (e.code){
+  switch (code){
     case 'KeyB': if (S.buyOpen) closeBuy(); else if (canBuy()) openBuy(); else if (player.alive) hint("Xarid faqat o'z bazangizda va raund boshida mumkin"); break;
     case 'Escape': if (S.buyOpen) closeBuy(); else if (noLock) pauseGame(); break;
     case 'Digit1': switchSlot(1); break; case 'Digit2': switchSlot(2); break; case 'Digit3': switchSlot(3); break; case 'Digit4': switchSlot(4); break; case 'Digit5': switchSlot(5); break;
@@ -4051,7 +4068,50 @@ document.addEventListener('keydown', e => {
     case 'KeyU': if (!e.repeat){ e.preventDefault(); chatOpen(true); } break;
   }
 });
-document.addEventListener('keyup', e => { keys[e.code] = false; if (e.code === 'Tab') showBoard(false); if (e.code === SET.ptt) voicePTT(false); });
+document.addEventListener('keyup', e => { const code = gameCode(e.code); if (code) keys[code] = false; if (code === 'Tab') showBoard(false); if (e.code === SET.ptt) voicePTT(false); });
+/* ---------- key bindings ----------
+   Every physical key is translated to the default key of the action it is bound to, so the game keeps reading
+   KeyW, KeyR, ... A key that was some action's default and is no longer bound to anything does nothing. */
+const BINDS = [['fwd','KeyW','Oldinga'],['back','KeyS','Orqaga'],['left','KeyA','Chapga'],['right','KeyD',"O'ngga"],['jump','Space','Sakrash'],['crouch','KeyC',"Cho'kkalash"],
+  ['walk','ShiftLeft','Sekin yurish'],['reload','KeyR',"Qayta o'qlash"],['use','KeyE','Olish, bomba'],['drop','KeyG','Tashlash, almashtirish'],['buy','KeyB','Xarid menyusi'],
+  ['last','KeyQ','Oldingi qurol'],['s1','Digit1','Asosiy qurol'],['s2','Digit2',"To'pponcha"],['s3','Digit3','Pichoq, Uchqun'],['s4','Digit4','Granata'],['s5','Digit5','Bomba'],
+  ['board','Tab','Hisob jadvali'],['team','KeyM','Jamoani almashtirish'],['chatAll','KeyY','Chat: hammaga'],['chatTeam','KeyU','Chat: jamoaga']];
+const KEY_NO = ['Escape','F1','F5','F11','F12','MetaLeft','MetaRight','ContextMenu'];
+let KEYMAP = {};
+const keyOf = id => ((SET.keys || {})[id]) || BINDS.find(b => b[0] === id)[1];
+function gameCode(c){ return c in KEYMAP ? KEYMAP[c] : c; }
+function keyRebuild(){
+  KEYMAP = {};
+  for (const [id, def] of BINDS) if (keyOf(id) !== def && !(def in KEYMAP)) KEYMAP[def] = '';
+  for (const [id, def] of BINDS) if (keyOf(id) !== def) KEYMAP[keyOf(id)] = def;
+  for (const k in keys) keys[k] = false;
+  document.querySelectorAll('kbd[data-act]').forEach(el => { el.textContent = keyLabel(keyOf(el.dataset.act)); });
+}
+function keyLabel(c){ return ({ Space:"Bo'shliq", ShiftLeft:'Shift', ShiftRight:'Shift (o\'ng)', ControlLeft:'Ctrl', ControlRight:'Ctrl (o\'ng)', AltLeft:'Alt', AltRight:'Alt (o\'ng)', Tab:'Tab', CapsLock:'Caps',
+  ArrowUp:'↑', ArrowDown:'↓', ArrowLeft:'←', ArrowRight:'→', Backquote:'`', Minus:'-', Equal:'=', BracketLeft:'[', BracketRight:']', Semicolon:';', Quote:"'", Comma:',', Period:'.', Slash:'/', Backslash:'\\', Enter:'Enter', Backspace:'⌫' })[c]
+  || (/^Key[A-Z]$/.test(c) ? c.slice(3) : /^Digit\d$/.test(c) ? c.slice(5) : /^Numpad/.test(c) ? 'Num ' + c.slice(6) : c); }
+function keysRender(){
+  const g = $('keyGrid'); if (!g) return;
+  g.innerHTML = BINDS.map(([id, def, name]) => `<div class="keyRow"><span>${escH(name)}</span><button type="button" data-k="${id}" class="${keyOf(id) !== def ? 'changed' : ''}">${escH(keyLabel(keyOf(id)))}</button></div>`).join('');
+}
+(function(){
+  let wait = null;
+  const stop = msg => { if (wait){ window.removeEventListener('keydown', onKey, true); wait = null; } keysRender(); if (msg) hint(msg, 2600); };
+  const onKey = e => { e.preventDefault(); e.stopImmediatePropagation(); const id = wait; if (!id) return;
+    if (e.code === 'Escape') return stop();
+    if (KEY_NO.includes(e.code)) return stop(keyLabel(e.code) + " — bu tugmani tanlab bo'lmaydi");
+    if (e.code === SET.ptt) return stop(keyLabel(e.code) + " — ovozli chatda gapirish tugmasi; avval uni o'zgartiring");
+    const kb = Object.assign({}, SET.keys || {}), old = keyOf(id), other = BINDS.find(b => b[0] !== id && keyOf(b[0]) === e.code);
+    kb[id] = e.code; if (other) kb[other[0]] = old;
+    for (const [bid, def] of BINDS) if (kb[bid] === def) delete kb[bid];
+    SET.keys = kb; saveSet(); keyRebuild();
+    stop(BINDS.find(b => b[0] === id)[2] + ': ' + keyLabel(e.code) + (other ? ' (' + other[2] + ' endi ' + keyLabel(old) + ')' : '')); };
+  $('keyGrid').addEventListener('click', e => { const b = e.target.closest('button[data-k]'); if (!b) return;
+    if (wait) stop(); wait = b.dataset.k; b.classList.add('wait'); b.textContent = 'Bosing…';
+    window.addEventListener('keydown', onKey, true); });
+  $('keysReset').addEventListener('click', () => { SET.keys = {}; saveSet(); keyRebuild(); stop('Tugmalar asl holiga qaytarildi'); });
+  setTimeout(() => { keyRebuild(); keysRender(); }, 0);
+})();
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouseL = mouseR = false; showBoard(false); voicePTT(false); });
 document.addEventListener('mousemove', e => {
   if (isTouch || !inGame() || S.paused || S.buyOpen) return;
@@ -4624,7 +4684,7 @@ function syncPtt(){ document.querySelectorAll('.pttKey').forEach(el => el.textCo
 (function(){
   const btn = $('pttBind'); let waiting = false;
   const stop = msg => { waiting = false; btn.classList.remove('wait'); btn.setAttribute('aria-pressed', 'false'); window.removeEventListener('keydown', onKey, true); window.removeEventListener('mousedown', onMouse, true); syncPtt(); if (msg) hint(msg, 2400); };
-  const set = code => { if (PTT_TAKEN.includes(code)){ stop(pttLabel(code) + " o'yinda band — boshqa tugma tanlang"); return; } SET.ptt = code; saveSet(); stop('Gapirish tugmasi: ' + pttLabel(code)); };
+  const set = code => { if (PTT_TAKEN.filter(k => !BINDS.some(b => b[1] === k)).includes(code) || BINDS.some(b => keyOf(b[0]) === code)){ stop(pttLabel(code) + " o'yinda band — boshqa tugma tanlang"); return; } SET.ptt = code; saveSet(); stop('Gapirish tugmasi: ' + pttLabel(code)); };
   const onKey = e => { e.preventDefault(); e.stopImmediatePropagation(); if (e.code === 'Escape') return stop(); set(e.code); };
   const onMouse = e => { if (e.button === 0 || e.button === 2) return; e.preventDefault(); e.stopImmediatePropagation(); set('Mouse' + (e.button + 1)); };
   btn.addEventListener('click', () => { if (waiting) return stop(); waiting = true; btn.classList.add('wait'); btn.setAttribute('aria-pressed', 'true'); btn.textContent = 'Tugmani bosing…';
@@ -5649,7 +5709,7 @@ function touchFrame(){
 }
 setTimeout(linkBoot, 0);
 setTimeout(mmInit, 0);
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){

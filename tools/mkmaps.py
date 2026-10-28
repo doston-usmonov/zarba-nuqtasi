@@ -1,4 +1,4 @@
-"""Draws the two new maps (Registon, Saroy) as 44x44 grids, checks them and prints the JS for MAPS.
+"""Draws the newer maps (Registon, Saroy, Zavod) as 44x44 grids, checks them and prints the JS for MAPS.
 '#' wall, '.' floor, 'c' crate (1 m), 's' stack (2.3 m), 'A'/'B' bomb sites, 't' attacker spawn, 'k' defender spawn."""
 import json, sys
 from collections import deque
@@ -109,6 +109,58 @@ def saroy():
     cables = [[4, 41, 10, 41], [80, 37, 84, 37], [40, 61, 46, 61]]
     return g, holds, plan, signs, cables
 
+# ------------------------------------------------------------------ Zavod
+# An old textile mill. Defenders hold the offices (north), attackers come in from the rail yard (south).
+# A: the weaving hall (west) full of looms; B: the warehouse yard (east) with stacked containers.
+# Mid: the long conveyor hall; flanks: the boiler room (west) and the repair shop (east).
+def zavod():
+    g = new()
+    rect(g, 17, 3, 26, 6, 'k')                          # offices
+    rect(g, 16, 37, 27, 40, 't')                        # rail yard gate
+    rect(g, 2, 33, 41, 36)                              # rail yard
+    # A: weaving hall
+    rect(g, 3, 7, 14, 17, 'A')
+    rect(g, 9, 4, 16, 6); rect(g, 9, 7, 10, 7)          # offices -> A (west corridor)
+    rect(g, 3, 18, 5, 32)                               # long pipe corridor from the yard up to A
+    rect(g, 6, 18, 7, 19)
+    # B: warehouse yard
+    rect(g, 30, 7, 40, 16, 'B')
+    rect(g, 27, 4, 34, 6); rect(g, 33, 7, 34, 7)        # offices -> B
+    rect(g, 38, 17, 40, 32)                             # loading ramp from the yard up to B
+    # mid: conveyor hall and its doors
+    rect(g, 18, 12, 25, 28)
+    rect(g, 20, 7, 23, 11)                              # office stairs down into the hall
+    rect(g, 15, 13, 17, 14)                             # hall -> A side door
+    rect(g, 26, 14, 29, 15)                             # hall -> B side door
+    rect(g, 20, 29, 23, 32)                             # hall -> yard
+    # flanks
+    rect(g, 8, 22, 13, 28)                              # boiler room
+    rect(g, 6, 24, 7, 25); rect(g, 14, 24, 17, 25)      # pipe corridor <-> boiler room <-> hall
+    rect(g, 10, 29, 11, 32)                             # boiler room -> yard
+    rect(g, 30, 21, 35, 27)                             # repair shop
+    rect(g, 36, 23, 37, 24); rect(g, 26, 23, 29, 24)    # ramp <-> shop <-> hall
+    # cover: looms in the hall, conveyors in the middle, containers on B, wagons in the yard
+    put(g, [(5, 9), (8, 9), (11, 9), (5, 13), (8, 13), (11, 13)], 's')                       # looms
+    put(g, [(6, 11), (10, 11), (13, 15), (4, 16)], 'c')
+    put(g, [(21, 15), (22, 15), (21, 19), (22, 20), (21, 24), (22, 24)], 'c')                # conveyor belts
+    put(g, [(19, 13), (24, 27)], 's')
+    put(g, [(32, 9), (33, 9), (37, 9), (38, 9), (32, 13), (36, 13), (37, 13)], 's')          # containers
+    put(g, [(35, 11), (40, 11), (31, 15)], 'c')
+    put(g, [(9, 24), (12, 26), (11, 23)], 's')                                               # boilers
+    put(g, [(32, 23), (34, 25), (31, 26)], 'c')                                              # workbenches
+    put(g, [(4, 21), (5, 27), (39, 20), (38, 28), (40, 25)], 'c')
+    put(g, [(7, 34), (8, 34), (14, 35), (29, 34), (30, 34), (35, 35)], 's')                  # wagons
+    put(g, [(18, 34), (25, 35), (3, 35), (40, 34)], 'c')
+    holds = {"A": [[[7, 8], [15, 13]], [[12, 16], [4, 19]], [[4, 11], [14, 14]], [[13, 8], [9, 7]]],
+             "B": [[[34, 8], [27, 14]], [[39, 15], [39, 19]], [[31, 11], [28, 15]], [[38, 12], [36, 17]]],
+             "M": [[[21, 12], [21, 28]], [[23, 9], [22, 24]], [[18, 26], [15, 24]]]}
+    plan = {"A": {"stages": [[4, 31], [19, 27], [7, 19]], "spots": [[7, 10], [9, 15], [12, 11], [4, 8]], "looks": [[15, 13], [10, 5], [4, 19]]},
+            "B": {"stages": [[39, 31], [24, 26], [36, 24]], "spots": [[35, 10], [39, 13], [31, 14], [34, 15]], "looks": [[27, 14], [33, 5], [39, 18]]}}
+    signs = [[14, 37, "N", "← A", 2.1], [29, 37, "N", "B →", 2.1], [21, 31, "W", "SEX", 2.2, 1.3], [6, 6, "S", "A", 3, 2.6], [36, 6, "S", "B", 3, 2.6],
+             [2, 24, "E", "A ↑", 2.1], [41, 24, "W", "B ↑", 2.1], [10, 21, "S", "QOZONXONA", 2.4, 1.5], [33, 20, "S", "USTAXONA", 2.4, 1.5]]
+    cables = [[8, 41, 14, 41], [78, 45, 84, 45], [40, 59, 46, 59]]
+    return g, holds, plan, signs, cables
+
 WALK = set('.ckAtB')   # bots walk over crates? no: crates block bots, players can jump; treat c as blocked for bot paths
 BOTOK = set('.AtBk')
 
@@ -153,7 +205,7 @@ def draw(name, rows, holds, plan, out):
 
 if __name__ == '__main__':
     out = {}
-    for name, fn in (('registon', registon), ('saroy', saroy)):
+    for name, fn in (('registon', registon), ('saroy', saroy), ('zavod', zavod)):
         g, holds, plan, signs, cables = fn()
         rows = check(name, g, holds, plan)
         draw(name, rows, holds, plan, f'{sys.argv[1]}/{name}.png')

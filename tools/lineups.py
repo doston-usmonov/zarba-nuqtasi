@@ -11,6 +11,7 @@ TARGETS = {
     'karvon':   [('A', "A — shimoliy yo'lak", 10, 11), ('B', "B — shimoliy yo'lak", 33, 11), ('M', "O'rta", 21.5, 12)],
     'registon': [('A', "A — himoya yo'li", 8, 7), ('B', "B — himoya yo'li", 35, 7), ('M', "Shimoliy peshtoq", 21.5, 12)],
     'saroy':    [('A', "A — qal'a yo'li", 15, 5), ('B', "B — qal'a yo'li", 28, 5), ('M', "Qal'a zinasi", 21.5, 11)],
+    'zavod':    [('A', "A — idora yo'lagi", 9.5, 6), ('B', "B — idora yo'lagi", 33.5, 6), ('M', "Idora zinasi", 21.5, 9)],
 }
 JS = r"""([mid, targets]) => {
   const z = __zn; z.setMap(mid);

@@ -56,6 +56,7 @@ func main() {
 		log.Printf("Telegram orqali kirish yoqilgan: @%s", a.tg.bot)
 	}
 	h.voice = voiceFromEnv()
+	h.dataDir = os.Getenv("DATA_DIR")
 	h.debug = os.Getenv("ZARBA_DEBUG") == "1"
 	h.startOfficial(parseOfficialRooms(os.Getenv("OFFICIAL_ROOMS")))
 	if h.debug {
@@ -94,6 +95,8 @@ func main() {
 	})
 	a.routes(mux)
 	mux.Handle("GET /metrics", metricsSrc{h: h, st: st, queue: a.queue, token: strings.TrimSpace(os.Getenv("METRICS_TOKEN"))})
+	mux.HandleFunc("GET /api/demos", h.demosHandler)
+	mux.HandleFunc("GET /api/demos/{id}", h.demoFileHandler)
 	mux.HandleFunc("/api/rooms", h.roomsHandler)
 	mux.HandleFunc("GET /api/rooms/{code}", h.roomHandler)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {

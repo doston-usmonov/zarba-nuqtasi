@@ -226,6 +226,9 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .item .rf{align-self:flex-start;margin-top:2px;padding:3px 8px;border-radius:4px;border:1px solid rgba(242,181,68,.55);color:var(--atk);font-size:12px;font-weight:700}
 .item.canSell:hover .rf{background:rgba(242,181,68,.14)}
 body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross,body.spec #slots{display:none!important}
+#demoBar{position:fixed;left:50%;top:calc(98px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:8px;background:rgba(14,13,11,.86);border:1px solid var(--line);border-radius:8px;padding:6px 10px;width:min(720px,calc(100vw - 32px));box-sizing:border-box}
+#demoBar input{flex:1;min-width:60px;accent-color:var(--atk)} #demoBar span{font-size:13px;color:var(--dim);white-space:nowrap} #demoBar button{padding:5px 9px}
+@media (max-width:640px){ #demoBar [data-d="prev"],#demoBar [data-d="next"]{display:none} }
 #specBar{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:rgba(14,13,11,.8);border:1px solid var(--line);border-left:4px solid var(--atk);border-radius:6px;padding:9px 16px;pointer-events:none;max-width:92vw;text-align:center}
 #specBar b{font-family:var(--f-display);font-size:19px} #specBar.ct{border-left-color:var(--def)} #specBar small{display:block;color:var(--dim);font-size:13px;margin-top:2px}
 .giveRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(243,239,230,.05);border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-width:0}
@@ -606,6 +609,15 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
   </div>
 </div>
 
+<div id="demoBar" hidden>
+  <button type="button" class="ghost sm" data-d="play" id="dPlay" title="P">Pauza</button>
+  <button type="button" class="ghost sm" data-d="prev" title=",">⏮ Raund</button>
+  <input type="range" id="dSeek" min="0" max="1000" value="0" aria-label="Yozuv vaqti">
+  <button type="button" class="ghost sm" data-d="next" title=".">Raund ⏭</button>
+  <span id="dTime" class="num">0:00 / 0:00</span>
+  <button type="button" class="ghost sm" data-d="speed" id="dSpeed">1×</button>
+  <button type="button" class="ghost sm" data-d="exit">Chiqish</button>
+</div>
 <div id="specBar" hidden><b id="specWho">Kuzatuvchi</b><small id="specHelp"></small></div>
 <div id="dead" hidden><b id="deadT">Siz halok bo'ldingiz</b><p id="deadS"></p></div>
 <div id="kcBar" hidden></div>
@@ -4220,7 +4232,8 @@ document.addEventListener('keydown', e => {
     case 'KeyE': if (!e.repeat && pickTarget) pickUp(pickTarget); break;
     case 'Space': if (!e.repeat){ if (MODE === 'online' && NET.spec){ S.specFree = !S.specFree; S.specLblT = 0; if (S.specFree){ player.yaw = camera.rotation.y; player.pitch = clamp(camera.rotation.x, -1.4, 1.4); } } else jumpQ = true; } break;
     case 'Tab': showBoard(true); break;
-    case 'KeyM': if (MODE === 'online') switchTeam(); break;
+    case 'KeyM': if (MODE === 'online' && !NET.spec) switchTeam(); break;
+    case 'KeyV': if (MODE === 'online' && NET.spec){ S.specFP = !S.specFP; S.specFree = false; S.specLblT = 0; } break;
     case 'KeyY': if (!e.repeat){ e.preventDefault(); chatOpen(false); } break;
     case 'KeyU': if (!e.repeat){ e.preventDefault(); chatOpen(true); } break;
   }
@@ -4910,7 +4923,7 @@ function updateRemote(r, pr, dt){
     if (r.alive && !was){ r.pos.copy(r.tpos); r.yaw = r.tyaw; r.deadT = 1; }
     if (!r.alive && was) r.deadT = 0;
     r.hp = clamp(num(pr.hp), 0, 100); r.w = W[pr.w] ? pr.w : 'pistol'; r.mv = pr.mv === 1; r.k = num(pr.k)|0; r.d = num(pr.d)|0;
-    r.fn = FINISHES[pr.fn] ? pr.fn : '';
+    r.fn = FINISHES[pr.fn] ? pr.fn : ''; r.pt = clamp(num(pr.pt), -1.5, 1.5);
     setSoldierWeapon(r.m, r.w, r.fn);
     // their shots
     const sh = pr.sh;
@@ -5190,12 +5203,13 @@ function switchTeam(){
 }
 function netStep(dt){
   const room = NET.room; if (!room) return;
+  if (DEMO.on) demoStep(dt);
   let peers = []; try { peers = room.peers(); } catch(e){}
   const valid = [];
   for (const p of peers){ if (p.sameTab){ NET.me = p.peer; continue; } const pr = p.presence; if (p.kind !== 'viewer' || !pr || pr.v !== 1 || (pr.tm !== 'T' && pr.tm !== 'CT')) continue; valid.push(p); }
   const here = new Set();
-  for (const p of valid){ here.add(p.peer); let r = NET.remotes.get(p.peer); if (!r){ r = makeRemote(p); NET.remotes.set(p.peer, r); hint(cleanName(p.presence.nm) + " xonaga qo'shildi", 2200); } updateRemote(r, p.presence, dt); }
-  for (const [k, r] of NET.remotes) if (!here.has(k)){ removeRemote(r); NET.remotes.delete(k); hint(r.name + ' xonadan chiqdi', 2200); }
+  for (const p of valid){ here.add(p.peer); let r = NET.remotes.get(p.peer); if (!r){ r = makeRemote(p); NET.remotes.set(p.peer, r); if (!DEMO.on) hint(cleanName(p.presence.nm) + " xonaga qo'shildi", 2200); } updateRemote(r, p.presence, dt); }
+  for (const [k, r] of NET.remotes) if (!here.has(k)){ removeRemote(r); NET.remotes.delete(k); if (!DEMO.on) hint(r.name + ' xonadan chiqdi', 2200); }
   if (!player.team && !NET.spec){ NET.joinT -= dt; if (NET.joinT <= 0) pickTeam(); }
   if (NET.spec && !NET.specNm && room.connected()){ NET.specNm = true; room.presence({ v:1, nm:NET.name || 'Kuzatuvchi' }).catch(() => {}); }
   const mine = NET.me || '~';
@@ -5216,6 +5230,81 @@ function netStep(dt){
   NET.sendT -= dt;
   if (NET.sendT <= 0 && player.team){ NET.sendT = IN_ARTIFACT ? .033 : .045; NET.room.presence(buildPres()).catch(() => {}); }
 }
+/* ---------- replays: a recorded match (server demo.go) played as a room you spectate ----------
+   Frames come every 100 ms: the game state the server sent and each player's state; events (shots, deaths, grenades)
+   only in the frame where they happened, names and badges only when they change. */
+const DEMO = { on:false, head:null, frames:[], i:0, t:0, speed:1, playing:true, st:{}, cache:null, cacheI:-1, rounds:[], noLock0:false };
+const DEMO_STATIC = ['nm', 'bot', 'lv', 'acc', 'fn'];
+async function demoPlay(id){
+  hint('Yozuv yuklanmoqda…', 2500);
+  let text = '';
+  try { const res = await fetch('/api/demos/' + encodeURIComponent(id)); if (!res.ok) throw 0; text = await res.text(); }
+  catch(e){ hint("Yozuvni yuklab bo'lmadi", 3000); return; }
+  const lines = text.split('\n').filter(Boolean); if (lines.length < 3){ hint("Yozuv bo'sh", 3000); return; }
+  let head; try { head = JSON.parse(lines[0]); } catch(e){ hint('Yozuv buzilgan', 3000); return; }
+  const frames = []; for (let k=1; k<lines.length; k++){ try { frames.push(JSON.parse(lines[k])); } catch(e){} }
+  Object.assign(DEMO, { on:true, head, frames, i:0, t:0, speed:1, playing:true, st:{}, cache:null, cacheI:-1 });
+  DEMO.rounds = []; let lastR = -1; frames.forEach((f, k) => { const r = f.g && f.g.r; if (f.g && f.g.ph === 'freeze' && r !== lastR){ DEMO.rounds.push(k); lastR = r; } });
+  if (MODE === 'online') toMenu();
+  if (MAPS[head.map]) setMap(head.map);
+  const room = { ref:true, peers:demoPeers, presence:() => Promise.resolve(), connected:() => true, leave:() => { demoStop(); return Promise.resolve(); }, chat:() => {}, admin:() => {}, vote:() => {}, signal:() => {} };
+  NET.code = 'yozuv-' + id; NET.name = NET.name || 'Kuzatuvchi';
+  ['lb', 'trnOv', 'socOv', 'roomOv'].forEach(x => { const el = $(x); if (el) el.hidden = true; });
+  DEMO.noLock0 = noLock; noLock = true;
+  goOnline(room, true); demoSeek(0); $('demoBar').hidden = false; demoUI();
+  showMsg('Yozuv · ' + (MAPS[head.map] ? MAPS[head.map].name : head.map), modeInfo(head.mode || 'comp').name + ' · ' + fmtDate(head.started) + " · P — pauza, V — o'yinchi ko'zi bilan", 'atk', 4000);
+}
+function demoStop(){ if (!DEMO.on) return; DEMO.on = false; DEMO.frames = []; $('demoBar').hidden = true; noLock = DEMO.noLock0; }
+function demoPeers(){
+  if (DEMO.cacheI === DEMO.i && DEMO.cache) return DEMO.cache;
+  const f = DEMO.frames[DEMO.i], out = [];
+  if (f) for (const p of f.p || []){ const id = String(p.id || ''); if (!id) continue;
+    const st = DEMO.st[id] || (DEMO.st[id] = {});
+    out.push({ peer:id, kind:'viewer', presence:Object.assign({ v:1, hc:1 }, st, p) }); }
+  DEMO.cache = out; DEMO.cacheI = DEMO.i; return out;
+}
+// statics (names, badges) carry over from earlier frames
+function demoStatics(upto, from){ for (let k=from; k<=upto; k++){ const f = DEMO.frames[k]; if (!f) continue;
+  for (const p of f.p || []){ const id = String(p.id || ''); const st = DEMO.st[id] || (DEMO.st[id] = {}); DEMO_STATIC.forEach(key => { if (p[key] !== undefined) st[key] = p[key]; }); } } }
+function demoApply(){ const f = DEMO.frames[DEMO.i]; if (f && f.g) NET.srvG = Object.assign({}, f.g); }
+function demoSeek(k){
+  k = clamp(k|0, 0, DEMO.frames.length - 1); DEMO.st = {}; demoStatics(k, 0); DEMO.i = k; DEMO.t = DEMO.frames[k].t; DEMO.cacheI = -1;
+  NET.remotes.forEach(removeRemote); NET.remotes.clear(); NET.lastPh = ''; NET.awardKey = ''; NET.boomKey = ''; NET.gSrc = null;
+  bomb.planted = false; bomb.mesh.visible = false; clearNades(); $('result').hidden = true; H.feed.innerHTML = ''; S.specHid = null;
+  demoApply();
+}
+function demoStep(dt){
+  if (!DEMO.on || !DEMO.frames.length) return;
+  if (DEMO.playing) DEMO.t += dt*1000*DEMO.speed;
+  const n = DEMO.frames.length; let i = DEMO.i, moved = false;
+  while (i + 1 < n && DEMO.frames[i + 1].t <= DEMO.t){ i++; moved = true; demoStatics(i, i); }
+  if (moved){ DEMO.i = i; demoApply(); }
+  if (i + 1 >= n && DEMO.playing){ DEMO.playing = false; hint('Yozuv tugadi', 3000); }
+  if (moved || !DEMO.uiT || performance.now() - DEMO.uiT > 400) demoUI();
+}
+const fmtMs = ms => { const s = Math.max(0, Math.round(ms/1000)); return Math.floor(s/60) + ':' + String(s % 60).padStart(2, '0'); };
+function demoUI(){
+  DEMO.uiT = performance.now(); const n = DEMO.frames.length; if (!n) return;
+  const end = DEMO.frames[n - 1].t; $('dTime').textContent = fmtMs(DEMO.t) + ' / ' + fmtMs(end);
+  if (document.activeElement !== $('dSeek')) $('dSeek').value = String(Math.round(DEMO.t/Math.max(1, end)*1000));
+  $('dPlay').textContent = DEMO.playing ? 'Pauza' : '▶ Davom'; $('dSpeed').textContent = DEMO.speed + '×';
+}
+function demoRound(dir){ const cur = DEMO.i; let target = 0;
+  if (dir > 0) target = DEMO.rounds.find(k => k > cur + 5); else { const prev = DEMO.rounds.filter(k => k < cur - 15); target = prev.length ? prev[prev.length - 1] : 0; }
+  if (target == null){ hint("Bu oxirgi raund", 1500); return; } demoSeek(target); demoUI(); }
+$('demoBar').addEventListener('click', e => { const b = e.target.closest('button[data-d]'); if (!b || !DEMO.on) return; const d = b.dataset.d;
+  if (d === 'play'){ if (!DEMO.playing && DEMO.i + 1 >= DEMO.frames.length) demoSeek(0); DEMO.playing = !DEMO.playing; }
+  else if (d === 'speed'){ const sp = [.5, 1, 2, 4], k = sp.indexOf(DEMO.speed); DEMO.speed = sp[(k + 1) % sp.length]; }
+  else if (d === 'prev') demoRound(-1); else if (d === 'next') demoRound(1);
+  else if (d === 'exit'){ toMenu(); return; }
+  demoUI(); b.blur(); });
+$('dSeek').addEventListener('input', () => { if (!DEMO.on) return; const end = DEMO.frames[DEMO.frames.length - 1].t, want = +$('dSeek').value/1000*end;
+  let lo = 0, hi = DEMO.frames.length - 1; while (lo < hi){ const m = (lo + hi + 1) >> 1; if (DEMO.frames[m].t <= want) lo = m; else hi = m - 1; } demoSeek(lo); demoUI(); });
+document.addEventListener('keydown', e => { if (!DEMO.on || e.target.closest('input,textarea')) return;
+  if (e.code === 'KeyP'){ DEMO.playing = !DEMO.playing; demoUI(); }
+  else if (e.code === 'Comma') demoRound(-1); else if (e.code === 'Period') demoRound(1);
+  else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight'){ const want = DEMO.t + (e.code === 'ArrowLeft' ? -10000 : 10000); let k = DEMO.i;
+    if (e.code === 'ArrowLeft'){ while (k > 0 && DEMO.frames[k].t > want) k--; demoSeek(k); } else { while (k + 1 < DEMO.frames.length && DEMO.frames[k + 1].t <= want) k++; demoSeek(k); } demoUI(); } });
 /* ---------- spectating a room: the round as it goes (bomb, winners, final table) and a camera that follows players ---------- */
 function specPhase(){
   const g = NET.g; if (!g) return;
@@ -5241,10 +5330,18 @@ function specCam(dt){
     if (keys.KeyW || keys.ArrowUp) P.addScaledVector(_d, sp); if (keys.KeyS || keys.ArrowDown) P.addScaledVector(_d, -sp);
     if (keys.KeyD) { P.x += rx*sp; P.z += rz*sp; } if (keys.KeyA) { P.x -= rx*sp; P.z -= rz*sp; }
     P.set(clamp(P.x, 1, MAPW - 1), clamp(P.y, .6, 40), clamp(P.z, 1, MAPH - 1));
-    camera.position.copy(P); camera.rotation.set(player.pitch, player.yaw, 0);
+    if (S.specHid){ if (S.specHid.m) S.specHid.m.g.visible = true; S.specHid = null; }
+    camera.position.copy(P); camera.rotation.set(player.pitch, player.yaw, 0, 'YXZ');
     specLabel(null, list.length); return;
   }
   const t = list[((S.specIdx % list.length) + list.length) % list.length];
+  if (S.specHid && (S.specHid !== t || !S.specFP)){ if (S.specHid.m) S.specHid.m.g.visible = true; S.specHid = null; }
+  if (S.specFP){   // through their eyes
+    camera.position.set(t.pos.x, t.pos.y + 1.62 - (t.cr || 0)*.48, t.pos.z); camera.rotation.set(t.pt || 0, t.yaw - Math.PI, 0, 'YXZ');
+    if (t.m){ t.m.g.visible = false; S.specHid = t; }
+    NET.specPos = camera.position.clone(); specLabel(t, list.length); return;
+  }
+  camera.rotation.order = 'XYZ';
   camTarget.set(t.pos.x + Math.sin(t.yaw)*3.2, 2.4, t.pos.z + Math.cos(t.yaw)*3.2);
   if (blockedAt(camTarget.x, camTarget.z, 0, .2, true)) camTarget.set(t.pos.x, 3.4, t.pos.z);
   camera.position.lerp(camTarget, Math.min(1, dt*5)); camera.lookAt(t.pos.x - Math.sin(t.yaw)*4, 1.3, t.pos.z - Math.cos(t.yaw)*4);
@@ -5254,7 +5351,7 @@ function specLabel(t, n){
   if ((S.specLblT = (S.specLblT || 0) - 1) > 0 && S.specLblFor === (t ? t.peer : '')) return; S.specLblT = 10; S.specLblFor = t ? t.peer : '';
   const bar = $('specBar'); bar.className = t && t.team === 'CT' ? 'ct' : '';
   $('specWho').textContent = t ? t.name + ' · ' + TEAM_NAME[t.team] + ' · ' + Math.max(0, Math.round(t.hp == null ? 100 : t.hp)) + ' jon' + (W[t.w] ? ' · ' + W[t.w].name : '') : 'Kuzatuvchi · erkin kamera';
-  $('specHelp').textContent = n ? KB("Chap / o'ng tugma — keyingi / oldingi o'yinchi · Bo'shliq — erkin kamera (W A S D)", "Ekranga bosing — keyingi o'yinchi") : "Tirik o'yinchi yo'q · W A S D — uchish, sichqoncha — qarash";
+  $('specHelp').textContent = n ? KB("Chap / o'ng tugma — keyingi / oldingi o'yinchi · V — " + (S.specFP ? "orqadan" : "uning ko'zi bilan") + " · Bo'shliq — erkin kamera", "Ekranga bosing — keyingi o'yinchi") : "Tirik o'yinchi yo'q · W A S D — uchish, sichqoncha — qarash";
 }
 function defuseTime(){ return player.kit ? 4 : 7; }
 function netPlantDefuse(dt){
@@ -5322,7 +5419,7 @@ function netHUD(){
   if (!$('pause').hidden){ NET.admT = (NET.admT || 0) + 1; if (NET.admT % 6 === 0) renderAdmin(); }
   const g = NET.g; if (!respawnMode()){ H.scT.textContent = gSideScore(g, 'T'); H.scCT.textContent = gSideScore(g, 'CT'); } netPips();
   const tt = $('teamTag'); tt.hidden = false;
-  tt.textContent = (isFFA() ? 'Deathmatch' : player.team ? 'Jamoa: ' + TEAM_NAME[player.team] : 'Jamoa tanlanmoqda…') + ' · Xona: ' + NET.code + ' · ' + (NET.remotes.size + 1) + " o'yinchi" + (NET.room && !NET.room.connected() ? ' · aloqa uzildi' : '');
+  tt.textContent = DEMO.on ? 'Yozuv · ' + NET.remotes.size + " o'yinchi" : (NET.spec ? 'Kuzatuvchi' : isFFA() ? 'Deathmatch' : player.team ? 'Jamoa: ' + TEAM_NAME[player.team] : 'Jamoa tanlanmoqda…') + ' · Xona: ' + NET.code + ' · ' + (NET.remotes.size + (NET.spec ? 0 : 1)) + " o'yinchi" + (NET.room && !NET.room.connected() ? ' · aloqa uzildi' : '');
   tt.style.color = player.team === 'CT' ? 'var(--def)' : 'var(--atk)';
 }
 function netBoardHTML(){
@@ -5402,7 +5499,7 @@ function linkParse(){
 }
 const linkPath = () => '/x/' + (NET.g && MAPS[NET.g.m] ? NET.g.m : MAP_ID) + '/' + encodeURIComponent(NET.code);
 function linkSync(){
-  if (!LINK.on) return;
+  if (!LINK.on || DEMO.on) return;
   const want = MODE === 'online' && NET.room ? linkPath() : LINK.want ? location.pathname : '/';
   if (location.pathname !== want){ try { history.replaceState(null, '', want); } catch(e){} }
 }
@@ -5614,11 +5711,21 @@ async function showProfile(name){
   const det = r.data.detail || null;
   box.innerHTML = `<div class="me"><div class="who"><b>${escH(u.username)}</b>${rankBadge(u.rank)}</div><div class="pts"><b>${u.rating}</b><span>${u.pos ? '#' + u.pos + " o'rin" : 'reyting'}</span></div></div>` +
     `<div class="mini"><div><b>${u.matches}</b><span>O'yin</span></div><div><b>${pct(u.wins, u.matches)}%</b><span>G'alaba</span></div><div><b>${kdOf(u)}</b><span>K/D</span></div><div><b>${pct(u.hs, u.kills)}%</b><span>Boshga</span></div></div>` +
-    (det ? `<div class="profTabs" role="group" aria-label="Profil bo'limlari"><button type="button" data-pt="hist" aria-pressed="true">O'yinlar</button><button type="button" data-pt="medals" aria-pressed="false">Medallar · ${(det.medals || []).filter(m => m.at).length}/${(det.medals || []).length}</button><button type="button" data-pt="stats" aria-pressed="false">Statistika</button></div>` : '') +
-    `<div data-pp="hist"><h3>So'nggi reytingli o'yinlar</h3><div class="hist">${hist}</div></div>` + (det ? profMedalsHTML(det) + profStatsHTML(det) : '');
+    (det ? `<div class="profTabs" role="group" aria-label="Profil bo'limlari"><button type="button" data-pt="hist" aria-pressed="true">O'yinlar</button><button type="button" data-pt="medals" aria-pressed="false">Medallar · ${(det.medals || []).filter(m => m.at).length}/${(det.medals || []).length}</button><button type="button" data-pt="stats" aria-pressed="false">Statistika</button><button type="button" data-pt="demos" aria-pressed="false">Yozuvlar</button></div>` : '') +
+    `<div data-pp="hist"><h3>So'nggi reytingli o'yinlar</h3><div class="hist">${hist}</div></div>` + (det ? profMedalsHTML(det) + profStatsHTML(det) + `<div data-pp="demos" hidden><h3>O'yin yozuvlari</h3><div class="hist" id="profDemos"><p class="note">Yuklanmoqda…</p></div></div>` : '');
   box.querySelectorAll('[data-pt]').forEach(b => b.addEventListener('click', () => { box.querySelectorAll('[data-pt]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-    box.querySelectorAll('[data-pp]').forEach(p => { p.hidden = p.dataset.pp !== b.dataset.pt; }); }));
+    box.querySelectorAll('[data-pp]').forEach(p => { p.hidden = p.dataset.pp !== b.dataset.pt; }); if (b.dataset.pt === 'demos') profDemos(u.username); }));
 }
+async function profDemos(name){
+  const box = $('profDemos'); if (!box) return;
+  const r = await apiCall('/api/demos?player=' + encodeURIComponent(name));
+  if (!r.ok || !r.data){ box.innerHTML = `<p class="note">Yozuvlar yuklanmadi.</p>`; return; }
+  const ds = r.data.demos || [];
+  box.innerHTML = ds.length ? ds.map(d => `<div><span class="res">${escH(MAPS[d.map] ? MAPS[d.map].name : d.map)}</span><span>${escH(modeInfo(d.mode).name)} · ${d.sA|0}:${d.sB|0} · ${Math.round((d.secs|0)/60)} daq</span>` +
+    `<button class="ghost sm" type="button" data-demo="${d.id|0}">Ko'rish</button><small>${fmtDate(d.started)} · ${escH((d.players || []).filter(p => !p.bot).map(p => p.name).slice(0, 10).join(', '))}</small></div>`).join('')
+    : `<p class="note">Hali yozuv yo'q. Raundli onlayn o'yinlar (Raqobat, Wingman, Retake, Aim) oxirigacha o'ynalsa, yozuvi shu yerda paydo bo'ladi.</p>`;
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-demo]'); if (b) demoPlay(+b.dataset.demo); });
 // a medal: a round badge with a ribbon (gold when earned)
 function medalSVG(on){ const c = on ? '#f2b544' : 'rgba(243,239,230,.28)', r = on ? '#c4452f' : 'rgba(243,239,230,.16)';
   return `<svg viewBox="0 0 34 34" aria-hidden="true"><path d="M10 1h6l3 9h-6zM24 1h-6l-3 9h6z" fill="${r}"/><circle cx="17" cy="21" r="11" fill="${c}"/><circle cx="17" cy="21" r="7.5" fill="none" stroke="rgba(20,18,14,.35)" stroke-width="1.6"/><path d="M17 15.5l1.7 3.4 3.7.5-2.7 2.6.7 3.7-3.4-1.8-3.4 1.8.7-3.7-2.7-2.6 3.7-.5z" fill="rgba(20,18,14,.45)"/></svg>`; }
@@ -6035,7 +6142,7 @@ function touchFrame(){
 }
 setTimeout(linkBoot, 0);
 setTimeout(mmInit, 0);
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, openTrn, TRN, joinOnline, specTargets, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, demoPlay, DEMO, openTrn, TRN, joinOnline, specTargets, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){

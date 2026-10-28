@@ -884,6 +884,11 @@ func (r *room) run(h *hub) {
 	for {
 		select {
 		case <-r.stop:
+			r.mu.Lock()
+			if r.demo != nil && !r.demo.done {
+				r.demo.discard()
+			}
+			r.mu.Unlock()
 			return
 		case now := <-t.C:
 			dt := math.Min(now.Sub(last).Seconds(), 1)
@@ -917,6 +922,7 @@ func (r *room) run(h *hub) {
 			if n++; n%2 == 0 { // holat soniyasiga 10 marta
 				r.broadcast(jsonMsg(map[string]any{"t": "g", "g": r.gs}), "")
 			}
+			r.demoTickLocked(h, now)
 			gains := r.gains
 			r.gains = nil
 			noteTick(time.Since(t0))

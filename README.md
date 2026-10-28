@@ -21,6 +21,7 @@ zarba-server/
 ├── spectate.go        kuzatuvchilar (o'yinchilarga ko'rinmaydi, chati faqat kuzatuvchilarga)
 ├── tournaments.go     klanlar turniri: setka, o'yin xonalari, natijalar
 ├── metrics.go         /metrics — Prometheus ko'rsatkichlari (token bilan)
+├── demo.go            o'yin yozuvlari (demo): yozish, ro'yxat, fayl
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── social.go          do'stlar, xonaga chaqiriqlar, klanlar (/api/social, /api/friends, /api/clan, /api/clans)
 ├── queue.go           «O'yin topish»: reytingli navbat, partiyalar, mm- xonalar (/api/queue)
@@ -126,7 +127,7 @@ O'q qayerga tekkanini otgan o'yinchining brauzeri aniqlaydi, server esa har bir 
 
 ### Ma'lumotlar bazasi (PostgreSQL 17)
 
-Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanadi), `matches`, `match_players`, `daily_progress`, `friends`, `clans`, `clan_members`, `clan_invites`, `leaver_bans`, `player_stats`, `achievements`, `tournaments`, `tournament_teams`, `tournament_matches` (Telegram: `users.tg_id`). Sxema `migrations/NNN_*.sql` fayllarida. Server ishga tushganda yangi migratsiyalar avtomatik qo'llanadi: har biri o'z tranzaksiyasida, `pg_advisory_lock` bilan himoyalangan. O'yin natijasi va barcha o'yinchilarning reytingi bitta tranzaksiyada yoziladi.
+Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanadi), `matches`, `match_players`, `daily_progress`, `friends`, `clans`, `clan_members`, `clan_invites`, `leaver_bans`, `player_stats`, `achievements`, `tournaments`, `tournament_teams`, `tournament_matches`, `demos` (Telegram: `users.tg_id`). Sxema `migrations/NNN_*.sql` fayllarida. Server ishga tushganda yangi migratsiyalar avtomatik qo'llanadi: har biri o'z tranzaksiyasida, `pg_advisory_lock` bilan himoyalangan. O'yin natijasi va barcha o'yinchilarning reytingi bitta tranzaksiyada yoziladi.
 
 - **Baza paroli:** `.env` faylidagi `ZARBA_DB_PASSWORD`. Fayl git'ga tushmaydi. `deploy/deploy.sh` uni birinchi marta o'zi yaratadi. **`.env` ni o'chirmang:** baza shu parol bilan yaratilgan.
 - **Port:** tashqariga ochilmaydi, bazaga faqat compose ichidagi xizmatlar ulanadi.
@@ -177,7 +178,13 @@ Har onlayn o'yin oxirida (XP bilan birga, hisobga kirganlarga) server tasdiqlaga
 
 **18 ta medal** (o'zimizniki): Birinchi qadam, Beshlik (bir raundda 5 ta), Yolg'iz qahramon (1 ga 3), Ayovsiz (bir o'yinda 30 ta), Pichoq ustasi, Uchqun, Qirg'iy ko'zi, Aniq nishon, Portlatuvchi, Olovli, Sapyor, Qutqaruvchi, Yulduz, G'olib, Faxriy, Mingtalik, Poyga sardori, Aim ustasi. Shart bajarilgan zahoti medal ochiladi (`achievements`), qo'shimcha XP beradi va o'yin oxiridagi oynada «Yangi medal» deb chiqadi.
 
-Profilda (reyting jadvalida istalgan o'yinchi) uch bo'lim: «O'yinlar» (so'nggi reytingli o'yinlar), «Medallar» (ochilganlari sanasi bilan, qolganlari qancha qolgani bilan), «Statistika» (jami, qurollar, xaritalar, rejimlar). `GET /api/players/{login}` → `detail`.
+Profilda (reyting jadvalida istalgan o'yinchi) to'rt bo'lim: «O'yinlar» (so'nggi reytingli o'yinlar), «Medallar» (ochilganlari sanasi bilan, qolganlari qancha qolgani bilan), «Statistika» (jami, qurollar, xaritalar, rejimlar), «Yozuvlar» (pastda). `GET /api/players/{login}` → `detail`.
+
+### O'yin yozuvlari (demo) va qayta ko'rish
+
+Server raundli onlayn o'yinlarni (Raqobat, Wingman, Retake, Aim — Deathmatch'dan tashqari) avtomatik yozib boradi (`demo.go`): har 100 ms da o'yin holati va har o'yinchining joyi, qarashi, quroli, joni; o'q, o'lim va granata hodisalari; ism va nishonlar faqat o'zgarganda. Fayl — `DATA_DIR/demos/*.jsonl.gz` (gzip JSONL, 1-qator sarlavha), 30 daqiqalik o'yin taxminan 2–4 MB. O'yin oxirigacha («over») yetgan yozuvlargina saqlanadi (isinishda tugagan, qayta boshlangan yoki bo'shab qolgan xona yozuvi tashlanadi); eng yangi 300 tasi qoladi.
+
+Profildagi «Yozuvlar» — o'yinchi qatnashgan so'nggi 30 yozuv, «Ko'rish» tugmasi o'yinni kuzatuvchi rejimida qayta o'ynatadi: pauza (P), 0.5×–4× tezlik, vaqt chizig'i (← → — 10 soniya), oldingi/keyingi raund (`,` `.`), istalgan o'yinchini orqadan yoki uning ko'zi bilan (V) ko'rish, erkin kamera. API: `GET /api/demos?player=<login>`, `GET /api/demos/{id}` (fayl). Jadval: `demos`.
 
 ### Do'stlar, partiya va klanlar
 
@@ -194,7 +201,7 @@ Profilda (reyting jadvalida istalgan o'yinchi) uch bo'lim: «O'yinlar» (so'nggi
 | `MAX_PLAYERS` | `16` | Bitta xonadagi o'yinchilar chegarasi |
 | `ALLOWED_ORIGINS` | bo'sh | Bo'sh bo'lsa faqat o'z domeni. `*` bo'lsa hammasi. Aks holda vergul bilan ajratilgan hostlar |
 | `DATABASE_URL` | bo'sh | PostgreSQL manzili. Bo'sh bo'lsa hisoblar o'chiq |
-| `DATA_DIR` | bo'sh (Docker'da `/data`) | Oldingi fayl bazasi papkasi (faqat bir martalik import uchun) |
+| `DATA_DIR` | bo'sh (Docker'da `/data`) | O'yin yozuvlari (`demos/`) va oldingi fayl bazasi (bir martalik import) papkasi; bo'sh bo'lsa yozuvlar o'chiq |
 | `STUN_URLS` | `stun:stun.l.google.com:19302` | Ovozli chat uchun STUN serverlar (vergul bilan). `-` — o'chirish |
 | `TURN_SECRET` | bo'sh (Docker'da `.env` dan) | coturn bilan bir xil kalit. Bo'sh bo'lsa TURN ishlatilmaydi |
 | `TURN_HOST` | bo'sh | TURN domeni. Bo'sh bo'lsa o'yin ochilgan domen olinadi |

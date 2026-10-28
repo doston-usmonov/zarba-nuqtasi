@@ -67,6 +67,8 @@ type room struct {
 	mm *mmRoom
 	// trn: turnir o'yini xonasi (tournaments.go) — faqat ikki klan a'zolari, egasiz, botsiz
 	trn *trnRoom
+	// demo: shu o'yinning yozuvi (demo.go)
+	demo *demoRec
 	// statistika (stats.go)
 	st               map[string]*pstat
 	stE              string
@@ -97,6 +99,7 @@ type hub struct {
 	loadouts    map[int64]map[string]string // hisob → qurol bo'yoqlari (progress.go)
 	soc         *social                     // kim qaysi xonada, xonaga chaqiriqlar (social.go)
 	leaverGrace time.Duration               // 0 — leaverGrace (leaver.go); testlarda qisqa
+	dataDir     string                      // DATA_DIR: o'yin yozuvlari shu yerda (demo.go)
 }
 
 func newHub(maxPlayers int, st *Store) *hub {

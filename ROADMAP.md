@@ -88,5 +88,5 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 
 ## Texnik
 - ✅ PostgreSQL: hisoblar, reyting va o'yinlar tarixi, migratsiyalar, kunlik zaxira
-- [ ] O'yin yozuvlari (demo) va qayta ko'rish
+- ✅ O'yin yozuvlari (demo) va qayta ko'rish: server raundli o'yinlarni yozadi, profilda «Yozuvlar» — pauza, tezlik, vaqt chizig'i, raundlar, o'yinchi ko'zi bilan
 - ✅ Monitoring: /metrics (Prometheus, token bilan) — o'yinchilar, xonalar, navbat, xatolar, hakam, xona takti, baza; docker-compose'da ixtiyoriy Prometheus

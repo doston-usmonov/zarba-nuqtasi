@@ -380,7 +380,7 @@ func (r *room) nadeDamageLocked(v *client, owner, w string, dmg float64, now tim
 	p := v.ps
 	killer := r.clients[owner]
 	if killer != nil && killer != v {
-		r.noteDamageLocked(killer, math.Min(dmg, math.Max(0, p.hp)))
+		r.noteDamageLocked(killer, math.Min(dmg, math.Max(0, p.hp)), w)
 	}
 	p.hp -= dmg
 	if p.hp > 0 {

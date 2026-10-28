@@ -571,7 +571,7 @@ func (r *room) applyHitLocked(c *client, h hitClaim, now time.Time) {
 		vp.armor = math.Max(0, vp.armor-(dmg-red)*.5)
 		dmg = red
 	}
-	r.noteDamageLocked(c, math.Min(dmg, math.Max(0, vp.hp)))
+	r.noteDamageLocked(c, math.Min(dmg, math.Max(0, vp.hp)), h.W)
 	vp.hp -= dmg
 	if v.bot != nil {
 		v.bot.alertAt = now
@@ -653,6 +653,7 @@ func (r *room) checkPlantLocked(c *client, f map[string]json.RawMessage, now tim
 				if site != "" && site == pl.S && at.flat(p.pos) < 2.5 && r.stoodLocked(p, now, 2.6, func(s sample) bool { return r.gm().siteAt(s.p.X, s.p.Z) == site && s.p.flat(at) < 2.5 }) {
 					g.B = &bombState{X: pl.X, Z: pl.Z, S: site, T: 40}
 					r.planter = c.id
+					r.noteBombLocked(c, false)
 					r.addMoneyLocked(c, 300)
 				} else {
 					c.warnLocked("noto'g'ri bomba o'rnatish", now)
@@ -675,6 +676,7 @@ func (r *room) checkPlantLocked(c *client, f map[string]json.RawMessage, now tim
 				}
 				if p.pos.flat(b) < 2.5 && r.stoodLocked(p, now, need, func(s sample) bool { return s.p.flat(b) < 2.5 }) {
 					r.defuser = c.id
+					r.noteBombLocked(c, true)
 					r.endRoundLocked("CT", "defuse")
 				} else {
 					c.warnLocked("noto'g'ri zararsizlantirish", now)
@@ -713,6 +715,7 @@ func (r *room) endRoundLocked(side, why string) {
 		g.SB++
 	}
 	r.roundMVPLocked(side, why)
+	r.clutchWonLocked(side)
 	r.roundAwardsLocked(side, why, g.B != nil)
 }
 

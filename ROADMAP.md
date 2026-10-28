@@ -58,7 +58,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Do'stlar: login bo'yicha so'rov, kim onlayn (menyuda yoki qaysi xonada o'ynayapti), do'st xonasiga bitta tugma bilan qo'shilish
 - ✅ Partiya: pauza menyusidan onlayn do'stni o'z xonangga chaqirish, chaqiriq menyuda yoki o'yin ichida keladi, qabul qilgan do'st sen bilan bitta jamoaga tushadi
 - ✅ Klanlar: nom va 2–5 belgili teg ([TEG] o'yinda ism oldida), do'stlarni taklif qilish, egasi a'zoni chiqaradi, klanlar reytingi (a'zolarning o'rtacha reytingi)
-- [ ] Batafsil statistika (qurollar bo'yicha, xaritalar bo'yicha)
+- ✅ Batafsil statistika: qurollar, xaritalar va rejimlar bo'yicha, eng yaxshi natijalar (profilda «Statistika»)
 - [ ] Telegram orqali kirish, parolni tiklash
 
 ## 7. Kosmetika va yutuqlar
@@ -70,7 +70,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Raund MVP (eng ko'p o'ldirgan, bombani o'rnatgan yoki zararsizlantirgan), o'yin oxirida natijalar jadvali va o'yin MVP'si, killcam
 - ✅ XP va 40 ta daraja, har kuni 3 ta vazifa (Toshkent vaqti bilan yangilanadi)
 - ✅ Qurol bo'yoqlari (10 ta o'zimizning naqsh: Qum, Tun, Zangori, Atlas, Lola, Gilam, Shoh, Olov, Muz, Afsona) daraja bilan ochiladi; tasodifiy sandiq va pullik narsa yo'q
-- [ ] Yutuqlar va medallar (masalan: "1 raundda 5 ta o'ldirish")
+- ✅ Yutuqlar va medallar: 18 ta (Beshlik — bir raundda 5 ta, Yolg'iz qahramon — 1 ga 3 va boshqalar), XP beradi, profilda «Medallar»
 
 ## Mashq
 - ✅ Nishon mashqi: 60 soniya, qurolni o'zingiz tanlaysiz, nishonlar o'q uzmaydi, qiyinlikka qarab turadi, yuradi yoki cho'kkalaydi. Natija: ochko, aniqlik, boshga tekkani, o'rtacha reaksiya. Har qurol va qiyinlik uchun rekord brauzerda saqlanadi

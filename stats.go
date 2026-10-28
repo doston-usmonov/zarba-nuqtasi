@@ -21,6 +21,13 @@ type pstat struct {
 	dmg    float64
 	mvp    int
 	rk, rR int // shu raunddagi o'ldirishlar va qaysi raund
+	// batafsil statistika va medallar uchun (medals.go)
+	wk, whs       map[string]int     // qurol bo'yicha o'ldirish, boshga
+	wdmg          map[string]float64 // qurol bo'yicha zarar
+	bestRK        int                // bitta raunddagi eng ko'p o'ldirish
+	clutch        int                // yutilgan eng og'ir «1 ga N»
+	clR, clVs     int                // shu raundda yolg'iz qoldi (raund, nechtaga qarshi)
+	plant, defuse int
 }
 
 // statRow — o'yin oxiridagi jadvalning bir qatori.
@@ -47,7 +54,7 @@ func (r *room) statLocked(c *client) *pstat {
 	}
 	s := r.st[c.id]
 	if s == nil {
-		s = &pstat{}
+		s = &pstat{wk: map[string]int{}, whs: map[string]int{}, wdmg: map[string]float64{}}
 		r.st[c.id] = s
 	}
 	s.name, s.sq = clientName(c), c.info.Sq
@@ -60,25 +67,81 @@ func (r *room) noteDeathLocked(victim, killer *client, hs bool, w string) {
 		return
 	}
 	r.statLocked(victim).d++
+	r.clutchCheckLocked()
 	if killer == nil || !r.foes(killer, victim) {
 		return
 	}
 	r.addMoneyLocked(killer, killReward(w))
 	s := r.statLocked(killer)
 	s.k++
+	if w != "" {
+		s.wk[w]++
+	}
 	if hs {
 		s.hs++
+		if w != "" {
+			s.whs[w]++
+		}
 	}
 	if s.rR != r.gs.R {
 		s.rk, s.rR = 0, r.gs.R
 	}
 	s.rk++
+	s.bestRK = max(s.bestRK, s.rk)
+}
+
+// clutchCheckLocked: kimdir jamoasida yolg'iz qoldi, raqib esa 2 va undan ko'p — «1 ga N» boshlandi.
+func (r *room) clutchCheckLocked() {
+	g := r.gs
+	if g.respawns() || g.Ph != "live" {
+		return
+	}
+	alive := map[string][]*client{}
+	for _, c := range r.clients {
+		if c.ps != nil && c.ps.alive && (c.info.Sq == "A" || c.info.Sq == "B") {
+			alive[c.info.Sq] = append(alive[c.info.Sq], c)
+		}
+	}
+	for sq, foe := range map[string]string{"A": "B", "B": "A"} {
+		if len(alive[sq]) == 1 && len(alive[foe]) >= 2 {
+			s := r.statLocked(alive[sq][0])
+			if s.clR != g.R {
+				s.clR, s.clVs = g.R, len(alive[foe])
+			}
+		}
+	}
+}
+
+// clutchWonLocked: raund tugadi — g'olib tomonda yolg'iz qolgan bo'lsa, «1 ga N» yutildi.
+func (r *room) clutchWonLocked(side string) {
+	g := r.gs
+	for _, s := range r.st {
+		if s.clR == g.R && sideOfSquad(s.sq, g.R, g.Fm) == side {
+			s.clutch = max(s.clutch, s.clVs)
+		}
+	}
+}
+
+// noteBombLocked: bomba o'rnatildi yoki zararsizlantirildi.
+func (r *room) noteBombLocked(c *client, defuse bool) {
+	if !r.statsOn() || c == nil {
+		return
+	}
+	if s := r.statLocked(c); defuse {
+		s.defuse++
+	} else {
+		s.plant++
+	}
 }
 
 // noteDamageLocked: tasdiqlangan tegish (jondan ortig'i hisobga olinmaydi).
-func (r *room) noteDamageLocked(c *client, dmg float64) {
+func (r *room) noteDamageLocked(c *client, dmg float64, w string) {
 	if r.statsOn() && dmg > 0 {
-		r.statLocked(c).dmg += dmg
+		s := r.statLocked(c)
+		s.dmg += dmg
+		if w != "" {
+			s.wdmg[w] += dmg
+		}
 	}
 }
 

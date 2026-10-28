@@ -318,7 +318,12 @@ func (a *api) player(w http.ResponseWriter, r *http.Request) {
 	}
 	out := toOut(u)
 	out.Pos = pos
-	writeJSON(w, http.StatusOK, map[string]any{"user": out, "stats": row(pos, u), "matches": ms})
+	det, err := a.st.PlayerDetail(r.Context(), u.ID)
+	if err != nil {
+		serverErr(w, "statistika", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"user": out, "stats": row(pos, u), "matches": ms, "detail": det})
 }
 
 // ---- oddiy "chelak" cheklagichi: har kalitga cap ta urinish, so'ng har every vaqtda bittadan ----

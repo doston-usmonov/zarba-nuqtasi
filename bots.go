@@ -654,6 +654,7 @@ func (r *room) botObjectiveLocked(c *client, now time.Time, dt float64) {
 			if b.actT >= 7 && g.Ph == "live" {
 				b.actT = 0
 				r.defuser = c.id
+				r.noteBombLocked(c, true)
 				r.endRoundLocked("CT", "defuse")
 			}
 			return
@@ -703,6 +704,7 @@ func (r *room) botObjectiveLocked(c *client, now time.Time, dt float64) {
 			if b.actT >= 3.2 && g.B == nil {
 				g.B = &bombState{X: math.Round(p.pos.X*100) / 100, Z: math.Round(p.pos.Z*100) / 100, S: r.gm().siteAt(p.pos.X, p.pos.Z), T: 40}
 				r.planter = c.id
+				r.noteBombLocked(c, false)
 				b.actT = 0
 				b.mode = "guard"
 			}

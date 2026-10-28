@@ -16,6 +16,7 @@ zarba-server/
 ├── economy.go         pul, xaridlar va qo'ldagi qurollar (raqobat rejimi)
 ├── nadesim.go         granatalar va bomba portlashi serverda
 ├── progress.go        XP, darajalar, kunlik vazifalar, qurol bo'yoqlari (/api/progress, /api/loadout)
+├── medals.go          batafsil statistika (qurollar, xaritalar, rejimlar) va medallar
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── social.go          do'stlar, xonaga chaqiriqlar, klanlar (/api/social, /api/friends, /api/clan, /api/clans)
 ├── queue.go           «O'yin topish»: reytingli navbat, partiyalar, mm- xonalar (/api/queue)
@@ -121,7 +122,7 @@ O'q qayerga tekkanini otgan o'yinchining brauzeri aniqlaydi, server esa har bir 
 
 ### Ma'lumotlar bazasi (PostgreSQL 17)
 
-Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanadi), `matches`, `match_players`, `daily_progress`, `friends`, `clans`, `clan_members`, `clan_invites`, `leaver_bans`. Sxema `migrations/NNN_*.sql` fayllarida. Server ishga tushganda yangi migratsiyalar avtomatik qo'llanadi: har biri o'z tranzaksiyasida, `pg_advisory_lock` bilan himoyalangan. O'yin natijasi va barcha o'yinchilarning reytingi bitta tranzaksiyada yoziladi.
+Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanadi), `matches`, `match_players`, `daily_progress`, `friends`, `clans`, `clan_members`, `clan_invites`, `leaver_bans`, `player_stats`, `achievements`. Sxema `migrations/NNN_*.sql` fayllarida. Server ishga tushganda yangi migratsiyalar avtomatik qo'llanadi: har biri o'z tranzaksiyasida, `pg_advisory_lock` bilan himoyalangan. O'yin natijasi va barcha o'yinchilarning reytingi bitta tranzaksiyada yoziladi.
 
 - **Baza paroli:** `.env` faylidagi `ZARBA_DB_PASSWORD`. Fayl git'ga tushmaydi. `deploy/deploy.sh` uni birinchi marta o'zi yaratadi. **`.env` ni o'chirmang:** baza shu parol bilan yaratilgan.
 - **Port:** tashqariga ochilmaydi, bazaga faqat compose ichidagi xizmatlar ulanadi.
@@ -136,6 +137,14 @@ Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanad
 - **Oldingi versiyadan ko'chish:** baza bo'sh bo'lsa, server `/data/snapshot.json` va `matches.jsonl` ni (fayl bazasini) avtomatik import qiladi. Hisoblar, parollar, sessiyalar, reyting va tarix saqlanib qoladi, fayllar `*.imported-<sana>` deb qayta nomlanadi.
 
 API: `POST /api/register`, `POST /api/login`, `POST /api/logout`, `GET /api/me`, `GET /api/leaderboard`, `GET /api/players/{login}`, `GET /api/progress`, `POST /api/loadout`, `GET /api/social`, `POST /api/friends`, `POST /api/clan`, `GET /api/clans`.
+
+### Medallar va batafsil statistika
+
+Har onlayn o'yin oxirida (XP bilan birga, hisobga kirganlarga) server tasdiqlagan natijalar jamlanadi (`medals.go`, `player_stats` jadvali): o'ldirish, o'lim, boshga, zarar, MVP, g'alaba, bomba o'rnatish va zararsizlantirish; qurollar bo'yicha (o'ldirish, boshga, zarar), xaritalar va rejimlar bo'yicha (o'ynagan, yutgan); eng yaxshilari — bitta raunddagi va bitta o'yindagi eng ko'p o'ldirish, yutilgan eng og'ir «1 ga N» (jamoada yolg'iz qolib 2 va undan ko'p raqibga qarshi raundni yutish).
+
+**18 ta medal** (o'zimizniki): Birinchi qadam, Beshlik (bir raundda 5 ta), Yolg'iz qahramon (1 ga 3), Ayovsiz (bir o'yinda 30 ta), Pichoq ustasi, Uchqun, Qirg'iy ko'zi, Aniq nishon, Portlatuvchi, Olovli, Sapyor, Qutqaruvchi, Yulduz, G'olib, Faxriy, Mingtalik, Poyga sardori, Aim ustasi. Shart bajarilgan zahoti medal ochiladi (`achievements`), qo'shimcha XP beradi va o'yin oxiridagi oynada «Yangi medal» deb chiqadi.
+
+Profilda (reyting jadvalida istalgan o'yinchi) uch bo'lim: «O'yinlar» (so'nggi reytingli o'yinlar), «Medallar» (ochilganlari sanasi bilan, qolganlari qancha qolgani bilan), «Statistika» (jami, qurollar, xaritalar, rejimlar). `GET /api/players/{login}` → `detail`.
 
 ### Do'stlar, partiya va klanlar
 

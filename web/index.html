@@ -421,6 +421,22 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .hist .l .res,.hist .down{color:var(--bad)}
 .hist small{grid-column:1/-1;color:var(--dim);font-size:12px}
 .tiers{display:flex;flex-wrap:wrap;gap:6px 14px}
+/* medals and detailed stats in the profile */
+.medals{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.medal{display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 9px;align-items:center;padding:8px 9px;border:1px solid var(--line);border-radius:8px;min-width:0}
+.medal svg{grid-row:span 2;width:34px;height:34px}
+.medal b{font-size:13px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.medal small{font-size:11px;color:var(--dim);line-height:1.25}
+.medal .bar{grid-column:1/-1;height:4px;border-radius:2px;background:rgba(243,239,230,.1);overflow:hidden}.medal .bar i{display:block;height:100%;background:var(--atk)}
+.medal.on{border-color:rgba(242,181,68,.55);background:rgba(242,181,68,.07)}
+.medal:not(.on) b{color:var(--dim)}
+.stTbl{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.stTbl th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);text-align:left;font-weight:600;padding:4px 6px}
+.stTbl td{padding:5px 6px;border-top:1px solid var(--line)} .stTbl .r{text-align:right}
+#lbProf [data-pp]{display:flex;flex-direction:column;gap:10px} #lbProf [data-pp][hidden]{display:none}
+.profTabs{display:flex;gap:6px;flex-wrap:wrap}
+.profTabs button{background:transparent;color:var(--dim);border:1px solid var(--line);border-radius:6px;padding:5px 10px;font-size:13px;font-weight:600}
+.profTabs button[aria-pressed="true"]{color:var(--ink);border-color:var(--atk);background:rgba(242,181,68,.12)}
 .tiers .rk{font-size:12px;font-weight:500;color:var(--dim)}
 #board td small{color:var(--dim);font-size:12px;margin-left:6px}
 #board .rk{margin-right:6px}
@@ -5193,12 +5209,13 @@ function netXP(m){
   const gain = num(m.gain)|0, lv = num(m.level)|0;
   if (ACC.me){ ACC.me.xp = num(m.xp); ACC.me.level = lv; ACC.me.lvCur = num(m.cur); ACC.me.lvNeed = num(m.need); }
   const done = Array.isArray(m.done) ? m.done.map(d => String(d && d.text || '').slice(0, 60)).filter(Boolean) : [];
+  const medals = Array.isArray(m.medals) ? m.medals.map(d => String(d && d.name || '').slice(0, 40)).filter(Boolean) : [];
   const unlocked = m.up ? Object.values(FINISHES).filter(f => f.lvl === lv).map(f => f.name) : [];
-  const title = m.up ? 'Yangi daraja: ' + lv + '!' : '+' + gain + ' XP', sub = (m.up ? '+' + gain + ' XP. ' : lv + '-daraja · ' + (num(m.cur)|0) + ' / ' + (num(m.need)|0) + ' XP. ') + (unlocked.length ? "Yangi bo'yoq ochildi: " + unlocked.join(', ') + '. ' : '') + (done.length ? 'Vazifa bajarildi: ' + done.join('; ') : '');
+  const title = m.up ? 'Yangi daraja: ' + lv + '!' : '+' + gain + ' XP', sub = (m.up ? '+' + gain + ' XP. ' : lv + '-daraja · ' + (num(m.cur)|0) + ' / ' + (num(m.need)|0) + ' XP. ') + (unlocked.length ? "Yangi bo'yoq ochildi: " + unlocked.join(', ') + '. ' : '') + (done.length ? 'Vazifa bajarildi: ' + done.join('; ') + '. ' : '') + (medals.length ? 'Yangi medal: ' + medals.join(', ') + '!' : '');
   const el = $('result');
   if (!el.hidden){ const d = document.createElement('div'); d.className = 'xpGain'; d.innerHTML = `<b>${escH(title)}</b><span>${escH(sub)}</span>` + xpBarHTML(lv, num(m.cur), num(m.need), num(m.xp)); el.appendChild(d); }
   else showMsg(title, sub, 'atk', 6000);
-  if (m.up) sfxChord(true);
+  if (m.up || medals.length) sfxChord(true);
 }
 function renderAcc(){
   $('accPanel').hidden = !ACC.on; if (!ACC.on) return;
@@ -5283,9 +5300,34 @@ async function showProfile(name){
     return `<div class="${m.won ? 'w' : 'l'}"><span class="res">${m.won ? "G'alaba" : "Mag'lubiyat"}</span><span>${own}:${opp} · ${m.k}/${m.d}</span>` +
       `<b class="${dd >= 0 ? 'up' : 'down'}">${dd >= 0 ? '+' : ''}${dd}</b><small>${fmtDate(m.ended)} · xona ${escH(m.room.replace(/^zn-/, ''))} · reyting ${m.after}</small></div>`;
   }).join('') : `<p class="note">Hali reytingli o'yin yo'q.</p>`;
+  const det = r.data.detail || null;
   box.innerHTML = `<div class="me"><div class="who"><b>${escH(u.username)}</b>${rankBadge(u.rank)}</div><div class="pts"><b>${u.rating}</b><span>${u.pos ? '#' + u.pos + " o'rin" : 'reyting'}</span></div></div>` +
     `<div class="mini"><div><b>${u.matches}</b><span>O'yin</span></div><div><b>${pct(u.wins, u.matches)}%</b><span>G'alaba</span></div><div><b>${kdOf(u)}</b><span>K/D</span></div><div><b>${pct(u.hs, u.kills)}%</b><span>Boshga</span></div></div>` +
-    `<h3>So'nggi o'yinlar</h3><div class="hist">${hist}</div>`;
+    (det ? `<div class="profTabs" role="group" aria-label="Profil bo'limlari"><button type="button" data-pt="hist" aria-pressed="true">O'yinlar</button><button type="button" data-pt="medals" aria-pressed="false">Medallar · ${(det.medals || []).filter(m => m.at).length}/${(det.medals || []).length}</button><button type="button" data-pt="stats" aria-pressed="false">Statistika</button></div>` : '') +
+    `<div data-pp="hist"><h3>So'nggi reytingli o'yinlar</h3><div class="hist">${hist}</div></div>` + (det ? profMedalsHTML(det) + profStatsHTML(det) : '');
+  box.querySelectorAll('[data-pt]').forEach(b => b.addEventListener('click', () => { box.querySelectorAll('[data-pt]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    box.querySelectorAll('[data-pp]').forEach(p => { p.hidden = p.dataset.pp !== b.dataset.pt; }); }));
+}
+// a medal: a round badge with a ribbon (gold when earned)
+function medalSVG(on){ const c = on ? '#f2b544' : 'rgba(243,239,230,.28)', r = on ? '#c4452f' : 'rgba(243,239,230,.16)';
+  return `<svg viewBox="0 0 34 34" aria-hidden="true"><path d="M10 1h6l3 9h-6zM24 1h-6l-3 9h6z" fill="${r}"/><circle cx="17" cy="21" r="11" fill="${c}"/><circle cx="17" cy="21" r="7.5" fill="none" stroke="rgba(20,18,14,.35)" stroke-width="1.6"/><path d="M17 15.5l1.7 3.4 3.7.5-2.7 2.6.7 3.7-3.4-1.8-3.4 1.8.7-3.7-2.7-2.6 3.7-.5z" fill="rgba(20,18,14,.45)"/></svg>`; }
+function profMedalsHTML(det){
+  const ms = (det.medals || []).slice().sort((a, b) => (b.at ? 1 : 0) - (a.at ? 1 : 0) || (b.have/b.target) - (a.have/a.target));
+  return `<div data-pp="medals" hidden><h3>Medallar</h3><div class="medals">` + ms.map(m => `<div class="medal${m.at ? ' on' : ''}" title="${escH(m.text)} · +${m.xp|0} XP">${medalSVG(!!m.at)}<b>${escH(m.name)}</b>` +
+    `<small>${m.at ? fmtDate(m.at) : escH(m.text)}</small><div class="bar"><i style="width:${Math.min(100, Math.round((num(m.have)/Math.max(1, num(m.target)))*100))}%"></i></div></div>`).join('') + `</div></div>`;
+}
+function profStatsHTML(det){
+  const T = det.totals || {}, n = k => num(T[k])|0;
+  const wName = id => (W[id] && W[id].name) || (id === 'taser' ? 'Uchqun' : id), mdName = id => (MODES[id] && MODES[id].name) || ({ tdm:'Deathmatch (jamoa)' }[id]) || id;
+  const ws = (det.weapons || []).slice(0, 8), mps = det.maps || [], mds = det.modes || [];
+  const rowW = w => `<tr><td>${escH(wName(w.w))}</td><td class="r">${w.k|0}</td><td class="r">${pct(w.hs|0, w.k|0)}%</td><td class="r">${w.dmg|0}</td></tr>`;
+  const rowM = (name, m) => `<tr><td>${escH(name)}</td><td class="r">${m.p|0}</td><td class="r">${m.w|0}</td><td class="r">${pct(m.w|0, m.p|0)}%</td></tr>`;
+  return `<div data-pp="stats" hidden><h3>Barcha onlayn o'yinlar</h3>` +
+    `<div class="mini"><div><b>${n('matches')}</b><span>O'yin</span></div><div><b>${n('k')}</b><span>O'ldirish</span></div><div><b>${n('best_rk')}</b><span>Bir raundda</span></div><div><b>${n('best_mk')}</b><span>Bir o'yinda</span></div><div><b>${n('clutch') ? '1×' + n('clutch') : '—'}</b><span>Yolg'iz yutgan</span></div><div><b>${n('plant')}/${n('defuse')}</b><span>Bomba / zararsiz.</span></div><div><b>${n('mvp')}</b><span>MVP</span></div><div><b>${n('dmg')}</b><span>Zarar</span></div></div>` +
+    (ws.length ? `<h3>Qurollar</h3><table class="stTbl"><thead><tr><th>Qurol</th><th class="r">O'ldir.</th><th class="r">Boshga</th><th class="r">Zarar</th></tr></thead><tbody>${ws.map(rowW).join('')}</tbody></table>` : '') +
+    (mps.length ? `<h3>Xaritalar</h3><table class="stTbl"><thead><tr><th>Xarita</th><th class="r">O'yin</th><th class="r">Yutgan</th><th class="r">%</th></tr></thead><tbody>${mps.map(m => rowM(mapName(m.m), m)).join('')}</tbody></table>` : '') +
+    (mds.length ? `<h3>Rejimlar</h3><table class="stTbl"><thead><tr><th>Rejim</th><th class="r">O'yin</th><th class="r">Yutgan</th><th class="r">%</th></tr></thead><tbody>${mds.map(m => rowM(mdName(m.m), m)).join('')}</tbody></table>` : '') +
+    (!n('matches') ? `<p class="note">Onlayn o'yinni oxirigacha o'ynasangiz, bu yerda qurollar, xaritalar va rejimlar bo'yicha statistika paydo bo'ladi.</p>` : '') + `</div>`;
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-lb]'); if (b){ openLB(); return; }
@@ -5607,7 +5649,7 @@ function touchFrame(){
 }
 setTimeout(linkBoot, 0);
 setTimeout(mmInit, 0);
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){

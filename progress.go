@@ -15,6 +15,7 @@ import (
 	"errors"
 	"hash/fnv"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -121,6 +122,7 @@ type matchGain struct {
 	mode    string
 	xp      int
 	metrics map[string]int
+	stats   map[string]int // batafsil statistika hisoblagichlari (medals.go)
 }
 
 // gainsLocked: o'yin tugadi — hisobga kirgan har bir o'yinchiga XP va vazifa natijalari.
@@ -174,7 +176,22 @@ func (r *room) gainsLocked(now time.Time) []matchGain {
 		if g.Md == modeGG && ggLevel(g.Sc[c.id]) == len(ggLadder)-1 {
 			m["ggknife"] = 1
 		}
-		out = append(out, matchGain{uid: c.acct.id, mode: g.Md, xp: xp, metrics: m})
+		st := map[string]int{"k": s.k, "d": s.d, "hs": s.hs, "dmg": int(math.Round(s.dmg)), "mvp": s.mvp, "matches": 1,
+			"plant": s.plant, "defuse": s.defuse, "best_rk": s.bestRK, "best_mk": s.k, "clutch": s.clutch,
+			"mp:" + r.gm().id: 1, "md:" + g.modeID(): 1}
+		if won {
+			st["wins"], st["mw:"+r.gm().id], st["mdw:"+g.modeID()] = 1, 1, 1
+		}
+		for w, n := range s.wk {
+			st["wk:"+w] = n
+		}
+		for w, n := range s.whs {
+			st["whs:"+w] = n
+		}
+		for w, d := range s.wdmg {
+			st["wdmg:"+w] = int(math.Round(d))
+		}
+		out = append(out, matchGain{uid: c.acct.id, mode: g.Md, xp: xp, metrics: m, stats: st})
 	}
 	return out
 }
@@ -198,10 +215,10 @@ type missionState struct {
 }
 
 // ApplyGain: XP va vazifalarni bitta tranzaksiyada yozadi. Bajarilgan vazifalarni qaytaradi.
-func (s *Store) ApplyGain(ctx context.Context, g matchGain, now time.Time) (xp int64, done []missionDef, err error) {
+func (s *Store) ApplyGain(ctx context.Context, g matchGain, now time.Time) (xp int64, done []missionDef, medals []medalDef, err error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, nil, err
 	}
 	defer tx.Rollback()
 	day := dayOf(now)
@@ -219,20 +236,27 @@ func (s *Store) ApplyGain(ctx context.Context, g matchGain, now time.Time) (xp i
 		var was bool
 		if err := tx.QueryRowContext(ctx, `INSERT INTO daily_progress (user_id, day, mission, progress) VALUES ($1, $2, $3, $4)
 			ON CONFLICT (user_id, day, mission) DO UPDATE SET `+upd+` RETURNING progress, done`, g.uid, day, m.ID, v).Scan(&prog, &was); err != nil {
-			return 0, nil, err
+			return 0, nil, nil, err
 		}
 		if !was && prog >= m.Target {
 			if _, err := tx.ExecContext(ctx, `UPDATE daily_progress SET done = true WHERE user_id = $1 AND day = $2 AND mission = $3`, g.uid, day, m.ID); err != nil {
-				return 0, nil, err
+				return 0, nil, nil, err
 			}
 			total += m.Reward
 			done = append(done, m)
 		}
 	}
-	if err := tx.QueryRowContext(ctx, `UPDATE users SET xp = xp + $2 WHERE id = $1 RETURNING xp`, g.uid, total).Scan(&xp); err != nil {
-		return 0, nil, err
+	medals, err = applyStatsTx(ctx, tx, g.uid, g.stats, now)
+	if err != nil {
+		return 0, nil, nil, err
 	}
-	return xp, done, tx.Commit()
+	for _, m := range medals {
+		total += m.XP
+	}
+	if err := tx.QueryRowContext(ctx, `UPDATE users SET xp = xp + $2 WHERE id = $1 RETURNING xp`, g.uid, total).Scan(&xp); err != nil {
+		return 0, nil, nil, err
+	}
+	return xp, done, medals, tx.Commit()
 }
 
 // Progress: o'yinchining XP'si, bugungi vazifalari va tanlangan bo'yoqlari.
@@ -356,13 +380,14 @@ func (h *hub) awardProgress(r *room, gains []matchGain) {
 	defer cancel()
 	now := time.Now()
 	type res struct {
-		xp   int64
-		gain int
-		done []missionDef
+		xp     int64
+		gain   int
+		done   []missionDef
+		medals []medalDef
 	}
 	results := map[int64]res{}
 	for _, g := range gains {
-		xp, done, err := h.store.ApplyGain(ctx, g, now)
+		xp, done, medals, err := h.store.ApplyGain(ctx, g, now)
 		if err != nil {
 			log.Printf("XP yozilmadi (#%d): %v", g.uid, err)
 			continue
@@ -371,7 +396,10 @@ func (h *hub) awardProgress(r *room, gains []matchGain) {
 		for _, d := range done {
 			gain += d.Reward
 		}
-		results[g.uid] = res{xp, gain, done}
+		for _, m := range medals {
+			gain += m.XP
+		}
+		results[g.uid] = res{xp, gain, done, medals}
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -385,7 +413,7 @@ func (h *hub) awardProgress(r *room, gains []matchGain) {
 		}
 		lv, cur, need := levelOf(x.xp)
 		before, _, _ := levelOf(x.xp - int64(x.gain))
-		c.trySend(jsonMsg(map[string]any{"t": "xp", "gain": x.gain, "xp": x.xp, "level": lv, "cur": cur, "need": need, "up": lv > before, "done": x.done}))
+		c.trySend(jsonMsg(map[string]any{"t": "xp", "gain": x.gain, "xp": x.xp, "level": lv, "cur": cur, "need": need, "up": lv > before, "done": x.done, "medals": x.medals}))
 	}
 }
 

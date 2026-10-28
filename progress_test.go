@@ -51,7 +51,7 @@ func TestProgressStore(t *testing.T) {
 	ms := dailyMissions(u.ID, dayOf(now))
 	// bitta o'yinda hamma vazifa metrikasini to'ldiramiz
 	big := map[string]int{"kills": 30, "hs": 10, "mvp": 5, "wins": 1, "dmkills": 20, "ggknife": 1, "matches": 1, "dmg": 3000}
-	xp, done, err := s.ApplyGain(ctx, matchGain{uid: u.ID, mode: modeComp, xp: 400, metrics: big}, now)
+	xp, done, _, err := s.ApplyGain(ctx, matchGain{uid: u.ID, mode: modeComp, xp: 400, metrics: big}, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestProgressStore(t *testing.T) {
 		t.Fatalf("XP: %d, kutilgan %d, bajarilgan %v", xp, want, done)
 	}
 	// takror: bajarilgan vazifa ikkinchi marta mukofot bermaydi
-	xp2, done2, _ := s.ApplyGain(ctx, matchGain{uid: u.ID, mode: modeComp, xp: 100, metrics: big}, now)
+	xp2, done2, _, _ := s.ApplyGain(ctx, matchGain{uid: u.ID, mode: modeComp, xp: 100, metrics: big}, now)
 	for _, d := range done2 {
 		if d.metric != "matches" {
 			t.Fatalf("vazifa ikki marta: %v", d)

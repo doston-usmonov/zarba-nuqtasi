@@ -13,11 +13,13 @@ for m in re.finditer(r"\n  (\w+):\{ name:(\"[^\"]*\")", blk):
     g=lambda L: '{'+', '.join('{%d, %d}'%tuple(p) for p in L)+'}'
     hl=[h for k in 'ABM' for h in holds[k]]
     aim = re.search(r"\baim:true\b", seg[:400]) is not None
+    lm = re.search(r"\n    lineups:(\[.*\]),\n", seg); lus = json.loads(lm.group(1)) if lm else []
     out.append('\t{id: "%s", name: %s,%s'%(mid, m.group(2), ' aim: true,' if aim else ''))
     out.append('\t\tholds: [][2][2]int{'+', '.join('{{%d, %d}, {%d, %d}}'%(a[0],a[1],b[0],b[1]) for a,b in hl)+'},')
     out.append('\t\tholdSite: []string{'+', '.join('"%s"'%k for k in 'ABM' for _ in holds[k])+'},')
     out.append('\t\tspots: map[string][][2]int{"A": %s, "B": %s},'%(g(plan['A']['spots']), g(plan['B']['spots'])))
     out.append('\t\tlooks: map[string][][2]int{"A": %s, "B": %s},'%(g(plan['A']['looks']), g(plan['B']['looks'])))
+    if lus: out.append('\t\tlineups: []lineup{'+', '.join('{site: "%s", x: %s, z: %s, yaw: %s, pitch: %s, land: [2]float64{%s, %s}}'%(l['site'], l['x'], l['z'], l['yaw'], l['pitch'], l['land'][0], l['land'][1]) for l in lus)+'},')
     out.append('\t\trows: []string{'); out += ['\t\t\t"%s",'%r for r in rows]; out.append('\t\t}},')
 out.append('}')
 open('mapsdata.go','w').write('\n'.join(out)+'\n')

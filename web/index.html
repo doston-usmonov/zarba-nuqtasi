@@ -2632,7 +2632,9 @@ function startRound(){
       if (S.md === 'rt'){ b.pos.copy(retakeSpot(site, bomb.pos.x, bomb.pos.z)); b.postPos = null; b.mode = 'exec'; }
     }
     b.m.g.visible = true; b.m.g.rotation.set(0,0,0); b.m.g.position.copy(b.pos); poseSoldier(b.m, 0, false, 0); setSoldierWeapon(b.m, b.weapon);
+    botGiveNades(b, rih, side);
   });
+  botPickSmoker(side, site, rih);
   if (S.md === 'rt'){ retakeLoadout(); if (player.team === 'T'){ player.pos.copy(retakeSpot(S.tSite, bomb.pos.x, bomb.pos.z)); } S.timer = 3; }
   if (S.md === 'arena') aimLoadout();
   $('dead').hidden = true; H.scope.hidden = true; H.cross.style.display = ''; H.progBar.style.background = '';
@@ -3415,6 +3417,7 @@ function updateBot(b, dt){
   }
   if (b.reloadT > 0){ b.reloadT -= dt; if (b.reloadT <= 0) b.mag = W[b.weapon].mag; }
   b.fireCd -= dt; b.pause -= dt;
+  if (MODE !== 'online') botNadeThink(b, dt);
   let kneelTarget = 0;
   if (b.seeing && player.alive){
     b.seenFor += dt;
@@ -3494,6 +3497,15 @@ function tBotThink(b, dt){
   }
   const allStaged = bots.every(o => !o.alive || o.atStage || o.mode !== 'stage');
   const go = S.liveT > S.execT || (allStaged && S.liveT > S.execT*.55) || S.timer < 45;
+  if (b.mode === 'stage' && b.lu && !b.luDone){
+    const d = Math.hypot(b.lu.x-b.pos.x, b.lu.z-b.pos.z);
+    if (d > .6) goTo(b, b.luPos, 4.1, dt);
+    else if (d > .03){ const st = Math.min(d, 2.2*dt); moveEntity(b.pos, (b.lu.x-b.pos.x)/d*st, (b.lu.z-b.pos.z)/d*st, .34, true); b.moving = true; b.speed = 2.2; }
+    else { b.pos.x = b.lu.x; b.pos.z = b.lu.z; b.atStage = true; turnTo(b, wrapA(b.lu.yaw + Math.PI), 4*dt); }
+    // the team goes in: throw from the lineup; still on the way — keep going if it is near and there is time, else give it up
+    if (go && (b.atStage || d > 22 || S.timer < 40)){ if (b.atStage) botThrow(b, 'smoke', { yaw:b.lu.yaw, pitch:b.lu.pitch, soft:false }); b.luDone = true; b.mode = 'exec'; b.path = null; }
+    return 0;
+  }
   if (b.mode === 'stage'){
     if (Math.hypot(b.stage.x-b.pos.x, b.stage.z-b.pos.z) > .8) goTo(b, b.stage, 4.1, dt);
     else { b.atStage = true; const L = b.alertPos && S.time - b.alertT < 4 ? b.alertPos : b.spot; turnTo(b, Math.atan2(L.x-b.pos.x, L.z-b.pos.z), 3*dt); }
@@ -3512,6 +3524,68 @@ function tBotThink(b, dt){
   if (d > .7) goTo(b, b.spot, 4.3, dt);
   else { const L = b.alertPos && S.time - b.alertT < 4 ? b.alertPos : b.postLook; turnTo(b, Math.atan2(L.x-b.pos.x, L.z-b.pos.z), 3*dt); }
   return 0;
+}
+/* ---------- bots' grenades ----------
+   A smoke from the map's lineup (the same spots as in grenade practice) on the way to the site, a flash over the site
+   just before walking in, an HE — or a molotov for defenders — where they last saw you, a molotov at footsteps they hear.
+   Throws use the player's very physics: the bot searches the pitch whose flight ends where it wants. */
+const BOT_NADES = { T:{ flash:.6, he:.3 }, CT:{ molly:.4, he:.3, flash:.3 } };
+let BOT_AIM_AT = -1;
+function botGiveNades(b, rih, side){
+  b.gren = []; b.nadeCd = 3 + rand()*4; b.lu = null; b.luDone = false; b.luPos = null; b.throwT = 0;
+  if (RM(S.md) || S.md === 'arena' || TRAIN(S.md)) return;
+  const k = (SET.diff === 'easy' ? .5 : SET.diff === 'hard' ? 1.25 : 1) * (rih > 1 ? 1 : .4);
+  for (const [t, pr] of Object.entries(BOT_NADES[side] || {})) if (rand() < pr*k) b.gren.push(t);
+}
+function botPickSmoker(side, site, rih){
+  if (side !== 'T' || RM(S.md) || S.md === 'arena' || S.md === 'rt' || TRAIN(S.md)) return;
+  const lu = (MAP.lineups || []).find(l => l.site === site), cand = bots.filter(b => !b.off && b.alive && !b.hasBomb && b.mode === 'stage');
+  if (!lu || !cand.length || rand() > (rih > 1 ? .9 : .45) * (SET.diff === 'easy' ? .6 : 1)) return;
+  const b = cand[(rand()*cand.length)|0]; b.lu = lu; b.luPos = new V3(lu.x, 0, lu.z); if (!b.gren.includes('smoke')) b.gren.push('smoke');
+}
+// where a grenade thrown by a bot standing at its spot starts and how fast it flies (as nadeLaunch, standing still)
+function botLaunch(b, yaw, pitch, soft){
+  viewDir(_d, yaw, Math.min(1.45, pitch + .1));
+  const pos = new V3(b.pos.x, b.pos.y + 1.62, b.pos.z).addScaledVector(_d, .25); pos.y -= .1;
+  const vel = new V3().copy(_d).multiplyScalar(soft ? 7.5 : 17.5);
+  pos.set(r2(pos.x), r2(pos.y), r2(pos.z)); vel.set(r2(vel.x), r2(vel.y), r2(vel.z));
+  return { pos, vel };
+}
+// the throw that ends closest to the target (flash: pops a little above it); null if nothing gets there
+function botAimNade(b, type, target){
+  const yaw = Math.atan2(-(target.x - b.pos.x), -(target.z - b.pos.z)), gy = type === 'flash' ? surfaceY(target.x, target.z) + 1.8 : 0;
+  let best = null;
+  const tryP = (pitch, soft) => { const { pos, vel } = botLaunch(b, yaw, pitch, soft), pts = simNade(type, pos, vel), e = pts[pts.length - 1];
+    if (type === 'molly' && e.y - surfaceY(e.x, e.z) > .4) return;   // would burst in the air
+    const err = Math.hypot(e.x - target.x, e.z - target.z) + (type === 'flash' ? Math.abs(e.y - gy)*.5 : 0);
+    if (!best || err < best.err) best = { yaw, pitch, soft, err }; };
+  for (const soft of [false, true]) for (let pitch = -.15; pitch < 1.2; pitch += .1) tryP(pitch, soft);   // coarse, then around the best
+  if (best) { const p0 = best.pitch, sf = best.soft; for (const dp of [-.06, -.03, .03, .06]) tryP(p0 + dp, sf); }
+  return best && best.err < (type === 'flash' ? 5 : 3.2) ? best : null;
+}
+function botThrow(b, type, a){
+  const i = b.gren.indexOf(type); if (i < 0) return false;
+  b.gren.splice(i, 1);
+  const { pos, vel } = botLaunch(b, a.yaw, a.pitch, a.soft);
+  spawnNade(type, pos, vel, b, b.side);
+  b.yaw = wrapA(a.yaw + Math.PI); b.throwT = .45; b.pause = Math.max(b.pause, .5); b.nadeCd = 4 + rand()*3;
+  if (b.pos.distanceTo(player.pos) < 30) noiseHit(spatial(b.pos), .22, .18, 900, .8);
+  return true;
+}
+function botNadeThink(b, dt){
+  b.nadeCd -= dt; if (b.throwT > 0) b.throwT -= dt;
+  if (!b.gren || !b.gren.length || b.nadeCd > 0 || b.seeing || S.phase !== 'live' || b.planting > 0 || b.defuse > 0 || b.blindT > 0) return;
+  const has = t => b.gren.includes(t), flat = p => Math.hypot(p.x - b.pos.x, p.z - b.pos.z);
+  if (BOT_AIM_AT === S.time) return;   // one trajectory search per frame across all bots
+  const tryAt = (t, at, cd) => { b.nadeCd = cd; BOT_AIM_AT = S.time; const a = botAimNade(b, t, at); return a ? botThrow(b, t, a) : false; };
+  // attackers: a flash over the site just before walking in
+  if (b.side === 'T' && b.mode === 'exec' && has('flash') && !bomb.planted && b.spot){ const d = flat(b.spot); if (d > 6 && d < 16 && tryAt('flash', b.spot, 1.2)) return; }
+  // where the enemy was a moment ago
+  if (b.lastKnown && S.time - b.lastSeen > .8 && S.time - b.lastSeen < 6){ const d = flat(b.lastKnown);
+    if (d > 6 && d < 24){ const t = b.side === 'CT' && has('molly') ? 'molly' : has('he') ? 'he' : has('flash') && d < 18 ? 'flash' : has('molly') ? 'molly' : null;
+      if (t && tryAt(t, b.lastKnown, 1.5)) return; } }
+  // defenders: footsteps coming — a molotov on them
+  if (b.side === 'CT' && has('molly') && b.mode === 'hold' && b.alertPos && S.time - b.alertT < 2.5){ const d = flat(b.alertPos); if (d > 7 && d < 22) tryAt('molly', b.alertPos, 2); }
 }
 function postSpot(b){
   for (let k=0;k<14;k++){ const a = rand()*Math.PI*2, r = 3 + rand()*5, x = bomb.pos.x + Math.sin(a)*r, z = bomb.pos.z + Math.cos(a)*r;
@@ -3735,7 +3809,7 @@ function popFlash(n){
     if (k > .05){ const dur = .4 + 4.3*k; if (dur > player.flashT){ player.flashT = dur; player.flashMax = dur; }
       toneHit({ g:1, pan:0, lp:20000 }, 3300, .1*k, dur*.8, 'sine'); }
   }
-  if (MODE !== 'online') for (const b of bots){ if (!b.alive) continue;
+  if (MODE !== 'online') for (const b of bots){ if (!b.alive || (n.owner && n.owner !== player && n.owner.side === b.side)) continue;
     _nb.set(b.pos.x, b.pos.y + 1.6 - b.kneel*.42, b.pos.z); _nv.set(Math.sin(b.yaw), 0, Math.cos(b.yaw));
     const k = blindness(_nb.clone(), _nv); if (k > .05){ b.blindT = Math.max(b.blindT, .3 + 3.8*k); b.seeing = false; b.vis = null; b.alertPos = n.p.clone(); b.alertT = S.time; } }
 }
@@ -5505,7 +5579,7 @@ function touchFrame(){
 }
 setTimeout(linkBoot, 0);
 setTimeout(mmInit, 0);
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){

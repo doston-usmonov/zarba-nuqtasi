@@ -18,7 +18,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Qurolni tashlash (G) va ko'tarish (E), o'lgan o'yinchining quroli yerda qoladi, yangi qurol olinganda eskisi tushadi
 - ✅ Jamoadoshga qurol berish (sotib olib, G bilan tashlab berish)
 - [ ] Jamoadoshga pul berish
-- [ ] Botlar ham granata otishi (tutun bilan yopish, ko'r qilib kirish)
+- ✅ Botlar ham granata otishi: tayyor joydan tutun, nuqtaga kirishdan oldin ko'r qiluvchi, raqib ko'ringan joyga portlovchi yoki yondiruvchi (offlayn va server botlari)
 - ✅ CS'dagi zarar: masofa birligi 12,7 m, qo'llar zonasi (×1, zirh himoya qiladi); orqadan pichoq bitta urishda
 - ✅ Elektroshoker «Uchqun» ($200): 4,6 m, bitta urishda, bir martalik; server masofa va qo'ldaligini tekshiradi
 - ✅ Yerdagi qurol: «+» belgisi, E — olish, G — almashtirish; botlarning quroli ham yerda qoladi

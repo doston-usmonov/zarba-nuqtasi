@@ -34,7 +34,15 @@ type mapDef struct {
 	holds        [][2][2]int         // himoyachi botlar turadigan joy va qaraydigan nuqta
 	holdSite     []string            // har bir joy qaysi nuqtaga tegishli: A, B yoki M (o'rta)
 	spots, looks map[string][][2]int // hujumchi botlar bomba qo'yadigan joylar va qarash nuqtalari
+	lineups      []lineup            // tayyor tutun joylari (granata mashqidagi; botlar ham otadi)
 	rows         []string
+}
+
+// lineup: shu joyda turib, shu yo'nalishda to'liq otilgan tutun land ga tushadi (tools/lineups.py).
+type lineup struct {
+	site             string
+	x, z, yaw, pitch float64
+	land             [2]float64
 }
 
 // gameMap — panjara va botlar uchun ma'lumot.

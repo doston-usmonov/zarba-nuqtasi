@@ -20,6 +20,7 @@ zarba-server/
 ├── social.go          do'stlar, xonaga chaqiriqlar, klanlar (/api/social, /api/friends, /api/clan, /api/clans)
 ├── queue.go           «O'yin topish»: reytingli navbat, partiyalar, mm- xonalar (/api/queue)
 ├── leaver.go          reytingli o'yinni tashlab ketganlik uchun navbat taqiqi, qayta ulanish
+├── botnades.go        botlarning granatalari: tayyor tutun joylari, ko'r qiluvchi, portlovchi, yondiruvchi
 ├── officials.go       doimiy (rasmiy) xonalar va ularni botlar bilan to'ldirish
 ├── deeplink.go        /x/<xarita>/<kod> xona havolalari va og: teglari
 ├── modes.go           o'yin rejimlari: deathmatch (hamma hammaga yoki jamoaviy), qurol poygasi, Wingman, Retake
@@ -233,7 +234,9 @@ Drobovik o'qi serverga bitta tegish sifatida yuboriladi (nishonga tekkan saochma
 - bot yoki o'yinchini chiqaradi. O'yinchi uchun tugmani ikki marta bosish kerak. Chiqarilgan o'yinchi shu xonaga 10 daqiqa kira olmaydi;
 - xonani ommaviy yoki yopiq qiladi, chegarani o'zgartiradi.
 
-Botlar serverda ishlaydi: yo'l topadi, himoyachilar o'z joylarini qo'riqlaydi, hujumchilar nuqtaga borib bomba qo'yadi, himoyachilar uni zararsizlantiradi, raqibni ko'rsa otadi. Ular boshqa o'yinchilar kabi server hakami orqali o'ynaydi. Bot qatnashgan o'yin reytingga yozilmaydi. `MAX_PLAYERS` (standart 64) — bitta xonadagi o'yinchilar va botlar uchun umumiy yuqori chegara.
+Botlar serverda ishlaydi: yo'l topadi, himoyachilar o'z joylarini qo'riqlaydi, hujumchilar nuqtaga borib bomba qo'yadi, himoyachilar uni zararsizlantiradi, raqibni ko'rsa otadi. Ular boshqa o'yinchilar kabi server hakami orqali o'ynaydi. Bot qatnashgan o'yin reytingga yozilmaydi.
+
+**Botlarning granatalari** (`botnades.go`, brauzerdagi botlarda ham xuddi shunday): raundli rejimlarda raund boshida har botga tasodifiy granatalar beriladi (hujumchilarga ko'r qiluvchi va portlovchi, himoyachilarga yondiruvchi, portlovchi va ko'r qiluvchi; to'pponcha raundida kamroq, oson botlarda kamroq, qiyinlarida ko'proq). Hujumchilardan biri ko'pincha o'z nuqtasining tayyor tutun joyiga (granata mashqidagi o'sha joylar) boradi va jamoa kirganda tutun otadi — tutun aynan mashqdagi joyga tushadi. Nuqtaga kirishdan oldin hujumchi nuqta ustiga ko'r qiluvchi otadi (bot jamoadoshini ko'r qilmaydi). Raqibni hozirgina ko'rgan bot o'sha joyga portlovchi otadi (himoyachi — yondiruvchi); brauzerdagi himoyachi bot qadam tovushini eshitsa, o'sha yerga yondiruvchi otadi. Otish o'yinchinikiday hisoblanadi: bot kerakli joyga tushadigan burchakni o'yin fizikasi bilan qidiradi. Server botining granatasi uning holatida (`gn`) brauzerlarga boradi, portlash, tutun va olovni server o'zi hisoblaydi. Aim, deathmatch va qurol poygasida botlarda granata yo'q. `MAX_PLAYERS` (standart 64) — bitta xonadagi o'yinchilar va botlar uchun umumiy yuqori chegara.
 
 ## Matnli chat
 

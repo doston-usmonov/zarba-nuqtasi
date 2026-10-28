@@ -77,6 +77,13 @@ type botBrain struct {
 	life      int
 	deadAt    time.Time
 	moving    bool
+	// granatalar (botnades.go)
+	gren    []string
+	lu      *lineup
+	flashed bool
+	nadeAt  time.Time
+	nadeN   int
+	gn      map[string]any
 }
 
 func (r *room) botCountLocked() (bots, humans int) {
@@ -267,6 +274,7 @@ func (r *room) spawnBotLocked(c *client, now time.Time) {
 		b.goal.Z += (rand.Float64() - .5) * 1.2
 		b.mode = "hold"
 	}
+	r.botGiveNadesLocked(c, rih, now)
 }
 
 // botDieLocked: bot halok bo'ldi (killer nil bo'lishi mumkin).
@@ -614,6 +622,7 @@ func (r *room) botStepLocked(c *client, now time.Time, dt float64) {
 		}
 	} else {
 		b.target = ""
+		r.botNadeLocked(c, now)
 		r.botObjectiveLocked(c, now, dt)
 	}
 	b.cr += ((map[bool]float64{true: 1}[b.actT > 0]) - b.cr) * math.Min(1, dt*8)
@@ -672,6 +681,9 @@ func (r *room) botObjectiveLocked(c *client, now time.Time, dt float64) {
 		return
 	}
 	if c.info.Tm == "T" && g.Ph != "warmup" {
+		if r.botLineupLocked(c, now, dt) {
+			return
+		}
 		if b.mode == "wait" {
 			if now.After(b.execAt) || (g.Ph == "live" && g.T < 50) {
 				b.mode = "go"
@@ -732,6 +744,9 @@ func (r *room) publishBotLocked(c *client, now time.Time) {
 	}
 	if len(b.drops) > 0 {
 		f["dr"] = b.drops
+	}
+	if b.gn != nil {
+		f["gn"] = b.gn
 	}
 	out, err := json.Marshal(f)
 	if err != nil {

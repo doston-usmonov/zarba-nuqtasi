@@ -18,6 +18,7 @@ zarba-server/
 ├── progress.go        XP, darajalar, kunlik vazifalar, qurol bo'yoqlari (/api/progress, /api/loadout)
 ├── medals.go          batafsil statistika (qurollar, xaritalar, rejimlar) va medallar
 ├── telegram.go        Telegram orqali kirish, hisobni ulash, parolni tiklash
+├── spectate.go        kuzatuvchilar (o'yinchilarga ko'rinmaydi, chati faqat kuzatuvchilarga)
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── social.go          do'stlar, xonaga chaqiriqlar, klanlar (/api/social, /api/friends, /api/clan, /api/clans)
 ├── queue.go           «O'yin topish»: reytingli navbat, partiyalar, mm- xonalar (/api/queue)
@@ -210,6 +211,8 @@ API: `GET /api/rooms` → `{rooms:[…], byMap:{qumtepa:3, …}}` (har qatorda `
 - **Tashlab ketganlik uchun jazo** (`leaver.go`): topilgan o'yinga kelmagan yoki o'yin tugamasdan chiqib 2,5 daqiqa ichida qaytmagan o'yinchi navbatga vaqtincha kira olmaydi — oxirgi 24 soatda 1-marta 5 daqiqa, 2-marta 30 daqiqa, keyin har safar 2 soat (`leaver_bans` jadvali). Pauzadagi «Bosh menyu» birinchi bosilganda ogohlantiradi; chiqib ketgan o'yinchiga menyuda «Qayta ulanish» tugmasi va qolgan vaqt ko'rinadi (`GET /api/queue` → `rejoin`), taqiq vaqtida «O'yin topish» o'chiq va qancha qolgani yoziladi (`ban`). Taqiq vaqtida yoki qaytilmagan o'yin turganda navbatga turish va partiyaga qo'shilish rad etiladi. O'yin tugagach chiqish jazolanmaydi.
 
 Wingman o'yinlari ham (botsiz bo'lsa) endi Raqobat kabi reytingga yoziladi.
+
+**Kuzatish.** Server brauzerida xonani oching → «Kuzatish». Kuzatuvchi o'ynamaydi va o'yinchilarga ko'rinmaydi (xona to'la bo'lsa ham kuzatish mumkin, xonada 16 tagacha kuzatuvchi). Kamera tirik o'yinchilarni orqadan kuzatadi: chap tugma — keyingisi, o'ng tugma — oldingisi, Bo'shliq — erkin kamera (W A S D bilan uchish, Shift — tezroq). Pastda kim kuzatilayotgani, jamoasi, joni va quroli; tepada hisob va vaqt, bomba ko'rinadi, raund natijalari va o'yin oxiridagi jadval chiqadi. Kuzatuvchining chati faqat boshqa kuzatuvchilarga boradi, ovozli chat va ovoz berish yo'q (o'yinchilarga yordam berib bo'lmasin). Reytingli navbat o'yinlarini kuzatib bo'lmaydi. Xonada o'yinchi qolmasa, kuzatish tugaydi. Server: `/ws?room=...&spec=1` (`spectate.go`), `GET /api/rooms` da `spec` — kuzatuvchilar soni.
 
 **Rasmiy xonalar** (`OFFICIAL_ROOMS`) — har doim ochiq, ro'yxatning tepasida «RASMIY» belgisi bilan, odam bo'lmasa ham ko'rinadi: `registon-comp`, `qumtepa-dm`, `bozor-comp`, `saroy-gg`, `karvon-wm`, `maydon-arena`. Kirgan odam hech qachon bo'sh xonaga tushmaydi: odam + bot soni `min(chegara, 10)` ga yetguncha o'rta darajadagi botlar qo'shiladi, har yangi odam kirganda bitta bot chiqadi, jamoalar teng saqlanadi (odam jamoa tanlagach, raundlar orasida bot boshqa jamoaga o'tadi). Hamma chiqib ketsa botlar ham chiqadi, xona o'z xaritasida boshidan boshlanadi va bo'sh turganda hech narsa hisoblamaydi. Egasi yo'q: bot qo'shish/chiqarish, chegara, ommaviylik va rejimni hech kim o'zgartira olmaydi; xaritani faqat o'yin oxiridagi ovoz almashtiradi (kod o'zgarmaydi). Bot qatnashgani uchun bu o'yinlar reytingga yozilmaydi — ular tez o'ynash uchun. Chegara botlarni emas, odamlarni sanaydi.
 

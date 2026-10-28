@@ -27,6 +27,7 @@ type roomOpts struct {
 	max    int    // 0 — cheksiz
 	gmap   string // xarita
 	mode   string // o'yin rejimi
+	spec   bool   // kuzatuvchi bo'lib kirish (spectate.go)
 }
 
 func parseRoomOpts(q map[string][]string) roomOpts {
@@ -36,7 +37,7 @@ func parseRoomOpts(q map[string][]string) roomOpts {
 		}
 		return ""
 	}
-	o := roomOpts{create: get("create") == "1", pub: get("pub") != "0", gmap: defaultMap}
+	o := roomOpts{create: get("create") == "1", pub: get("pub") != "0", gmap: defaultMap, spec: get("spec") == "1"}
 	if validMap(get("map")) {
 		o.gmap = get("map")
 	}
@@ -201,6 +202,8 @@ type roomListing struct {
 	// Official: doimiy xona — odam bo'lmasa ham ro'yxatda
 	Official bool   `json:"official"`
 	Region   string `json:"region"` // hozircha bitta server; keyin ikkinchisi qo'shilsa kerak bo'ladi
+	Spec     int    `json:"spec"`   // kuzatuvchilar
+	MM       bool   `json:"mm"`     // reytingli navbat o'yini (kuzatib bo'lmaydi)
 }
 
 // listingLocked: ro'yxatdagi bitta qator (r.mu ushlangan holda).
@@ -211,7 +214,7 @@ func (r *room) listingLocked() roomListing {
 		owner = cleanGuestName(o.info.Nm)
 	}
 	return roomListing{Code: strings.TrimPrefix(r.name, "zn-"), Owner: owner, Humans: humans, Bots: bots, Max: r.max, Map: r.gs.M, Mode: r.gs.modeID(),
-		Phase: r.gs.Ph, Round: r.gs.R, SA: r.gs.SA, SB: r.gs.SB, Fm: r.gs.Fm, Official: r.official != nil}
+		Phase: r.gs.Ph, Round: r.gs.R, SA: r.gs.SA, SB: r.gs.SB, Fm: r.gs.Fm, Official: r.official != nil, Spec: r.specCountLocked(), MM: r.mm != nil}
 }
 
 func (h *hub) roomList() []*room {
@@ -291,6 +294,9 @@ type roomDetail struct {
 func (r *room) roomDetailLocked() roomDetail {
 	d := roomDetail{roomListing: r.listingLocked(), Players: []roomPlayer{}}
 	for _, c := range r.clients {
+		if c.spec {
+			continue
+		}
 		p := roomPlayer{Name: clientName(c), Team: c.info.Tm, Bot: c.bot != nil}
 		if s := r.st[c.id]; s != nil && r.stE == r.gs.E {
 			p.K, p.D = s.k, s.d

@@ -36,7 +36,7 @@ func (r *room) chatLocked(c *client, d json.RawMessage, now time.Time) {
 		return
 	}
 	text := cleanChat(m.M)
-	if text == "" || c.info.Sq == "" {
+	if text == "" || (c.info.Sq == "" && !c.spec) {
 		return
 	}
 	// chelak: 4 tagacha xabar ketma-ket, keyin har 1,5 soniyada bittadan
@@ -51,10 +51,11 @@ func (r *room) chatLocked(c *client, d json.RawMessage, now time.Time) {
 	if c.acct != nil {
 		name = c.acct.name
 	}
-	team := m.Tm == 1
-	msg := jsonMsg(map[string]any{"t": "chat", "from": c.id, "nm": name, "side": c.info.Tm, "dead": !c.ps.alive, "tm": map[bool]int{true: 1}[team], "m": text})
+	team := m.Tm == 1 && !c.spec
+	msg := jsonMsg(map[string]any{"t": "chat", "from": c.id, "nm": name, "side": c.info.Tm, "dead": !c.ps.alive, "tm": map[bool]int{true: 1}[team], "m": text, "spec": map[bool]int{true: 1}[c.spec]})
 	for _, o := range r.clients {
-		if o == c || o.bot != nil || (team && o.info.Sq != c.info.Sq) {
+		// kuzatuvchining xabari faqat kuzatuvchilarga (o'yinchilarga raqib haqida aytib bo'lmasin)
+		if o == c || o.bot != nil || (team && o.info.Sq != c.info.Sq) || (c.spec && !o.spec) {
 			continue
 		}
 		o.trySend(msg)

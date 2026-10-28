@@ -86,11 +86,12 @@ type botBrain struct {
 	gn      map[string]any
 }
 
+// botCountLocked: botlar va odam o'yinchilar (kuzatuvchilar sanalmaydi).
 func (r *room) botCountLocked() (bots, humans int) {
 	for _, c := range r.clients {
 		if c.bot != nil {
 			bots++
-		} else {
+		} else if !c.spec {
 			humans++
 		}
 	}

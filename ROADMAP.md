@@ -41,6 +41,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Xona havolasi `/x/<xarita>/<kod>`: ochgan odam shu xonaga tushadi, messenjerlarda rasm va o'yinchilar soni bilan chiqadi (og: teglari), pauza menyusida «Havolani ulashish» — [docs/play-cs-uslubi.md](docs/play-cs-uslubi.md) 1-bosqich
 - ✅ Reytingga qarab navbat: «O'yin topish» (Raqobat 5×5, Wingman 2×2; ±150, har 20 s da +50; yopiq botsiz `mm-` xona) va Deathmatch'ga tez kirish — [docs/play-cs-uslubi.md](docs/play-cs-uslubi.md) 4-bosqich
 - ✅ Deathmatch (har kim har kimga yoki jamoa jamoaga — xona yaratishda tanlanadi; qayta tug'ilish, 6 daqiqa) va Qurol poygasi (snayperdan boshlab har 2 o'ldirishda kuchsizroq qurol, oxiri pichoq); hisobni server yuritadi
+- ✅ Kuzatuvchi rejimi: xonani o'yinchilarga ko'rinmasdan kuzatish (o'yinchilarni kuzatish yoki erkin kamera), chati faqat kuzatuvchilarga
 - ✅ Wingman (2 ga 2, faqat A nuqta, MR8) va Retake (bomba raund boshidan o'rnatilgan, qurollar beriladi)
 - ✅ Partiya: do'stlar bilan birga navbatga turish (bitta jamoaga tushadi)
 - ✅ O'yinni tashlab ketganlik uchun jazo: 2,5 daqiqada qaytmasa navbat taqiqi (5 daqiqa → 30 daqiqa → 2 soat), menyuda «Qayta ulanish»

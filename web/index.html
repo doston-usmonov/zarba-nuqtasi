@@ -225,6 +225,9 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
 .item.own{border-color:var(--good)}
 .item .rf{align-self:flex-start;margin-top:2px;padding:3px 8px;border-radius:4px;border:1px solid rgba(242,181,68,.55);color:var(--atk);font-size:12px;font-weight:700}
 .item.canSell:hover .rf{background:rgba(242,181,68,.14)}
+body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross,body.spec #slots{display:none!important}
+#specBar{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:rgba(14,13,11,.8);border:1px solid var(--line);border-left:4px solid var(--atk);border-radius:6px;padding:9px 16px;pointer-events:none;max-width:92vw;text-align:center}
+#specBar b{font-family:var(--f-display);font-size:19px} #specBar.ct{border-left-color:var(--def)} #specBar small{display:block;color:var(--dim);font-size:13px;margin-top:2px}
 .giveRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(243,239,230,.05);border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-width:0}
 .giveRow b{flex:1 1 120px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px}
 .giveRow button{background:transparent;color:var(--good);border:1px solid rgba(127,224,138,.45);border-radius:5px;padding:5px 10px;font-family:var(--f-display);font-size:14px}
@@ -577,6 +580,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
   </div>
 </div>
 
+<div id="specBar" hidden><b id="specWho">Kuzatuvchi</b><small id="specHelp"></small></div>
 <div id="dead" hidden><b id="deadT">Siz halok bo'ldingiz</b><p id="deadS"></p></div>
 <div id="kcBar" hidden></div>
 <div id="kc" hidden><span class="tag">KILLCAM</span><b id="kcName"></b><small id="kcInfo"></small></div>
@@ -853,7 +857,7 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
       <div class="roHero"><img id="roImg" alt=""><div><span class="eyebrow" id="roEyebrow"></span><h2 id="roTitle"></h2></div></div>
       <p class="roMeta" id="roMeta"></p>
       <div class="roList"><table id="roPlayers"></table></div>
-      <div class="row"><button class="cta" id="roJoin" type="button">Kirish</button><button class="ghost" id="roCopy" type="button">Havolani nusxalash</button><button class="ghost" id="roClose" type="button">Yopish</button></div>
+      <div class="row"><button class="cta" id="roJoin" type="button">Kirish</button><button class="ghost" id="roSpec" type="button">Kuzatish</button><button class="ghost" id="roCopy" type="button">Havolani nusxalash</button><button class="ghost" id="roClose" type="button">Yopish</button></div>
     </div>
   </div>
 </section>
@@ -4081,7 +4085,7 @@ document.addEventListener('keydown', e => {
     case 'KeyL': if (MODE !== 'online' && S.md === 'nade' && inGame()) trainLineup(); break;
     case 'KeyG': if (pickTarget && player.alive) pickUp(pickTarget); else dropCurrent(); break;   // standing at a gun: swap
     case 'KeyE': if (!e.repeat && pickTarget) pickUp(pickTarget); break;
-    case 'Space': if (!e.repeat) jumpQ = true; break;
+    case 'Space': if (!e.repeat){ if (MODE === 'online' && NET.spec){ S.specFree = !S.specFree; S.specLblT = 0; if (S.specFree){ player.yaw = camera.rotation.y; player.pitch = clamp(camera.rotation.x, -1.4, 1.4); } } else jumpQ = true; } break;
     case 'Tab': showBoard(true); break;
     case 'KeyM': if (MODE === 'online') switchTeam(); break;
     case 'KeyY': if (!e.repeat){ e.preventDefault(); chatOpen(false); } break;
@@ -4136,7 +4140,7 @@ window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; m
 document.addEventListener('mousemove', e => {
   if (isTouch || !inGame() || S.paused || S.buyOpen) return;
   if (!locked && !noLock) return;
-  if (!player.alive) return;
+  if (!player.alive && !(MODE === 'online' && NET.spec && S.specFree)) return;
   const zoom = player.scope === 1 ? .45 : player.scope === 2 ? .18 : 1;
   const k = SET.sens * .022 * DEG * zoom;
   player.yaw -= e.movementX * k; player.pitch = clamp(player.pitch - e.movementY * k, -1.52, 1.52);
@@ -4146,6 +4150,7 @@ canvas.addEventListener('mousedown', e => {
   if (!inGame() || S.paused || S.buyOpen) return;
   initAudio();
   if (!locked && !noLock){ requestLock(); return; }
+  if (MODE === 'online' && NET.spec){ if (e.button === 0){ S.specIdx++; S.specFree = false; } else if (e.button === 2){ S.specIdx--; S.specFree = false; } S.specLblT = 0; return; }
   if (!player.alive){ if (e.button === 0) cycleSpec(); return; }
   if (e.button === 0){ mouseL = true; firePressed = true; }
   if (e.button === 2){ mouseR = true; const w = curW(); if (w.kind === 'sniper' && player.drawT <= 0 && player.reloadT <= 0){ player.scope = (player.scope + 1) % 3; sfxClick(); } else if (w.kind === 'knife') knifeAttack(true); }
@@ -4256,7 +4261,7 @@ function rbRender(){
   $('roImg').src = rbThumb(map || 'qumtepa');
   $('roEyebrow').innerHTML = (d.official ? '<span class="offTag">RASMIY</span>' : '') + escH(map ? MAPS[map].name : '') + (d.mode ? ' · ' + escH(modeInfo(d.mode).name) : '');
   $('roTitle').textContent = d.code || '';
-  $('roJoin').disabled = gone || rbFull(d);
+  $('roJoin').disabled = gone || rbFull(d); $('roSpec').hidden = gone || !!d.mm; $('roSpec').textContent = 'Kuzatish' + (d.spec ? ' · ' + (d.spec|0) : '');
   if (gone){ $('roMeta').textContent = "Bu xona yopilgan — hamma chiqib ketgan."; $('roPlayers').innerHTML = ''; return; }
   const [st] = rbStatus(d), sc = rbScore(d);
   $('roMeta').innerHTML = `<b>${d.humans|0}</b> odam${d.bots ? ' + ' + (d.bots|0) + ' bot' : ''} · joy: ${d.max ? d.max|0 : 'cheksiz'} · ${st}${sc ? ' · ' + escH(sc) : ''}`
@@ -4277,6 +4282,7 @@ $('result').addEventListener('click', e => { const b = e.target.closest('[data-v
 $('mapCards').addEventListener('click', e => { const b = e.target.closest('[data-play]'); if (b) mapPlay(b.dataset.play); });
 $('roomList').addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) rbOpen(b.dataset.open); });
 $('roJoin').addEventListener('click', () => { const d = RB.detail || {}; const code = RB.open; rbClose(); if (code) rbJoin(code); });
+$('roSpec').addEventListener('click', () => { const code = RB.open; rbClose(); if (code){ $('roomCode').value = code; joinOnline(false, code, true); } });
 $('roClose').addEventListener('click', rbClose);
 $('roomOv').addEventListener('click', e => { if (e.target === $('roomOv')) rbClose(); });
 $('roCopy').addEventListener('click', async () => {
@@ -4491,7 +4497,7 @@ function wsJoin(name, opts){
     opts = opts || {};
     const url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?room=' + encodeURIComponent(name) +
       (opts.create ? '&create=1&pub=' + (opts.pub ? 1 : 0) + '&max=' + (opts.max|0) + '&map=' + encodeURIComponent(opts.map || 'qumtepa') + '&mode=' + encodeURIComponent(opts.mode || 'comp')
-        : opts.map ? '&map=' + encodeURIComponent(opts.map) + (opts.mode ? '&mode=' + encodeURIComponent(opts.mode) : '') : '');
+        : opts.map ? '&map=' + encodeURIComponent(opts.map) + (opts.mode ? '&mode=' + encodeURIComponent(opts.mode) : '') : '') + (opts.spec ? '&spec=1' : '');
     const others = new Map(); let ws = null, me = null, conn = false, closed = false, mine = {}, snap = [], dirty = true, settled = false, tries = 0;
     const api = {
       peers(){ if (dirty){ dirty = false; const a = []; if (me) a.push({ peer:me, presence:mine, sameTab:true, isMe:true, kind:'viewer', guest:false, by:null });
@@ -4526,7 +4532,8 @@ function wsJoin(name, opts){
         else if (m.t === 'inv'){ socLiveInvite(m); }
         else if (m.t === 'chat'){ chatShow(cleanName(m.nm), m.side === 'CT' ? 'CT' : 'T', !!m.dead, m.tm === 1, String(m.m || '').slice(0, 120), false); }
         else if (m.t === 'err' && !settled){ settled = true; closed = true; reject({ code:m.code || 'refused' }); }
-        else if (m.t === 'err' && m.code === 'kicked'){ closed = true; netKicked(); } };
+        else if (m.t === 'err' && m.code === 'kicked'){ closed = true; netKicked(); }
+        else if (m.t === 'err' && m.code === 'room_closed'){ closed = true; if (MODE === 'online'){ toMenu(); $('onlineNote').textContent = "Xonada o'yinchi qolmadi — kuzatish tugadi."; hint("Xonada o'yinchi qolmadi", 3000); } } };
       ws.onclose = () => { conn = false; others.clear(); dirty = true;
         if (!settled){ settled = true; reject({ code:'upstream_error' }); return; }
         if (!closed) setTimeout(open, Math.min(4000, 400*(++tries))); };
@@ -4955,9 +4962,9 @@ function showNetResult(g){
   if (g.st && g.st.length) rows = g.st.map(r => ({ ...r, me:r.id === NET.me, side: !RM(md) ? sideOfSquad(r.sq, Math.max(1, g.r), g.fm) : (r.sq === 'B' ? 'CT' : 'T') }));
   else rows = modeRows().map(r => ({ nm:r.name.replace(' (siz)', ''), k:r.k, d:r.d, hs:r.me ? player.hs : 0, dmg:r.me ? Math.round(player.dmg) : 0, mvp:r.me ? (player.mvp || 0) : 0, me:r.me, side:r.team }));
   const tdm = teamDM(), mine = tdm ? g.wn === NET.sq : !RM(md) ? (g.sA > g.sB) === (NET.sq !== 'B') : (g.wn ? g.wn === NET.me : g.wnm === NET.name);
-  const title = tdm ? (!g.wn ? 'Durang' : mine ? 'Jamoangiz yutdi!' : 'Raqib jamoa yutdi') : !RM(md) ? (mine ? "G'alaba" : "Mag'lubiyat") : (mine ? "Siz yutdingiz!" : (g.wnm || 'Kimdir') + ' yutdi');
+  const title = NET.spec ? "O'yin tugadi" : tdm ? (!g.wn ? 'Durang' : mine ? 'Jamoangiz yutdi!' : 'Raqib jamoa yutdi') : !RM(md) ? (mine ? "G'alaba" : "Mag'lubiyat") : (mine ? "Siz yutdingiz!" : (g.wnm || 'Kimdir') + ' yutdi');
   const sub = modeInfo(md).name + ' · ' + MAP.name + (!RM(md) || tdm ? ' · hisob ' + (NET.sq === 'B' ? g.sB + ' : ' + g.sA : g.sA + ' : ' + g.sB) : '') + ' · isinish 10 soniyadan keyin';
-  $('result').innerHTML = resultHTML(title, sub, rows, !RM(md) ? matchMVP(rows) : null) + voteHTML(g); $('result').hidden = false; $('dead').hidden = true;
+  $('result').innerHTML = resultHTML(title, sub, rows, !RM(md) ? matchMVP(rows) : null) + (NET.spec ? '' : voteHTML(g)); $('result').hidden = false; $('dead').hidden = true;
   setTimeout(() => { H.msg.className = ''; }, 0);   // the table says it all
   setTimeout(() => { if (!NET.g || NET.g.ph !== 'over') $('result').hidden = true; }, 10500);
 }
@@ -5055,7 +5062,8 @@ function netStep(dt){
   const here = new Set();
   for (const p of valid){ here.add(p.peer); let r = NET.remotes.get(p.peer); if (!r){ r = makeRemote(p); NET.remotes.set(p.peer, r); hint(cleanName(p.presence.nm) + " xonaga qo'shildi", 2200); } updateRemote(r, p.presence, dt); }
   for (const [k, r] of NET.remotes) if (!here.has(k)){ removeRemote(r); NET.remotes.delete(k); hint(r.name + ' xonadan chiqdi', 2200); }
-  if (!player.team){ NET.joinT -= dt; if (NET.joinT <= 0) pickTeam(); }
+  if (!player.team && !NET.spec){ NET.joinT -= dt; if (NET.joinT <= 0) pickTeam(); }
+  if (NET.spec && !NET.specNm && room.connected()){ NET.specNm = true; room.presence({ v:1, nm:NET.name || 'Kuzatuvchi' }).catch(() => {}); }
   const mine = NET.me || '~';
   let host = player.team ? mine : null;
   for (const p of valid) if (p.presence.hc === 1 && (host === null || p.peer < host)) host = p.peer;  // only full game clients run the round
@@ -5070,9 +5078,49 @@ function netStep(dt){
     if (g && typeof g === 'object' && g !== NET.gSrc){ NET.gSrc = g; NET.g = sanitizeG(g); }
     else if (NET.g){ NET.g.t = Math.max(0, NET.g.t - dt); if (NET.g.b && NET.g.ph === 'live') NET.g.b.t = Math.max(0, NET.g.b.t - dt); }
   }
-  clientPhase(dt);
+  clientPhase(dt); if (NET.spec) specPhase();
   NET.sendT -= dt;
   if (NET.sendT <= 0 && player.team){ NET.sendT = IN_ARTIFACT ? .033 : .045; NET.room.presence(buildPres()).catch(() => {}); }
+}
+/* ---------- spectating a room: the round as it goes (bomb, winners, final table) and a camera that follows players ---------- */
+function specPhase(){
+  const g = NET.g; if (!g) return;
+  if (g.m && g.m !== MAP_ID) setMap(g.m);
+  const ph = g.ph, key = g.e + ':' + g.r; S.phase = ph === 'over' ? 'mover' : ph;
+  const planted = (ph === 'live' || (g.md === 'rt' && ph === 'freeze')) && !!g.b;
+  if (planted && !bomb.planted){ bomb.pos.set(g.b.x, 0, g.b.z); bomb.mesh.position.copy(bomb.pos); bomb.mesh.visible = true; if (g.md !== 'rt'){ vo('planted'); showMsg("Bomba o'rnatildi", g.b.s + ' nuqtasi', 'atk', 2600); } }
+  bomb.planted = planted; if (planted) bomb.timer = g.b.t;
+  if (!planted && ph !== 'post') bomb.mesh.visible = false;
+  if (ph === 'live' && NET.lastPh === 'freeze') vo('start');
+  if (ph === 'post' && g.bm === g.r && g.r > 0 && NET.boomKey !== key){ NET.boomKey = key; netBoom(); }
+  if (ph === 'post' && NET.awardKey !== key && g.w){ NET.awardKey = key; setTimeout(() => vo(g.w === 'T' ? 'twin' : 'ctwin'), 300);
+    const mvp = g.mv ? ' · ★ MVP: ' + g.mvn : ''; showMsg(TEAM_NAME[g.w] + " jamoasi g'alaba qozondi", gSideScore(g, 'T') + ' : ' + gSideScore(g, 'CT') + mvp, g.w === 'CT' ? 'def' : 'atk', 4500); }
+  if (ph === 'over' && NET.lastPh !== 'over') showNetResult(g);
+  NET.lastPh = ph;
+}
+function specTargets(){ return [...NET.remotes.values()].filter(r => r.alive && r.team).sort((a, b) => (a.team > b.team ? 1 : a.team < b.team ? -1 : 0) || (a.name < b.name ? -1 : 1)); }
+function specCam(dt){
+  const list = specTargets();
+  if (S.specFree || !list.length){   // free flight: mouse looks, W A S D fly, Shift faster
+    const P = NET.specPos || (NET.specPos = new V3(MAPW/2, 14, MAPH/2)), sp = (keys.ShiftLeft || keys.ShiftRight ? 22 : 10)*dt;
+    viewDir(_d, player.yaw, player.pitch); const rx = Math.cos(player.yaw), rz = -Math.sin(player.yaw);
+    if (keys.KeyW || keys.ArrowUp) P.addScaledVector(_d, sp); if (keys.KeyS || keys.ArrowDown) P.addScaledVector(_d, -sp);
+    if (keys.KeyD) { P.x += rx*sp; P.z += rz*sp; } if (keys.KeyA) { P.x -= rx*sp; P.z -= rz*sp; }
+    P.set(clamp(P.x, 1, MAPW - 1), clamp(P.y, .6, 40), clamp(P.z, 1, MAPH - 1));
+    camera.position.copy(P); camera.rotation.set(player.pitch, player.yaw, 0);
+    specLabel(null, list.length); return;
+  }
+  const t = list[((S.specIdx % list.length) + list.length) % list.length];
+  camTarget.set(t.pos.x + Math.sin(t.yaw)*3.2, 2.4, t.pos.z + Math.cos(t.yaw)*3.2);
+  if (blockedAt(camTarget.x, camTarget.z, 0, .2, true)) camTarget.set(t.pos.x, 3.4, t.pos.z);
+  camera.position.lerp(camTarget, Math.min(1, dt*5)); camera.lookAt(t.pos.x - Math.sin(t.yaw)*4, 1.3, t.pos.z - Math.cos(t.yaw)*4);
+  NET.specPos = camera.position.clone(); specLabel(t, list.length);
+}
+function specLabel(t, n){
+  if ((S.specLblT = (S.specLblT || 0) - 1) > 0 && S.specLblFor === (t ? t.peer : '')) return; S.specLblT = 10; S.specLblFor = t ? t.peer : '';
+  const bar = $('specBar'); bar.className = t && t.team === 'CT' ? 'ct' : '';
+  $('specWho').textContent = t ? t.name + ' · ' + TEAM_NAME[t.team] + ' · ' + Math.max(0, Math.round(t.hp == null ? 100 : t.hp)) + ' jon' + (W[t.w] ? ' · ' + W[t.w].name : '') : 'Kuzatuvchi · erkin kamera';
+  $('specHelp').textContent = n ? KB("Chap / o'ng tugma — keyingi / oldingi o'yinchi · Bo'shliq — erkin kamera (W A S D)", "Ekranga bosing — keyingi o'yinchi") : "Tirik o'yinchi yo'q · W A S D — uchish, sichqoncha — qarash";
 }
 function defuseTime(){ return player.kit ? 4 : 7; }
 function netPlantDefuse(dt){
@@ -5156,7 +5204,7 @@ function netBoardHTML(){
         : `<tr><td colspan="4" style="color:var(--dim)">Hali hech kim yo'q</td></tr>`); };
   return `<h3>Xona: ${esc(NET.code)} · ${g.r ? g.r + '-raund · ' + fmtLabel(g.fm) + (g.r > 2*g.fm ? " · qo'shimcha vaqt" : '') : 'Isinish'}</h3><table><tr><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">PUL / HOLAT</th></tr>` + sec('T') + sec('CT') + '</table>';
 }
-async function joinOnline(create, codeOverride){
+async function joinOnline(create, codeOverride, spec){
   if (MM.st && MM.st.state === 'searching'){ mmLeave(); hint("Navbatdan chiqdingiz", 2000); }
   const btn = create ? $('createBtn') : $('onlineBtn'), note = $('onlineNote'); initAudio();
   const raw = codeOverride || (create ? $('newCode').value : $('roomCode').value);
@@ -5164,7 +5212,8 @@ async function joinOnline(create, codeOverride){
   if (create) $('newCode').value = NET.code; else { $('roomCode').value = NET.code; SET.room = NET.code; }
   saveSet();
   const deep = !create && LINK.want && LINK.want.code === NET.code ? LINK.want : null;   // opened from /x/<map>/<code>: create it on that map if it isn't there
-  const opts = create ? { create:true, pub:$('newPub').value === '1', max:+$('newMax').value || 0, map:$('newMap').value, mode:$('newMode').value } : deep ? { map:deep.map, mode:deep.mode } : null;
+  let opts = create ? { create:true, pub:$('newPub').value === '1', max:+$('newMax').value || 0, map:$('newMap').value, mode:$('newMode').value } : deep ? { map:deep.map, mode:deep.mode } : null;
+  if (spec) opts = { spec:true };
   btn.disabled = true; note.textContent = 'Ulanmoqda…';
   const room = await roomP;
   if (!room){ btn.disabled = false; note.textContent = "Onlayn rejim bu ko'rinishda ishlamaydi. Sahifani claude.ai'da hisobingizga kirib oching; do'stlaringiz ham artifakt ulashilgan hisob bilan kirishi kerak."; return; }
@@ -5175,14 +5224,14 @@ async function joinOnline(create, codeOverride){
       named = { peers:() => room.peers(), presence:p => room.presence(p), connected:() => room.connected(), leave:() => room.presence({ v:null }) };
       NET.code = 'umumiy'; $('roomCode').value = 'umumiy';
     } else {
-      const why = { mm_only:"Bu navbatdan topilgan o'yin — unga faqat navbat orqali tushgan o'yinchilar kira oladi.", room_exists:"Bu kodli o'yin allaqachon bor. Boshqa kod tanlang yoki unga «Kirish» orqali qo'shiling.", kicked:"Xona egasi sizni chiqarib yuborgan — 10 daqiqadan keyin qayta urinib ko'ring.", room_full:"Xona to'la. Boshqa o'yinni tanlang yoki yangisini yarating.", already_in_room:"Bu hisob bilan siz allaqachon shu xonadasiz (boshqa oyna yoki qurilmada).", too_many_connections:"Bu manzildan juda ko'p ulanish bor." }[e && e.code];
+      const why = { no_room:"Bunday xona hozir yo'q — kuzatish uchun xonada o'yin bo'lishi kerak.", spec_full:"Bu xonada kuzatuvchilar juda ko'p (16 ta). Keyinroq urinib ko'ring.", mm_spec:"Reytingli navbat o'yinini kuzatib bo'lmaydi.", mm_only:"Bu navbatdan topilgan o'yin — unga faqat navbat orqali tushgan o'yinchilar kira oladi.", room_exists:"Bu kodli o'yin allaqachon bor. Boshqa kod tanlang yoki unga «Kirish» orqali qo'shiling.", kicked:"Xona egasi sizni chiqarib yuborgan — 10 daqiqadan keyin qayta urinib ko'ring.", room_full:"Xona to'la. Boshqa o'yinni tanlang yoki yangisini yarating.", already_in_room:"Bu hisob bilan siz allaqachon shu xonadasiz (boshqa oyna yoki qurilmada).", too_many_connections:"Bu manzildan juda ko'p ulanish bor." }[e && e.code];
       btn.disabled = false; note.textContent = why || ("Xonaga ulanib bo'lmadi (" + ((e && e.code) || 'xato') + "). Birozdan keyin qayta urinib ko'ring."); return; }
   }
   btn.disabled = false; note.textContent = DEFAULT_NOTE; LINK.want = null;
-  goOnline(named); linkSync(); mmRender();
-  if (voiceMode() && voiceAvailable()) voiceMic();
+  goOnline(named, !!spec); linkSync(); mmRender();
+  if (voiceMode() && voiceAvailable() && !spec) voiceMic();
 }
-function goOnline(named){
+function goOnline(named, spec){
   MODE = 'online'; NET.room = named; recClear();
   Object.assign(NET, { lastMd:'comp', buys:[], buyLog:{}, pickW:{}, drops:[], picks:[], me:null, host:false, g:null, gSrc:null, hits:[], shot:null, death:null, plant:null, def:null, seen:{}, inRound:0, roundKey:'', lastPh:'', awardKey:'', boomKey:'', sendT:0, liveT:0, deadT:0, defuseT:0, planted:false, loss:0, joinT:1.6, cdShown:-1, tickLast:performance.now() });
   player.team = null; NET.sq = null; player.alive = false; player.hp = 100; player.kills = player.deaths = player.hs = 0; player.dmg = 0; resetInv(); player.money = 16000; player.killer = null;
@@ -5193,13 +5242,15 @@ function goOnline(named){
   decals.forEach(d => d.visible = false);
   ['menu','over','pause'].forEach(id => $(id).hidden = true); $('hud').hidden = false;
   $('deadT').textContent = 'Xonaga ulanildi'; $('deadS').textContent = 'Jamoa tanlanmoqda…'; $('dead').hidden = false; H.cross.style.display = 'none';
+  NET.spec = !!spec; NET.specNm = false; S.specFree = false; S.specIdx = 0; document.body.classList.toggle('spec', NET.spec);
+  if (NET.spec){ $('dead').hidden = true; $('specBar').hidden = false; NET.specPos = new V3(MAPW/2, 14, MAPH/2); }
   goFullscreen(); requestLock(); canvas.focus({ preventScroll:true });
 }
 function leaveOnline(){
   killcamStop(); recClear(); $('result').hidden = true;
   voiceStop(); if (CHAT.open) chatClose(); $('chatLog').innerHTML = ''; NET.chats = []; NET.roomInfo = null; $('adminPanel').hidden = true;
   if (NET.room){ const r = NET.room; NET.room = null; r.leave().catch(() => {}); }
-  NET.mmSq = null;
+  NET.mmSq = null; NET.spec = false; document.body.classList.remove('spec'); $('specBar').hidden = true;
   NET.remotes.forEach(removeRemote); NET.remotes.clear(); NET.g = null;
   MODE = 'bots'; player.team = 'T'; bots.forEach(b => b.m.g.visible = true); $('teamTag').hidden = true; bomb.mesh.visible = false; bomb.planted = false;
   linkSync();
@@ -5775,7 +5826,7 @@ function touchFrame(){
 }
 setTimeout(linkBoot, 0);
 setTimeout(mmInit, 0);
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, joinOnline, specTargets, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){
@@ -6005,6 +6056,8 @@ function render(dt){
     camera.position.set(b0.pos.x + Math.sin(a)*3.2, 1.65, b0.pos.z + Math.cos(a)*3.2);
     const dx = -Math.sin(a), dz = -Math.cos(a), off = innerWidth > 760 ? 1.25 : 0;   // keep the soldier clear of the menu column
     camera.lookAt(b0.pos.x + dz*off, 1.1, b0.pos.z - dx*off);
+  } else if (MODE === 'online' && NET.spec){
+    specCam(dt);
   } else if (player.alive){
     camera.position.set(player.pos.x, player.pos.y + eyeH(), player.pos.z);
     camera.rotation.set(player.pitch + player.punchY*DEG*.5, player.yaw + player.punchX*DEG*.3, 0);

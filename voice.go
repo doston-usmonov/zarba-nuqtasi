@@ -103,7 +103,7 @@ func (r *room) relaySignal(from *client, to string, d json.RawMessage) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	t := r.clients[to]
-	if t == nil {
+	if t == nil || t.spec || from.spec {
 		return
 	}
 	msg := jsonMsg(map[string]any{"t": "sig", "from": from.id, "d": d})

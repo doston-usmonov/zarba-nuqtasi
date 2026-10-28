@@ -45,6 +45,7 @@ type client struct {
 	bot     *botBrain // nil — odam; aks holda server boshqaradigan bot
 	prefFm  int       // o'yinchi sozlamasidagi format (8/12)
 	joined  time.Time // xonaga kirgan vaqti
+	spec    bool      // kuzatuvchi: jamoasi yo'q, o'ynamaydi, boshqalarga ko'rinmaydi (spectate.go)
 }
 
 type room struct {
@@ -163,6 +164,11 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 		ws.write(opText, jsonMsg(map[string]string{"t": "err", "code": "room_exists"}))
 		return
 	}
+	if r == nil && opts.spec {
+		h.mu.Unlock()
+		ws.write(opText, jsonMsg(map[string]string{"t": "err", "code": "no_room"}))
+		return
+	}
 	if r == nil {
 		r = &room{name: roomName, clients: map[string]*client{}, gs: newGameState(), stop: make(chan struct{}), pub: opts.pub, max: opts.max, bans: map[string]time.Time{}}
 		if opts.gmap != "" {
@@ -183,13 +189,24 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 	if r.official != nil { // rasmiy xonada botlar odamga joy bo'shatadi
 		_, n = r.botCountLocked()
 	}
+	if opts.spec {
+		n = 0 // kuzatuvchilar o'yinchilar chegarasiga kirmaydi
+		if r.specCountLocked() >= maxSpectators {
+			reject = "spec_full"
+		}
+		if r.mm != nil {
+			reject = "mm_spec" // reytingli navbat o'yinini kuzatib bo'lmaydi
+		}
+	} else {
+		n -= r.specCountLocked()
+	}
 	if n >= h.maxPlayers || (r.max > 0 && n >= r.max) {
 		reject = "room_full"
 	}
 	if r.bannedLocked(ip, acct, time.Now()) {
 		reject = "kicked"
 	}
-	if r.mm != nil && (acct == nil || r.mm.sq[acct.id] == "") {
+	if r.mm != nil && (acct == nil || r.mm.sq[acct.id] == "") && !opts.spec {
 		reject = "mm_only" // navbat o'yiniga faqat topilganlar
 	}
 	for _, o := range r.clients {
@@ -208,7 +225,13 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 		ws.write(opText, jsonMsg(map[string]string{"t": "err", "code": reject}))
 		return
 	}
-	c := &client{id: newID(), ip: ip, room: r, ws: ws, send: make(chan []byte, sendQueue), acct: acct, accJSON: accJSON, loadout: lo, ps: newPState(), joined: time.Now()}
+	c := &client{id: newID(), ip: ip, room: r, ws: ws, send: make(chan []byte, sendQueue), acct: acct, accJSON: accJSON, loadout: lo, ps: newPState(), joined: time.Now(), spec: opts.spec}
+	if c.spec {
+		c.ps.alive = false
+		if acct != nil {
+			c.info.Nm = acct.name
+		}
+	}
 	// greeting + everyone already here, queued before anyone else can write to us
 	c.send <- jsonMsg(map[string]any{"t": "hello", "id": c.id, "ice": h.voice.iceFor(host, c.id, time.Now())})
 	type peer struct {
@@ -223,11 +246,11 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 	}
 	c.send <- jsonMsg(map[string]any{"t": "s", "peers": snap})
 	r.clients[c.id] = c
-	if acct != nil {
+	if acct != nil && !c.spec {
 		h.joinedLocked(acct.id, r)
 		r.mmPresentLocked(acct.id)
 	}
-	if r.owner == "" && !r.ownerless() {
+	if r.owner == "" && !r.ownerless() && !c.spec {
 		r.owner = c.id
 	}
 	r.fillBotsLocked(time.Now())
@@ -249,7 +272,7 @@ func (h *hub) leave(c *client) {
 	r.mu.Lock()
 	r.savePurseLocked(c)
 	delete(r.clients, c.id)
-	if c.acct != nil {
+	if c.acct != nil && !c.spec {
 		h.leftLocked(c.acct.id, r)
 		r.mmAbsentLocked(c.acct.id, time.Now())
 	}
@@ -270,8 +293,11 @@ func (h *hub) leave(c *client) {
 	} else if !empty && r.pickOwnerLocked() {
 		r.broadcast(r.infoMsgLocked(), "")
 	}
-	r.mu.Unlock()
 	if empty {
+		r.closeSpectatorsLocked() // o'yinchisi qolmagan xona yopiladi
+	}
+	r.mu.Unlock()
+	if empty && h.rooms[r.name] == r {
 		delete(h.rooms, r.name)
 		close(r.stop)
 	}
@@ -344,6 +370,9 @@ func (h *hub) reader(c *client) {
 			}
 			continue
 		}
+		if c.spec && m.T != "chat" && m.T != "p" {
+			continue // kuzatuvchi o'ynamaydi: ovoz berish, xona buyruqlari, ovozli chat yo'q
+		}
 		if m.T == "vote" { // o'yin oxirida keyingi xarita uchun ovoz
 			r := c.room
 			r.mu.Lock()
@@ -370,6 +399,18 @@ func (h *hub) reader(c *client) {
 			continue
 		}
 		if m.T != "p" {
+			continue
+		}
+		if c.spec { // faqat ismi (boshqalarga yuborilmaydi)
+			var p struct {
+				Nm string `json:"nm"`
+			}
+			if c.acct == nil && json.Unmarshal(m.D, &p) == nil && p.Nm != "" {
+				r := c.room
+				r.mu.Lock()
+				c.info.Nm = p.Nm
+				r.mu.Unlock()
+			}
 			continue
 		}
 		d := bytes.TrimSpace(m.D)

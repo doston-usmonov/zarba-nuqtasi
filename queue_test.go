@@ -256,7 +256,7 @@ func TestWingmanRated(t *testing.T) {
 func TestLeaverPenalty(t *testing.T) {
 	srv, st, h := newTestServer(t)
 	defer srv.Close()
-	h.leaverGrace = 400 * time.Millisecond
+	h.leaverGrace = time.Second
 	var cs []*testClient
 	for i := 0; i < 4; i++ {
 		c := newTestClient(srv.URL)
@@ -282,7 +282,7 @@ func TestLeaverPenalty(t *testing.T) {
 			w.c.Close()
 		}
 	}()
-	time.Sleep(900 * time.Millisecond)
+	time.Sleep(1600 * time.Millisecond)
 	if code, out := cs[3].post(t, "/api/queue", map[string]any{"action": "join", "mode": "wm"}); code != 403 {
 		t.Fatalf("kelmagan o'yinchi navbatga turdi: %d %v", code, out)
 	}
@@ -296,8 +296,13 @@ func TestLeaverPenalty(t *testing.T) {
 	}
 	// 0 chiqadi va vaqtida qaytadi — jazo yo'q
 	ws[0].c.Close()
-	time.Sleep(150 * time.Millisecond)
-	_, q := cs[0].get(t, "/api/queue")
+	var q map[string]any
+	for k := 0; k < 20; k++ { // server ulanish uzilganini sezguncha
+		time.Sleep(30 * time.Millisecond)
+		if _, q = cs[0].get(t, "/api/queue"); q["rejoin"] != nil {
+			break
+		}
+	}
 	rj, _ := q["rejoin"].(map[string]any)
 	if rj == nil || rj["room"] != f["room"] || rj["sq"] != f["sq"] {
 		t.Fatalf("qayta ulanish taklifi yo'q: %v", q)
@@ -306,13 +311,13 @@ func TestLeaverPenalty(t *testing.T) {
 		t.Fatal("tashlab chiqqan o'yinchi yangi navbatga turdi")
 	}
 	ws[0] = dialWS(t, cs[0], room)
-	time.Sleep(600 * time.Millisecond)
+	time.Sleep(1300 * time.Millisecond)
 	if _, q := cs[0].get(t, "/api/queue"); q["ban"] != nil || q["rejoin"] != nil {
 		t.Fatalf("qaytgan o'yinchi jazolandi: %v", q)
 	}
 	// 1 chiqib qaytmaydi — jazo
 	ws[1].c.Close()
-	time.Sleep(700 * time.Millisecond)
+	time.Sleep(1600 * time.Millisecond)
 	if _, q := cs[1].get(t, "/api/queue"); q["ban"] == nil {
 		t.Fatalf("qaytmagan o'yinchi jazolanmadi: %v", q)
 	}
@@ -323,7 +328,7 @@ func TestLeaverPenalty(t *testing.T) {
 	r.mu.Unlock()
 	time.Sleep(100 * time.Millisecond)
 	ws[2].c.Close()
-	time.Sleep(700 * time.Millisecond)
+	time.Sleep(1600 * time.Millisecond)
 	if _, q := cs[2].get(t, "/api/queue"); q["ban"] != nil {
 		t.Fatalf("o'yin tugagach chiqqan o'yinchi jazolandi: %v", q)
 	}

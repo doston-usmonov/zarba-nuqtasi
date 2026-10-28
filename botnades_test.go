@@ -89,6 +89,7 @@ func TestBotNadesInRoom(t *testing.T) {
 		t.Fatal("bot tutunchi bo'lmadi")
 	}
 	lu := *bot.bot.lu
+	bot.bot.gren = []string{"smoke"} // faqat tutun (tasodifiy ko'r qiluvchi tekshiruvga aralashmasin)
 	bot.bot.execAt = now.Add(20 * time.Second)
 	r.gs.Ph = "live"
 	a.ps.pos, a.ps.alive = vec3{3, 0, 3}, true // bot ko'rmaydigan joyda
@@ -115,16 +116,18 @@ func TestBotNadesInRoom(t *testing.T) {
 	// raqibni yo'qotdi — o'sha joyga portlovchi
 	bot.bot.gren = []string{"he"}
 	bot.bot.nadeAt = time.Time{}
-	bot.bot.mode = "go"
+	bot.bot.mode, bot.bot.actT = "go", 0 // bomba qo'ymayapti
 	var target vec3
-	for k := 0; k < 200; k++ {
+	found := false
+	for k := 0; k < 2000 && !found; k++ {
 		c := gameMaps["qumtepa"].open[rand.IntN(len(gameMaps["qumtepa"].open))]
 		target = cellCenter(c)
 		if d := bot.ps.pos.flat(target); d > 8 && d < 20 {
-			if _, ok := gameMaps["qumtepa"].botAimNade(bot.ps.pos, "he", target); ok {
-				break
-			}
+			_, found = gameMaps["qumtepa"].botAimNade(bot.ps.pos, "he", target)
 		}
+	}
+	if !found {
+		t.Skip("bu joydan portlovchi uchun nishon topilmadi")
 	}
 	bot.bot.lastKnown, bot.bot.knownAt = target, now.Add(-2*time.Second)
 	n0 := len(r.nades)

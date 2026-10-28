@@ -46,6 +46,7 @@ type client struct {
 	prefFm  int       // o'yinchi sozlamasidagi format (8/12)
 	joined  time.Time // xonaga kirgan vaqti
 	spec    bool      // kuzatuvchi: jamoasi yo'q, o'ynamaydi, boshqalarga ko'rinmaydi (spectate.go)
+	fixSq   string    // turnir xonasida server belgilagan jamoa (A/B)
 }
 
 type room struct {
@@ -64,6 +65,8 @@ type room struct {
 	official *officialRoom
 	// mm: navbatdan ochilgan xona (queue.go) — faqat topilgan o'yinchilar, egasiz, botsiz
 	mm *mmRoom
+	// trn: turnir o'yini xonasi (tournaments.go) — faqat ikki klan a'zolari, egasiz, botsiz
+	trn *trnRoom
 	// statistika (stats.go)
 	st               map[string]*pstat
 	stE              string
@@ -152,6 +155,20 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 			h.mu.Unlock()
 		}
 	}
+	// turnir o'yini xonasi: qaysi klanlar o'ynaydi va o'yinchi qaysi klanda
+	var trnInfo *trnRoom
+	trnMap, myClan := "", int64(0)
+	tid, trR, trS, isTrn := parseTrnRoom(roomName)
+	if isTrn && h.store.Ready() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		if a, b, gm, ok := h.store.trnMatchFor(ctx, tid, trR, trS); ok {
+			trnInfo, trnMap = &trnRoom{tid: tid, round: trR, slot: trS, clanA: a, clanB: b}, gm
+		}
+		if acct != nil {
+			myClan = h.store.clanIDOf(ctx, acct.id)
+		}
+		cancel()
+	}
 	h.mu.Lock()
 	if h.perIP[ip] >= perIPLimit {
 		h.mu.Unlock()
@@ -169,8 +186,17 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 		ws.write(opText, jsonMsg(map[string]string{"t": "err", "code": "no_room"}))
 		return
 	}
+	if r == nil && isTrn && trnInfo == nil {
+		h.mu.Unlock()
+		ws.write(opText, jsonMsg(map[string]string{"t": "err", "code": "trn_closed"})) // bunday turnir o'yini yo'q yoki tugagan
+		return
+	}
 	if r == nil {
 		r = &room{name: roomName, clients: map[string]*client{}, gs: newGameState(), stop: make(chan struct{}), pub: opts.pub, max: opts.max, bans: map[string]time.Time{}}
+		if trnInfo != nil {
+			r.trn, r.pub, r.max = trnInfo, true, 10
+			opts.gmap, opts.mode = trnMap, modeComp
+		}
 		if opts.gmap != "" {
 			r.gs.M = opts.gmap
 		}
@@ -209,6 +235,15 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 	if r.mm != nil && (acct == nil || r.mm.sq[acct.id] == "") && !opts.spec {
 		reject = "mm_only" // navbat o'yiniga faqat topilganlar
 	}
+	fixSq := ""
+	if r.trn != nil && !opts.spec {
+		if fixSq = r.trn.side(myClan); acct == nil || fixSq == "" {
+			reject = "trn_only" // turnir o'yiniga faqat shu ikki klan a'zolari
+		}
+		if r.trn.reported {
+			reject = "trn_closed"
+		}
+	}
 	for _, o := range r.clients {
 		if acct != nil && o.acct != nil && o.acct.id == acct.id {
 			reject = "already_in_room"
@@ -225,7 +260,7 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 		ws.write(opText, jsonMsg(map[string]string{"t": "err", "code": reject}))
 		return
 	}
-	c := &client{id: newID(), ip: ip, room: r, ws: ws, send: make(chan []byte, sendQueue), acct: acct, accJSON: accJSON, loadout: lo, ps: newPState(), joined: time.Now(), spec: opts.spec}
+	c := &client{id: newID(), ip: ip, room: r, ws: ws, send: make(chan []byte, sendQueue), acct: acct, accJSON: accJSON, loadout: lo, ps: newPState(), joined: time.Now(), spec: opts.spec, fixSq: fixSq}
 	if c.spec {
 		c.ps.alive = false
 		if acct != nil {
@@ -245,6 +280,9 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 		}
 	}
 	c.send <- jsonMsg(map[string]any{"t": "s", "peers": snap})
+	if c.fixSq != "" {
+		c.send <- jsonMsg(map[string]any{"t": "side", "sq": c.fixSq}) // turnir: jamoani server belgilaydi
+	}
 	r.clients[c.id] = c
 	if acct != nil && !c.spec {
 		h.joinedLocked(acct.id, r)
@@ -435,6 +473,9 @@ func (h *hub) reader(c *client) {
 			if sq := r.mm.sq[c.acct.id]; sq != "" && info.Sq != "" && info.Sq != sq {
 				info.Sq, fields["sq"] = sq, jsonMsg(sq)
 			}
+		}
+		if c.fixSq != "" && info.Sq != "" && info.Sq != c.fixSq { // turnirda ham
+			info.Sq, fields["sq"] = c.fixSq, jsonMsg(c.fixSq)
 		}
 		c.info = info
 		r.refereeLocked(c, fields, info, now)

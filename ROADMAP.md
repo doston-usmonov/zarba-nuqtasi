@@ -58,6 +58,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Ovozli chat (WebRTC): jamoa yoki hamma, K bosib gapirish yoki doim ochiq mikrofon, TURN (coturn)
 - ✅ Do'stlar: login bo'yicha so'rov, kim onlayn (menyuda yoki qaysi xonada o'ynayapti), do'st xonasiga bitta tugma bilan qo'shilish
 - ✅ Partiya: pauza menyusidan onlayn do'stni o'z xonangga chaqirish, chaqiriq menyuda yoki o'yin ichida keladi, qabul qilgan do'st sen bilan bitta jamoaga tushadi
+- ✅ Klanlar turniri: 4 yoki 8 klan, setka (reyting bo'yicha), har o'yinga alohida xona (faqat ikki klan, boshqalar kuzatadi), natija o'zi yoziladi, texnik g'alaba
 - ✅ Klanlar: nom va 2–5 belgili teg ([TEG] o'yinda ism oldida), do'stlarni taklif qilish, egasi a'zoni chiqaradi, klanlar reytingi (a'zolarning o'rtacha reytingi)
 - ✅ Batafsil statistika: qurollar, xaritalar va rejimlar bo'yicha, eng yaxshi natijalar (profilda «Statistika»)
 - ✅ Telegram orqali kirish, hisobni ulash, parolni tiklash (Telegram bilan kirib, eski parolsiz yangisini qo'yish)

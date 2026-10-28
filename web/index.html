@@ -386,6 +386,32 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
 .lvTag{display:inline-block;font-family:var(--f-display);font-size:11px;padding:0 5px;border-radius:3px;background:rgba(242,181,68,.16);color:var(--atk);margin-left:6px;vertical-align:1px}
 #accPanel .fields{grid-template-columns:1fr}
 #socOv{background:#14120e;align-items:start;grid-template-columns:minmax(0,1fr)}
+#trnOv{background:#14120e;align-items:start}
+.trnGrid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr);gap:18px;align-items:start}
+@media (max-width:900px){ .trnGrid{grid-template-columns:minmax(0,1fr)} }
+.trnList{display:flex;flex-direction:column;gap:6px}
+.trnItem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;text-align:left;background:rgba(243,239,230,.04);border:1px solid var(--line);border-radius:8px;padding:8px 11px;color:var(--ink);font:inherit;cursor:pointer}
+.trnItem[aria-pressed="true"]{border-color:var(--atk);background:rgba(242,181,68,.08)}
+.trnItem b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .trnItem small{color:var(--dim);font-size:12px;grid-column:1/-1}
+.trnState{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:4px;align-self:start}
+.trnState.open{background:rgba(127,224,138,.15);color:var(--good)} .trnState.running{background:rgba(242,181,68,.15);color:var(--atk)} .trnState.done{background:rgba(243,239,230,.08);color:var(--dim)}
+.trnForm{display:flex;flex-direction:column;gap:10px}
+.trnDetail{gap:12px;min-width:0}
+.trnHead{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline} .trnHead h3{font-size:22px;letter-spacing:.02em;text-transform:none;color:var(--ink);margin:0}
+.trnTeams{display:flex;flex-wrap:wrap;gap:6px}
+.trnTeams span{border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:13px} .trnTeams i{font-style:normal;color:var(--dim);margin-right:4px}
+.bracket{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(170px,1fr);gap:14px;overflow-x:auto;padding-bottom:6px}
+.bRound{display:flex;flex-direction:column;justify-content:space-around;gap:10px;min-width:0}
+.bRound>h4{margin:0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:600}
+.bMatch{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:rgba(243,239,230,.03)}
+.bMatch.live{border-color:rgba(242,181,68,.6)}
+.bSide{display:flex;justify-content:space-between;gap:8px;padding:6px 9px;font-size:13px;min-width:0}
+.bSide+.bSide{border-top:1px solid var(--line)}
+.bSide span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .bSide b{font-family:var(--f-display)}
+.bSide.win{background:rgba(127,224,138,.1)} .bSide.win span{font-weight:700} .bSide.lose{color:var(--dim)} .bSide.none{color:var(--dim);font-style:italic}
+.bAct{display:flex;flex-wrap:wrap;gap:6px;padding:6px 9px;border-top:1px solid var(--line)}
+.bAct button{padding:4px 9px;font-size:12px}
+.trnWin{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(242,181,68,.5);border-radius:8px;background:rgba(242,181,68,.08)} .trnWin b{font-family:var(--f-display);font-size:18px}
 #socOv .panel{min-width:0}
 .cta.sm{padding:7px 12px;font-size:13px}
 .trainQuick{align-items:center;gap:8px} .trainQuick .note{margin:0}
@@ -639,7 +665,7 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
             </div>
             <p class="note" id="authHint" hidden>Login: 3–16 ta lotin harfi, raqam yoki _. Parol kamida 6 belgi.</p>
             <p class="note warn" id="authErr" role="alert" hidden></p>
-            <div class="row"><button class="cta" type="submit" id="authBtn">Kirish</button><button class="ghost" type="button" data-lb="1">Reyting jadvali</button></div>
+            <div class="row"><button class="cta" type="submit" id="authBtn">Kirish</button><button class="ghost" type="button" data-lb="1">Reyting jadvali</button><button class="ghost" type="button" data-trn="1">Turnirlar</button></div>
             <button class="link" type="button" id="forgotBtn" style="font-size:13px;color:var(--dim)">Parolni unutdingizmi?</button>
             <p class="note" id="forgotNote" hidden></p>
           </form>
@@ -658,7 +684,7 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
               <div class="row"><button class="cta sm" type="submit" id="pwBtn">Saqlash</button></div>
             </form>
           </details>
-          <div class="row"><button class="cta" type="button" data-prog="1">Vazifalar va bo'yoqlar</button><button class="ghost" type="button" data-soc="1">Do'stlar va klan<span class="socBadge" id="socBadge" hidden></span></button><button class="ghost" type="button" data-lb="1">Reyting</button><button class="ghost" type="button" id="logoutBtn">Chiqish</button></div>
+          <div class="row"><button class="cta" type="button" data-prog="1">Vazifalar va bo'yoqlar</button><button class="ghost" type="button" data-soc="1">Do'stlar va klan<span class="socBadge" id="socBadge" hidden></span></button><button class="ghost" type="button" data-trn="1">Turnirlar</button><button class="ghost" type="button" data-lb="1">Reyting</button><button class="ghost" type="button" id="logoutBtn">Chiqish</button></div>
         </div>
       </div>
       <div class="panel">
@@ -861,6 +887,31 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
     </div>
   </div>
 </section>
+<section id="trnOv" class="overlay" hidden aria-label="Turnirlar">
+  <div class="lbWrap">
+    <div class="buyHead">
+      <div><span class="eyebrow">Klanlar o'rtasida · bitta mag'lubiyatda chiqib ketish</span><h2>Turnirlar</h2></div>
+      <button class="ghost" type="button" id="trnClose">Yopish</button>
+    </div>
+    <div class="trnGrid">
+      <div class="col">
+        <div class="panel"><h3>Turnirlar</h3><div class="trnList" id="trnList"><p class="note">Yuklanmoqda…</p></div></div>
+        <div class="panel" id="trnNew"><h3>Yangi turnir</h3>
+          <form id="trnForm" class="trnForm" novalidate>
+            <label class="field" for="trnName"><span>Nomi</span><input id="trnName" maxlength="40" placeholder="Masalan: Kuzgi kubok" autocomplete="off"></label>
+            <div class="fields"><label class="field" for="trnSize"><span>Jamoalar</span><select id="trnSize"><option value="4">4 ta klan</option><option value="8" selected>8 ta klan</option></select></label>
+            <label class="field" for="trnMap"><span>Xarita</span><select id="trnMap"></select></label></div>
+            <p class="note warn" id="trnErr" role="alert" hidden></p>
+            <div class="row"><button class="cta sm" type="submit">Turnir ochish</button></div>
+            <p class="note" style="margin:0;font-size:12px">Siz tashkilotchi bo'lasiz: klanlar yozilgach boshlaysiz, jamoa kelmasa — g'olibni qo'lda belgilaysiz. O'yinlar: Raqobat, 9 g'alabagacha, botsiz, reytingga yoziladi.</p>
+          </form>
+        </div>
+      </div>
+      <div class="panel trnDetail" id="trnDetail"><p class="note">Turnirni tanlang.</p></div>
+    </div>
+  </div>
+</section>
+
 <section id="socOv" class="overlay" hidden aria-label="Do'stlar va klan">
   <div class="lbWrap">
     <div class="buyHead">
@@ -4522,6 +4573,7 @@ function wsJoin(name, opts){
         else if (m.t === 'rt'){ netRating(m); }
         else if (m.t === 'sig'){ voiceSignal(String(m.from || ''), m.d); }
         else if (m.t === 'g'){ if (m.g && typeof m.g === 'object') NET.srvG = m.g; }
+        else if (m.t === 'side'){ NET.mmSq = m.sq === 'B' ? 'B' : 'A'; if (player.team && NET.sq !== NET.mmSq){ NET.sq = NET.mmSq; player.team = netSide(); } }
         else if (m.t === 'kill'){ netServerKill(m); }
         else if (m.t === 'fix'){ if (player.alive){ player.pos.set(num(m.x), num(m.y), num(m.z)); player.vel.set(0, 0, 0); } }
         else if (m.t === 'pong'){ const rtt = performance.now() - num(m.c); if (rtt >= 0 && rtt < 10000) NET.ping = NET.ping ? NET.ping*.7 + rtt*.3 : rtt; }
@@ -5049,7 +5101,7 @@ function pickTeam(){ let a = 0, b = 0; NET.remotes.forEach(r => { if (!r.team) r
   hint((pal ? pal.name + ' bilan bir jamoadasiz: ' : 'Siz ') + TEAM_NAME[player.team] + ' jamoasidasiz · ' + KB('M', 'Jamoa tugmasi') + ' — almashtirish', 3500); }
 function switchTeam(){
   if (!player.team) return; const g = NET.g;
-  if (NET.mmSq){ hint("Navbat o'yinida jamoalarni server tuzgan — almashtirib bo'lmaydi", 2600); return; }
+  if (NET.mmSq){ hint("Bu o'yinda jamoalarni server tuzgan — almashtirib bo'lmaydi", 2600); return; }
   if (g && (g.ph === 'live' || g.ph === 'post') && player.alive && NET.inRound === g.r){ hint("Raund davomida jamoani almashtirib bo'lmaydi"); return; }
   NET.sq = NET.sq === 'A' ? 'B' : 'A'; player.team = netSide(); hint('Endi siz ' + TEAM_NAME[player.team] + ' jamoasidasiz', 2200);
   if (!g || g.ph === 'warmup') respawnWarm(); else if (g.ph === 'freeze') spawnAt(player.team);
@@ -5224,7 +5276,7 @@ async function joinOnline(create, codeOverride, spec){
       named = { peers:() => room.peers(), presence:p => room.presence(p), connected:() => room.connected(), leave:() => room.presence({ v:null }) };
       NET.code = 'umumiy'; $('roomCode').value = 'umumiy';
     } else {
-      const why = { no_room:"Bunday xona hozir yo'q — kuzatish uchun xonada o'yin bo'lishi kerak.", spec_full:"Bu xonada kuzatuvchilar juda ko'p (16 ta). Keyinroq urinib ko'ring.", mm_spec:"Reytingli navbat o'yinini kuzatib bo'lmaydi.", mm_only:"Bu navbatdan topilgan o'yin — unga faqat navbat orqali tushgan o'yinchilar kira oladi.", room_exists:"Bu kodli o'yin allaqachon bor. Boshqa kod tanlang yoki unga «Kirish» orqali qo'shiling.", kicked:"Xona egasi sizni chiqarib yuborgan — 10 daqiqadan keyin qayta urinib ko'ring.", room_full:"Xona to'la. Boshqa o'yinni tanlang yoki yangisini yarating.", already_in_room:"Bu hisob bilan siz allaqachon shu xonadasiz (boshqa oyna yoki qurilmada).", too_many_connections:"Bu manzildan juda ko'p ulanish bor." }[e && e.code];
+      const why = { trn_only:"Bu turnir o'yini — unga faqat shu ikki klan a'zolari kiradi. Boshqalar kuzata oladi.", trn_closed:"Bu turnir o'yini tugagan yoki hali tayyor emas.", no_room:"Bunday xona hozir yo'q — kuzatish uchun xonada o'yin bo'lishi kerak.", spec_full:"Bu xonada kuzatuvchilar juda ko'p (16 ta). Keyinroq urinib ko'ring.", mm_spec:"Reytingli navbat o'yinini kuzatib bo'lmaydi.", mm_only:"Bu navbatdan topilgan o'yin — unga faqat navbat orqali tushgan o'yinchilar kira oladi.", room_exists:"Bu kodli o'yin allaqachon bor. Boshqa kod tanlang yoki unga «Kirish» orqali qo'shiling.", kicked:"Xona egasi sizni chiqarib yuborgan — 10 daqiqadan keyin qayta urinib ko'ring.", room_full:"Xona to'la. Boshqa o'yinni tanlang yoki yangisini yarating.", already_in_room:"Bu hisob bilan siz allaqachon shu xonadasiz (boshqa oyna yoki qurilmada).", too_many_connections:"Bu manzildan juda ko'p ulanish bor." }[e && e.code];
       btn.disabled = false; note.textContent = why || ("Xonaga ulanib bo'lmadi (" + ((e && e.code) || 'xato') + "). Birozdan keyin qayta urinib ko'ring."); return; }
   }
   btn.disabled = false; note.textContent = DEFAULT_NOTE; LINK.want = null;
@@ -5510,6 +5562,7 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-lb]'); if (b){ openLB(); return; }
   if (e.target.closest('[data-prog]')){ openProg(); return; }
   if (e.target.closest('[data-soc]')){ openSoc(); return; }
+  if (e.target.closest('[data-trn]')){ openTrn(); return; }
   const p = e.target.closest('#lbBody [data-p]'); if (p) showProfile(p.dataset.p);
 });
 $('lbClose').addEventListener('click', () => { $('lb').hidden = true; });
@@ -5658,6 +5711,80 @@ function socRender(){
     : `<tr><td colspan="5" class="wrap">Hali klanlar yo'q — birinchisini siz oching.</td></tr>`;
 }
 async function socLoadTop(){ const r = await apiCall('/api/clans'); SOC.top = r.ok && r.data ? r.data.clans || [] : []; if (!$('socOv').hidden) socRender(); }
+/* ---------- tournaments: clans, single elimination, one room per match (only the two clans play, anyone watches) ---------- */
+const TRN = { list:[], cur:null, d:null, busy:false };
+function openTrn(){ $('trnOv').hidden = false; $('trnErr').hidden = true; $('trnNew').hidden = !ACC.me;
+  const ms = $('trnMap'); if (!ms.options.length) Object.keys(MAPS).filter(id => !MAPS[id].aim).forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = MAPS[id].name; ms.appendChild(o); });
+  trnLoad(); if (TRN.cur) trnShow(TRN.cur); }
+function closeTrn(){ $('trnOv').hidden = true; }
+$('trnClose').addEventListener('click', closeTrn);
+document.addEventListener('keydown', e => { if (e.code === 'Escape' && !$('trnOv').hidden) closeTrn(); });
+const TRN_STATE = { open:"Yozilish", running:"Davom etmoqda", done:"Tugadi" };
+async function trnLoad(){
+  const r = await apiCall('/api/tournaments'); if (!r.ok || !r.data) { $('trnList').innerHTML = `<p class="note">Turnirlar yuklanmadi.</p>`; return; }
+  TRN.list = r.data.tournaments || [];
+  $('trnList').innerHTML = TRN.list.length ? TRN.list.map(t => `<button type="button" class="trnItem" data-t="${t.id|0}" aria-pressed="${t.id === TRN.cur}"><b>${escH(t.name)}</b><span class="trnState ${escH(t.state)}">${escH(TRN_STATE[t.state] || t.state)}</span>` +
+    `<small>${escH(mapName(t.map))} · ${t.teams|0}/${t.size|0} klan · tashkilotchi ${escH(t.owner)}${t.winner ? ' · 🏆 ' + escH(t.winner) : ''}</small></button>`).join('')
+    : `<p class="note">Hali turnir yo'q. ${ACC.me ? "Birinchisini siz oching — pastdagi shakl." : "Hisobga kirsangiz, turnir ochishingiz mumkin."}</p>`;
+  if (!TRN.cur && TRN.list.length) trnShow(TRN.list[0].id);
+}
+$('trnList').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) trnShow(+b.dataset.t); });
+async function trnShow(id){
+  TRN.cur = id; $('trnList').querySelectorAll('[data-t]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.t === id)));
+  const r = await apiCall('/api/tournaments/' + id); if (!r.ok || !r.data){ $('trnDetail').innerHTML = `<p class="note">${escH((r.data && r.data.error) || 'Yuklanmadi')}</p>`; return; }
+  trnRender(r.data);
+}
+const trnRoundName = (r, n) => r === n ? 'Final' : r === n - 1 ? 'Yarim final' : r === n - 2 ? 'Chorak final' : r + '-bosqich';
+function trnRender(d){
+  TRN.d = d; const me = d.me || {}, teams = d.teamList || [], mine = teams.some(t => t.id === me.clan);
+  const side = (m, x, e) => { const c = m[x]; if (!c) return `<div class="bSide none"><span>${e ? "— bo'sh —" : 'kutilmoqda'}</span></div>`;
+    const won = m.winner && m.winner === c.id, lost = m.winner && m.winner !== c.id, sc = x === 'a' ? m.sA : m.sB;
+    return `<div class="bSide${won ? ' win' : lost ? ' lose' : ''}"><span>[${escH(c.tag)}] ${escH(c.name)}</span><b>${sc != null ? sc|0 : ''}</b></div>`; };
+  const rounds = []; for (let r = 1; r <= d.rounds; r++) rounds.push((d.matches || []).filter(m => m.round === r));
+  const act = m => { if (!m.room) return ''; const my = me.clan && ((m.a && m.a.id === me.clan) || (m.b && m.b.id === me.clan)); let h = '';
+    if (my) h += `<button class="cta sm" type="button" data-play="${escH(m.room)}">O'ynash</button>`;
+    h += `<button class="ghost sm" type="button" data-watch="${escH(m.room)}">Kuzatish</button>`;
+    if (me.owner) h += `<button class="ghost sm" type="button" data-res="${m.round}:${m.slot}:${m.a.id}">${escH(m.a.tag)} g'olib</button><button class="ghost sm" type="button" data-res="${m.round}:${m.slot}:${m.b.id}">${escH(m.b.tag)} g'olib</button>`;
+    return `<div class="bAct">${h}</div>`; };
+  const bracket = d.state === 'open' ? '' : `<div class="bracket">` + rounds.map((ms, i) => `<div class="bRound"><h4>${trnRoundName(i + 1, d.rounds)}</h4>` +
+    ms.map(m => `<div class="bMatch${m.room ? ' live' : ''}">${side(m, 'a', m.ea)}${side(m, 'b', m.eb)}${act(m)}</div>`).join('') + `</div>`).join('') + `</div>`;
+  let btns = '';
+  if (d.state === 'open'){
+    if (me.clanOwner && !mine && teams.length < d.size) btns += `<button class="cta sm" type="button" data-ta="join">«${escH(me.clanName)}» klanini yozdirish</button>`;
+    if (me.clanOwner && mine) btns += `<button class="ghost sm" type="button" data-ta="leave">Klanni chiqarish</button>`;
+    if (me.owner) btns += `<button class="cta sm" type="button" data-ta="start"${teams.length < 2 ? ' disabled' : ''}>Boshlash</button><button class="ghost sm" type="button" data-ta="delete">O'chirish</button>`;
+  } else if (d.state === 'done' && me.owner) btns += `<button class="ghost sm" type="button" data-ta="delete">O'chirish</button>`;
+  const note = d.state === 'open' ? (ACC.me ? (me.clanOwner ? '' : me.clan ? "Klaningizni faqat klan egasi yozdira oladi." : "Qatnashish uchun klan kerak: «Do'stlar va klan» → klan oching.") : "Qatnashish uchun hisobga kiring.") +
+      ` Boshlanganda klanlar o'rtacha reyting bo'yicha saralanadi; jamoa yetmasa, kuchlilar keyingi bosqichga o'zi o'tadi.`
+    : d.state === 'running' ? "O'yin tayyor bo'lsa (ikkala klan ma'lum), klan a'zolari «O'ynash» bilan xonaga kiradi — jamoalar o'zi belgilanadi, o'yin ikkala jamoa kelgach bir daqiqadan keyin boshlanadi. Natija o'zi yoziladi." : '';
+  $('trnDetail').innerHTML = `<div class="trnHead"><h3>${escH(d.name)}</h3><span class="trnState ${escH(d.state)}">${escH(TRN_STATE[d.state] || d.state)}</span></div>` +
+    `<p class="note" style="margin:0">${escH(mapName(d.map))} · ${d.size|0} klanlik · Raqobat, 9 g'alabagacha · tashkilotchi ${escH(d.owner)}</p>` +
+    (d.winner ? `<div class="trnWin"><span aria-hidden="true">🏆</span><div><small class="note">G'olib</small><br><b>${escH(d.winner)}</b></div></div>` : '') +
+    `<div class="trnTeams">${teams.length ? teams.map(t => `<span>${t.seed ? '<i>' + (t.seed|0) + '.</i>' : ''}[${escH(t.tag)}] ${escH(t.name)} <i>· ${t.rating|0}</i></span>`).join('') : '<span class="note">Hali klan yozilmagan</span>'}</div>` +
+    (btns ? `<div class="row">${btns}</div>` : '') + (note ? `<p class="note" style="margin:0">${escH(note)}</p>` : '') + `<p class="note warn" id="trnActErr" role="alert" hidden></p>` + bracket;
+}
+async function trnAct(body){
+  if (TRN.busy) return; TRN.busy = true; const r = await apiCall('/api/tournaments', body); TRN.busy = false;
+  if (!r.ok){ const el = $('trnActErr') || $('trnErr'); el.textContent = (r.data && r.data.error) || "Bajarib bo'lmadi"; el.hidden = false; return null; }
+  return r.data;
+}
+$('trnDetail').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b || !TRN.d) return;
+  if (b.dataset.play){ closeTrn(); $('roomCode').value = b.dataset.play; joinOnline(false, b.dataset.play); return; }
+  if (b.dataset.watch){ closeTrn(); $('roomCode').value = b.dataset.watch; joinOnline(false, b.dataset.watch, true); return; }
+  if (b.dataset.res){ const [round, slot, w] = b.dataset.res.split(':').map(Number);
+    if (b.dataset.sure !== '1'){ b.dataset.sure = '1'; b.textContent = 'Tasdiqlash'; setTimeout(() => { if (b.isConnected){ b.dataset.sure = ''; trnRender(TRN.d); } }, 3500); return; }
+    const d = await trnAct({ action:'result', id:TRN.d.id, round, slot, winner:w }); if (d){ trnRender(d); trnLoad(); } return; }
+  if (b.dataset.ta){ const a = b.dataset.ta;
+    if (a === 'delete' && b.dataset.sure !== '1'){ b.dataset.sure = '1'; b.textContent = "Rostdan o'chirish"; return; }
+    const d = await trnAct({ action:a, id:TRN.d.id }); if (!d) return;
+    if (d.deleted){ TRN.cur = null; $('trnDetail').innerHTML = `<p class="note">Turnir o'chirildi.</p>`; } else trnRender(d); trnLoad(); }
+});
+$('trnForm').addEventListener('submit', async e => {
+  e.preventDefault(); $('trnErr').hidden = true;
+  const d = await trnAct({ action:'create', name:$('trnName').value.trim(), size:+$('trnSize').value, map:$('trnMap').value }); if (!d) return;
+  $('trnName').value = ''; TRN.cur = d.id; trnRender(d); trnLoad();
+});
 function openSoc(){ if (!ACC.me) return; $('socOv').hidden = false; $('frErr').hidden = $('clErr').hidden = true; SOC.top = null; socRender(); socLoad(); socLoadTop(); }
 function closeSoc(){ $('socOv').hidden = true; }
 $('socClose').addEventListener('click', closeSoc);
@@ -5826,7 +5953,7 @@ function touchFrame(){
 }
 setTimeout(linkBoot, 0);
 setTimeout(mmInit, 0);
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, joinOnline, specTargets, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, openTrn, TRN, joinOnline, specTargets, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){

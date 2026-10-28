@@ -75,7 +75,7 @@ func (r *room) bannedLocked(ip string, acct *account, now time.Time) bool {
 
 // pickOwnerLocked: egasi chiqib ketgan bo'lsa, eng oldin kirgan odamni ega qiladi.
 // ownerless: rasmiy va navbat xonalarida ega yo'q — xona buyruqlari ishlamaydi.
-func (r *room) ownerless() bool { return r.official != nil || r.mm != nil }
+func (r *room) ownerless() bool { return r.official != nil || r.mm != nil || r.trn != nil }
 
 func (r *room) pickOwnerLocked() bool {
 	if r.ownerless() {

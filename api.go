@@ -62,6 +62,7 @@ func (a *api) routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/queue", h(a.queueGet))
 	mux.HandleFunc("POST /api/queue", h(a.queuePost))
 	a.telegramRoutes(mux, h)
+	a.trnRoutes(mux, h)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeErr(w, http.StatusNotFound, "Topilmadi") })
 }
 

@@ -766,6 +766,9 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 		if f := g.fixedFm(); f != 0 {
 			g.Fm = f
 		}
+		if r.trn != nil { // turnir: 9 g'alabagacha
+			g.Fm = trnFm
+		}
 		if nA > 0 && nB > 0 {
 			g.Cd -= dt
 			g.T = math.Max(0, g.Cd)
@@ -779,6 +782,9 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 			}
 		} else {
 			g.Cd, g.T = 6, 0
+			if r.trn != nil {
+				g.Cd = 60 // turnir: ikkala jamoa kelgach bir daqiqa — qolgan a'zolar yig'ilsin
+			}
 		}
 	case "freeze":
 		g.T -= dt
@@ -900,6 +906,12 @@ func (r *room) run(h *hub) {
 				}
 			}
 			res := r.tickLocked(now, dt)
+			trn := r.trn
+			if res == nil || trn == nil || trn.reported {
+				trn = nil
+			} else {
+				trn.reported = true
+			}
 			if n++; n%2 == 0 { // holat soniyasiga 10 marta
 				r.broadcast(jsonMsg(map[string]any{"t": "g", "g": r.gs}), "")
 			}
@@ -908,6 +920,9 @@ func (r *room) run(h *hub) {
 			r.mu.Unlock()
 			if res != nil && h.store.Ready() {
 				go h.finishMatch(r, res)
+			}
+			if trn != nil {
+				go h.trnResult(trn, res)
 			}
 			if len(gains) > 0 && h.store.Ready() {
 				go h.awardProgress(r, gains)

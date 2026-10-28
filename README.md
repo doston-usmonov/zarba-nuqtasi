@@ -19,6 +19,7 @@ zarba-server/
 ├── medals.go          batafsil statistika (qurollar, xaritalar, rejimlar) va medallar
 ├── telegram.go        Telegram orqali kirish, hisobni ulash, parolni tiklash
 ├── spectate.go        kuzatuvchilar (o'yinchilarga ko'rinmaydi, chati faqat kuzatuvchilarga)
+├── tournaments.go     klanlar turniri: setka, o'yin xonalari, natijalar
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── social.go          do'stlar, xonaga chaqiriqlar, klanlar (/api/social, /api/friends, /api/clan, /api/clans)
 ├── queue.go           «O'yin topish»: reytingli navbat, partiyalar, mm- xonalar (/api/queue)
@@ -124,7 +125,7 @@ O'q qayerga tekkanini otgan o'yinchining brauzeri aniqlaydi, server esa har bir 
 
 ### Ma'lumotlar bazasi (PostgreSQL 17)
 
-Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanadi), `matches`, `match_players`, `daily_progress`, `friends`, `clans`, `clan_members`, `clan_invites`, `leaver_bans`, `player_stats`, `achievements` (Telegram: `users.tg_id`). Sxema `migrations/NNN_*.sql` fayllarida. Server ishga tushganda yangi migratsiyalar avtomatik qo'llanadi: har biri o'z tranzaksiyasida, `pg_advisory_lock` bilan himoyalangan. O'yin natijasi va barcha o'yinchilarning reytingi bitta tranzaksiyada yoziladi.
+Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanadi), `matches`, `match_players`, `daily_progress`, `friends`, `clans`, `clan_members`, `clan_invites`, `leaver_bans`, `player_stats`, `achievements`, `tournaments`, `tournament_teams`, `tournament_matches` (Telegram: `users.tg_id`). Sxema `migrations/NNN_*.sql` fayllarida. Server ishga tushganda yangi migratsiyalar avtomatik qo'llanadi: har biri o'z tranzaksiyasida, `pg_advisory_lock` bilan himoyalangan. O'yin natijasi va barcha o'yinchilarning reytingi bitta tranzaksiyada yoziladi.
 
 - **Baza paroli:** `.env` faylidagi `ZARBA_DB_PASSWORD`. Fayl git'ga tushmaydi. `deploy/deploy.sh` uni birinchi marta o'zi yaratadi. **`.env` ni o'chirmang:** baza shu parol bilan yaratilgan.
 - **Port:** tashqariga ochilmaydi, bazaga faqat compose ichidagi xizmatlar ulanadi.
@@ -139,6 +140,16 @@ Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanad
 - **Oldingi versiyadan ko'chish:** baza bo'sh bo'lsa, server `/data/snapshot.json` va `matches.jsonl` ni (fayl bazasini) avtomatik import qiladi. Hisoblar, parollar, sessiyalar, reyting va tarix saqlanib qoladi, fayllar `*.imported-<sana>` deb qayta nomlanadi.
 
 API: `POST /api/register`, `POST /api/login`, `POST /api/logout`, `GET /api/me`, `GET /api/leaderboard`, `GET /api/players/{login}`, `GET /api/progress`, `POST /api/loadout`, `GET /api/social`, `POST /api/friends`, `POST /api/clan`, `GET /api/clans`.
+
+### Turnirlar
+
+Hisob panelidagi «Turnirlar»: klanlar o'rtasida, bitta mag'lubiyatda chiqib ketish, 4 yoki 8 jamoa (`tournaments.go`).
+- **Ochish:** istalgan o'yinchi nomi, hajmi va xaritasini (aim xaritalaridan tashqari) tanlab ochadi va tashkilotchi bo'ladi. Bir vaqtda bitta tugamagan turnir.
+- **Yozilish:** klan egasi o'z klanini yozdiradi yoki chiqaradi (turnir boshlanguncha).
+- **Boshlash:** tashkilotchi (kamida 2 klan). Klanlar a'zolarining o'rtacha reytingi bo'yicha saralanadi (1-o'rin — eng kuchli) va setka tuziladi: 1–8, 4–5, 2–7, 3–6. Jamoa yetmasa, raqibsiz qolgan klan keyingi bosqichga o'zi o'tadi.
+- **O'yinlar:** har o'yinning o'z xonasi bor — `t<turnir>-<bosqich>-<o'rin>` (Raqobat, 9 g'alabagacha, botsiz, reytingga yoziladi). Ikkala klan ma'lum bo'lgach, ularning a'zolariga «O'ynash» tugmasi chiqadi; yuqoridagi klan A jamoasida, pastdagisi B da (jamoani server belgilaydi). Boshqalar xonaga faqat kuzatuvchi bo'lib kira oladi. O'yin ikkala jamoa xonaga kirgach bir daqiqadan keyin boshlanadi (qolgan a'zolar yig'ilishi uchun).
+- **Natija:** server tasdiqlagan o'yin oxirida g'olib setkada o'zi keyingi bosqichga o'tadi, final g'olibi — turnir g'olibi. Jamoa kelmasa yoki o'yin buzilsa, tashkilotchi g'olibni qo'lda belgilaydi (texnik g'alaba).
+- Jadvallar: `tournaments`, `tournament_teams`, `tournament_matches`. API: `GET /api/tournaments`, `GET /api/tournaments/{id}`, `POST /api/tournaments` (`create`, `join`, `leave`, `start`, `result`, `delete`).
 
 ### Telegram orqali kirish va parolni tiklash
 

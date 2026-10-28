@@ -142,6 +142,23 @@ func roundInHalf(r, h int) int {
 	return (r-2*h-1)%otHalf + 1
 }
 
+// pickAimWeapon: aim xaritasida bot quroli (hammasi bepul).
+func pickAimWeapon() string {
+	switch x := rand.Float64(); {
+	case x < .35:
+		return "rifle"
+	case x < .55:
+		return "carbine"
+	case x < .7:
+		return "sniper"
+	case x < .8:
+		return "scout"
+	case x < .9:
+		return "deagle"
+	}
+	return "smg"
+}
+
 func pickBotWeapon(rih int) string {
 	switch {
 	case rih <= 1:
@@ -218,6 +235,9 @@ func (r *room) spawnBotLocked(c *client, now time.Time) {
 		}
 	}
 	b.weapon = pickBotWeapon(rih)
+	if g.Md == modeAim {
+		b.weapon, rih = pickAimWeapon(), 3
+	}
 	if modeLive && g.Md == modeGG {
 		b.weapon = ggWeapon(g.Sc[c.id])
 	}
@@ -231,7 +251,7 @@ func (r *room) spawnBotLocked(c *client, now time.Time) {
 	}
 	p.dueAt, p.spawnAt = time.Time{}, now
 	p.push(sample{t: now, p: pos})
-	if modeLive {
+	if modeLive || g.Md == modeAim {
 		b.yaw = rand.Float64() * 2 * math.Pi
 		b.mode, b.goal, b.path = "roam", r.gm().roamPoint(), nil
 	} else if c.info.Tm == "T" {
@@ -620,7 +640,7 @@ func (r *room) botStepLocked(c *client, now time.Time, dt float64) {
 
 func (r *room) botObjectiveLocked(c *client, now time.Time, dt float64) {
 	b, p, g := c.bot, c.ps, r.gs
-	if g.respawns() && g.Ph == "live" {
+	if (g.respawns() || g.Md == modeAim) && g.Ph == "live" { // aim'da ham — raqibni qidirib yuradi
 		r.botRoamLocked(c, now, dt)
 		return
 	}

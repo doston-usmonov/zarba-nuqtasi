@@ -956,7 +956,7 @@ func TestOfficialRooms(t *testing.T) {
 	for _, o := range def {
 		codes = append(codes, fmt.Sprintf("%s:%d", o.code(), o.max))
 	}
-	if strings.Join(codes, ",") != "registon-comp:16,qumtepa-dm:20,bozor-comp:10,saroy-gg:12,karvon-wm:4" {
+	if strings.Join(codes, ",") != "registon-comp:16,qumtepa-dm:20,bozor-comp:10,saroy-gg:12,karvon-wm:4,maydon-arena:10" {
 		t.Fatalf("standart ro'yxat: %v", codes)
 	}
 	if parseOfficialRooms("-") != nil {

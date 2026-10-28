@@ -155,7 +155,7 @@ API: `POST /api/register`, `POST /api/login`, `POST /api/logout`, `GET /api/me`,
 | `TURN_SECRET` | bo'sh (Docker'da `.env` dan) | coturn bilan bir xil kalit. Bo'sh bo'lsa TURN ishlatilmaydi |
 | `TURN_HOST` | bo'sh | TURN domeni. Bo'sh bo'lsa o'yin ochilgan domen olinadi |
 | `TURN_PORT` | `3478` | TURN porti |
-| `OFFICIAL_ROOMS` | `registon:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4` | Doimiy (rasmiy) xonalar: `xarita:rejim:chegara`, vergul bilan. Kodi — `<xarita>-<rejim>`. `-` — o'chirish |
+| `OFFICIAL_ROOMS` | `registon:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4,maydon:arena:10` | Doimiy (rasmiy) xonalar: `xarita:rejim:chegara`, vergul bilan. Kodi — `<xarita>-<rejim>`. `-` — o'chirish |
 
 Bitta IP manzildan bir vaqtda ko'pi bilan 8 ta ulanish qabul qilinadi. Bir o'yinchidan soniyasiga 60 tadan ortiq xabar kelsa, ortiqchasi tashlanadi. Bitta xabar 8 KB dan oshmaydi.
 
@@ -177,7 +177,7 @@ API: `GET /api/rooms` → `{rooms:[…], byMap:{qumtepa:3, …}}` (har qatorda `
 
 Wingman o'yinlari ham (botsiz bo'lsa) endi Raqobat kabi reytingga yoziladi.
 
-**Rasmiy xonalar** (`OFFICIAL_ROOMS`) — har doim ochiq, ro'yxatning tepasida «RASMIY» belgisi bilan, odam bo'lmasa ham ko'rinadi: `registon-comp`, `qumtepa-dm`, `bozor-comp`, `saroy-gg`, `karvon-wm`. Kirgan odam hech qachon bo'sh xonaga tushmaydi: odam + bot soni `min(chegara, 10)` ga yetguncha o'rta darajadagi botlar qo'shiladi, har yangi odam kirganda bitta bot chiqadi, jamoalar teng saqlanadi (odam jamoa tanlagach, raundlar orasida bot boshqa jamoaga o'tadi). Hamma chiqib ketsa botlar ham chiqadi, xona o'z xaritasida boshidan boshlanadi va bo'sh turganda hech narsa hisoblamaydi. Egasi yo'q: bot qo'shish/chiqarish, chegara, ommaviylik va rejimni hech kim o'zgartira olmaydi; xaritani faqat o'yin oxiridagi ovoz almashtiradi (kod o'zgarmaydi). Bot qatnashgani uchun bu o'yinlar reytingga yozilmaydi — ular tez o'ynash uchun. Chegara botlarni emas, odamlarni sanaydi.
+**Rasmiy xonalar** (`OFFICIAL_ROOMS`) — har doim ochiq, ro'yxatning tepasida «RASMIY» belgisi bilan, odam bo'lmasa ham ko'rinadi: `registon-comp`, `qumtepa-dm`, `bozor-comp`, `saroy-gg`, `karvon-wm`, `maydon-arena`. Kirgan odam hech qachon bo'sh xonaga tushmaydi: odam + bot soni `min(chegara, 10)` ga yetguncha o'rta darajadagi botlar qo'shiladi, har yangi odam kirganda bitta bot chiqadi, jamoalar teng saqlanadi (odam jamoa tanlagach, raundlar orasida bot boshqa jamoaga o'tadi). Hamma chiqib ketsa botlar ham chiqadi, xona o'z xaritasida boshidan boshlanadi va bo'sh turganda hech narsa hisoblamaydi. Egasi yo'q: bot qo'shish/chiqarish, chegara, ommaviylik va rejimni hech kim o'zgartira olmaydi; xaritani faqat o'yin oxiridagi ovoz almashtiradi (kod o'zgarmaydi). Bot qatnashgani uchun bu o'yinlar reytingga yozilmaydi — ular tez o'ynash uchun. Chegara botlarni emas, odamlarni sanaydi.
 
 **O'yin yaratish:** kod, kimga (ommaviy yoki yopiq) va maksimal o'yinchilar soni (standart: ommaviy, cheksiz). Yopiq o'yin ro'yxatda ko'rinmaydi, unga faqat kodni bilganlar kiradi. Bunday kodli o'yin allaqachon bo'lsa, yaratib bo'lmaydi. Kod bilan kirganda o'yin hali bo'lmasa, standart sozlamalar bilan yaratiladi.
 
@@ -192,6 +192,13 @@ Telegram va boshqa messenjerlarda havola rasm va sarlavha bilan chiqadi: server 
 - *Qurol poygasi*: eng kuchli quroldan boshlanib, har 2 o'ldirishda kuchsizrog'iga o'tiladi: Qirg'iy-50 (snayper) → Tog' (pulemyot) → Burkut → Lochin-K → Bo'ron (drobovik) → Shamol → Burgut .50 → Chaqmoq → P-18 → pichoq (19 o'ldirish). Pichoq bilan birinchi o'ldirgan yutadi.
 
 **Xaritalar** (hammasi o'zimizniki, 44×44 katak): Qumtepa, Bozor, Karvonsaroy, Registon (Samarqand uslubidagi maydon: o'rtada favvora va rastalar, g'arbiy madrasa hovlisi — A, sharqiy yopiq bozor — B; koshinli peshtoqlar, minoralar, moviy gumbazlar), Saroy (tepalikdagi qal'a: o'rtada ustunli ichki zallar, sharqda devor bo'yi uzun yo'lak, g'arbda zinapoyali yo'l; qal'a tishlari, dumaloq minoralar, bayroqlar). Xarita sxemasi `web/index.html` dagi `MAPS` da, server nusxasi `tools/genmaps.py` bilan yasaladi.
+
+**Aim xaritalari va «Aim» rejimi** — faqat nishon olish uchun kichik, simmetrik maydonlar (ikki tomon aynan bir xil sharoitda, `tools/mkaim.py` chizadi va tekshiradi):
+- *Maydon* — ochiq maydon, o'rtada baland yashiklardan siniq devor va past yashik qatorlari: uzoq masofa, snayper va avtomat.
+- *Chorraha* — xoch shaklidagi ko'chalar: uzun sharq–g'arb ko'chasi asosiy duel chizig'i, shimol va janub yo'llari — aylanib o'tish.
+- *Hovli* — kvadrat hovli, o'rtasida to'rt eshikli kichik uy (eshiklar bir chiziqda emas): yaqin jang, burchakdan chiqish.
+
+«Aim» rejimi (`arena`): jamoa jamoaga raundlar, bomba yo'q — raund raqib jamoa yo'q qilinganda tugaydi; 60 soniyada tugamasa, tirik qolganlari ko'p jamoa (teng bo'lsa — joni ko'p jamoa) yutadi. Raund oldidan 3 soniya. Qurollar bepul: har raundda zirh, dubulg'a, tanlangan asosiy qurol (standart Burkut) va to'pponcha (standart Burgut .50) beriladi; B menyusida (bazada, raund boshidagi 10 soniyagacha) boshqasini tanlasangiz, keyingi raundlarda ham o'sha beriladi. Granata, bomba, pul yo'q. 9 g'alabagacha (8 raunddan keyin tomonlar almashadi). Aim xaritalari faqat shu rejimda, rejim faqat shu xaritalarda o'ynaladi — biri tanlansa ikkinchisi o'zi moslashadi (menyuda, xona yaratishda, xona egasi almashtirganda, ovoz berishda). Botlarga qarshi: siz va 2 ta bot; botlar raqib qidirib yuradi. Rasmiy xona: `maydon-arena` (10 kishilik, botlar bilan to'ladi). Reytingga yozilmaydi.
 
 **Qurollar** (nomlari va dizayni o'zimizniki):
 

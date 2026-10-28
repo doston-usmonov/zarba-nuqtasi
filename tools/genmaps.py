@@ -12,7 +12,8 @@ for m in re.finditer(r"\n  (\w+):\{ name:(\"[^\"]*\")", blk):
     rows=re.findall(r"'([#.cskAtB]{44})'", seg); assert len(rows)==44, (mid,len(rows))
     g=lambda L: '{'+', '.join('{%d, %d}'%tuple(p) for p in L)+'}'
     hl=[h for k in 'ABM' for h in holds[k]]
-    out.append('\t{id: "%s", name: %s,'%(mid, m.group(2)))
+    aim = re.search(r"\baim:true\b", seg[:400]) is not None
+    out.append('\t{id: "%s", name: %s,%s'%(mid, m.group(2), ' aim: true,' if aim else ''))
     out.append('\t\tholds: [][2][2]int{'+', '.join('{{%d, %d}, {%d, %d}}'%(a[0],a[1],b[0],b[1]) for a,b in hl)+'},')
     out.append('\t\tholdSite: []string{'+', '.join('"%s"'%k for k in 'ABM' for _ in holds[k])+'},')
     out.append('\t\tspots: map[string][][2]int{"A": %s, "B": %s},'%(g(plan['A']['spots']), g(plan['B']['spots'])))

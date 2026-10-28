@@ -66,6 +66,9 @@ func TestSmokeLineups(t *testing.T) {
 		if n+1 < len(locs) {
 			end = locs[n+1][0]
 		}
+		if isAimMap(id) { // aim xaritalarida granata yo'q
+			continue
+		}
 		m := lu.FindStringSubmatch(blk[l[1]:end])
 		if m == nil {
 			t.Fatalf("%s: lineups yo'q", id)

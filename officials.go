@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const defaultOfficialRooms = "registon:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4"
+const defaultOfficialRooms = "registon:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4,maydon:arena:10"
 
 type officialRoom struct {
 	gmap, mode string
@@ -49,7 +49,7 @@ func parseOfficialRooms(s string) []officialRoom {
 		}
 		o := officialRoom{gmap: strings.ToLower(f[0]), mode: strings.ToLower(f[1])}
 		o.max, _ = strconv.Atoi(f[2])
-		if !validMap(o.gmap) || !validMode(o.mode) || o.max < 2 || o.max > 64 || seen[o.code()] {
+		if !validMap(o.gmap) || !validMode(o.mode) || o.max < 2 || o.max > 64 || seen[o.code()] || isAimMap(o.gmap) != (o.mode == modeAim) {
 			log.Printf("OFFICIAL_ROOMS: %q o'tkazib yuborildi (xarita, rejim yoki chegara noto'g'ri, yoki takror)", part)
 			continue
 		}

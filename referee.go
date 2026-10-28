@@ -764,7 +764,7 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 			g.Cd -= dt
 			g.T = math.Max(0, g.Cd)
 			if g.Cd <= 0 {
-				g.R, g.Ph, g.T, g.SA, g.SB, g.B, g.Bm, g.E = 1, "freeze", 6, 0, 0, nil, -1, randEpoch()
+				g.R, g.Ph, g.T, g.SA, g.SB, g.B, g.Bm, g.E = 1, "freeze", g.freezeTime(true, false), 0, 0, nil, -1, randEpoch()
 				g.Mv, g.Mvn, g.Mvr, g.St, r.planter, r.defuser = "", "", "", nil, "", ""
 				r.purses, r.matchAt = nil, now
 				if g.Md == modeRT {
@@ -796,6 +796,8 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 			r.endRoundLocked("T", "kill")
 		case pT > 0 && aT == 0 && g.B == nil:
 			r.endRoundLocked("CT", "kill")
+		case g.B == nil && g.T <= 0 && g.Md == modeAim:
+			r.endRoundLocked(r.aimTimeoutWinner(), "time")
 		case g.B == nil && g.T <= 0:
 			r.endRoundLocked("CT", "time")
 		}
@@ -807,11 +809,8 @@ func (r *room) tickLocked(now time.Time, dt float64) *matchResult {
 				r.finalStatsLocked()
 			} else {
 				g.R++
-				g.Ph, g.T, g.B = "freeze", 5, nil
+				g.Ph, g.T, g.B = "freeze", g.freezeTime(false, halfStart(g.R, g.Fm)), nil
 				g.Mv, g.Mvn, g.Mvr, r.planter, r.defuser = "", "", "", "", ""
-				if halfStart(g.R, g.Fm) {
-					g.T = 10
-				}
 				if g.Md == modeRT {
 					r.retakeRoundLocked()
 				}

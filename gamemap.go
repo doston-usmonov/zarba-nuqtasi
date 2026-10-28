@@ -30,6 +30,7 @@ var cellHeight = [8]float64{0, 7, 1.0, 2.3, 0, 0, 0, 0}
 // mapDef — xarita ta'rifi (mapsdata.go, brauzerdagi MAPS dan yasalgan).
 type mapDef struct {
 	id, name     string
+	aim          bool                // aim xaritasi: faqat «Aim» rejimida, bomba nuqtalari yo'q
 	holds        [][2][2]int         // himoyachi botlar turadigan joy va qaraydigan nuqta
 	holdSite     []string            // har bir joy qaysi nuqtaga tegishli: A, B yoki M (o'rta)
 	spots, looks map[string][][2]int // hujumchi botlar bomba qo'yadigan joylar va qarash nuqtalari
@@ -89,6 +90,29 @@ func mapByID(id string) *gameMap {
 }
 
 func validMap(id string) bool { return gameMaps[id] != nil }
+
+// isAimMap: aim xaritasi (kichik maydon, faqat Aim rejimi uchun).
+func isAimMap(id string) bool { return gameMaps[id] != nil && gameMaps[id].aim }
+
+const defaultAimMap = "maydon"
+
+// pairMapMode: aim xaritasi faqat Aim rejimida, Aim rejimi faqat aim xaritasida o'ynaladi.
+// Qaysi biri o'zgartirilgan bo'lsa (byMode), ikkinchisi unga moslashtiriladi.
+func pairMapMode(gmap, mode string, byMode bool) (string, string) {
+	if (mode == modeAim) == isAimMap(gmap) {
+		return gmap, mode
+	}
+	if byMode {
+		if mode == modeAim {
+			return defaultAimMap, mode
+		}
+		return defaultMap, mode
+	}
+	if isAimMap(gmap) {
+		return gmap, modeAim
+	}
+	return gmap, modeComp
+}
 
 // zoneCenter: baza kataklarining o'rtasiga eng yaqin baza katagi (to'siqsiz).
 func (m *gameMap) zoneCenter(t uint8) vec3 {

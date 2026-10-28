@@ -19,7 +19,7 @@ import (
 
 const kickBan = 10 * time.Minute
 
-var modeNames = map[string]string{modeComp: "Raqobat", modeDM: "Deathmatch", modeTDM: "Jamoaviy deathmatch", modeGG: "Qurol poygasi", modeWM: "Wingman", modeRT: "Retake"}
+var modeNames = map[string]string{modeComp: "Raqobat", modeDM: "Deathmatch", modeTDM: "Jamoaviy deathmatch", modeGG: "Qurol poygasi", modeWM: "Wingman", modeRT: "Retake", modeAim: "Aim"}
 
 type roomOpts struct {
 	create bool // "yaratish" tugmasi: bunday xona bor bo'lsa — xato
@@ -44,6 +44,7 @@ func parseRoomOpts(q map[string][]string) roomOpts {
 	if validMode(get("mode")) {
 		o.mode = get("mode")
 	}
+	o.gmap, o.mode = pairMapMode(o.gmap, o.mode, validMode(get("mode")) && !validMap(get("map")))
 	if m, err := strconv.Atoi(get("max")); err == nil && m >= 2 && m <= 64 {
 		o.max = m
 	}
@@ -167,6 +168,9 @@ func (h *hub) adminLocked(r *room, c *client, d json.RawMessage, now time.Time) 
 // changeMapLocked: xona boshqa xaritaga o'tadi — o'yin isinishdan boshlanadi, hamma yangi bazasida tug'iladi.
 func (r *room) changeMapLocked(id string, now time.Time) {
 	g := r.gs
+	if _, m := pairMapMode(id, g.modeID(), false); m != g.modeID() { // aim xaritasiga o'tsa — Aim rejimi va aksincha
+		g.setMode(m)
+	}
 	g.M = id
 	g.reset()
 	for _, c := range r.clients {

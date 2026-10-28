@@ -612,10 +612,10 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <button type="button" data-d="normal">O'rta<small>Muvozanatli</small></button>
           <button type="button" data-d="hard">Qiyin<small>Tez va aniq</small></button>
         </div>
-        <div class="field"><span>Rejim</span><div class="seg modeSeg" data-set="mode"><button type="button" data-v="comp">Raqobat</button><button type="button" data-v="wm">Wingman</button><button type="button" data-v="rt">Retake</button><button type="button" data-v="dm">Deathmatch</button><button type="button" data-v="gg">Qurol poygasi</button></div></div>
+        <div class="field"><span>Rejim</span><div class="seg modeSeg" data-set="mode"><button type="button" data-v="comp">Raqobat</button><button type="button" data-v="wm">Wingman</button><button type="button" data-v="rt">Retake</button><button type="button" data-v="dm">Deathmatch</button><button type="button" data-v="gg">Qurol poygasi</button><button type="button" data-v="arena">Aim</button></div></div>
         <p class="note" id="modeNote"></p>
         <div class="row trainQuick"><span class="note">Mashq:</span><button class="ghost sm" type="button" data-train="aim">Nishon mashqi</button><button class="ghost sm" type="button" data-train="nade">Granata mashqi</button></div>
-        <label class="field" for="mapSel"><span>Xarita</span><select id="mapSel"><option value="qumtepa">Qumtepa — Klassik: uzun yo'lak, o'rta va tunnel</option><option value="bozor">Bozor — Ixcham: rastalar, tor o'rta, ko'prikcha</option><option value="karvon">Karvonsaroy — Ixcham: markazda hovli, ikki qanot</option><option value="registon">Registon — Maydon, madrasa hovlisi, yopiq bozor</option><option value="saroy">Saroy — Qal'a: ichki zallar, devor bo'yi yo'lak</option></select></label>
+        <label class="field" for="mapSel"><span>Xarita</span><select id="mapSel"><option value="qumtepa">Qumtepa — Klassik: uzun yo'lak, o'rta va tunnel</option><option value="bozor">Bozor — Ixcham: rastalar, tor o'rta, ko'prikcha</option><option value="karvon">Karvonsaroy — Ixcham: markazda hovli, ikki qanot</option><option value="registon">Registon — Maydon, madrasa hovlisi, yopiq bozor</option><option value="saroy">Saroy — Qal'a: ichki zallar, devor bo'yi yo'lak</option><optgroup label="Aim xaritalari"><option value="maydon">Maydon — ochiq maydon, siniq devor</option><option value="chorraha">Chorraha — xoch shaklidagi ko'chalar</option><option value="hovli">Hovli — o'rtada to'rt eshikli uy</option></optgroup></select></label>
         <button class="cta" id="startBtn" type="button">Botlar bilan o'ynash</button>
       </div>
       <div class="panel" id="trainPanel">
@@ -653,8 +653,8 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
         <div class="srv-only createrow">
           <label class="field" for="newCode"><span>Kod</span><input id="newCode" maxlength="40" autocomplete="off"></label>
           <label class="field" for="newPub"><span>Kimga</span><select id="newPub"><option value="1">Ommaviy</option><option value="0">Yopiq (kod bilan)</option></select></label>
-          <label class="field" for="newMode"><span>Rejim</span><select id="newMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option></select></label>
-          <label class="field" for="newMap"><span>Xarita</span><select id="newMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="registon">Registon</option><option value="saroy">Saroy</option></select></label>
+          <label class="field" for="newMode"><span>Rejim</span><select id="newMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option><option value="arena">Aim — faqat nishon</option></select></label>
+          <label class="field" for="newMap"><span>Xarita</span><select id="newMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="registon">Registon</option><option value="saroy">Saroy</option><optgroup label="Aim"><option value="maydon">Maydon</option><option value="chorraha">Chorraha</option><option value="hovli">Hovli</option></optgroup></select></label>
           <label class="field" for="newMax"><span>Maks. o'yinchi</span><select id="newMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select></label>
         </div>
         <button class="ghost srv-only" id="createBtn" type="button">O'yin yaratish</button>
@@ -750,8 +750,8 @@ h2{font-size:clamp(32px,5vw,52px);text-transform:uppercase}
           <div class="row"><button class="ghost sm" type="button" data-adm="botT">+ Bot hujumga</button><button class="ghost sm" type="button" data-adm="botCT">+ Bot himoyaga</button></div>
           <div class="set"><span>Bot darajasi</span><div class="seg" data-set="botLv"><button type="button" data-v="easy">Oson</button><button type="button" data-v="normal">O'rta</button><button type="button" data-v="hard">Qiyin</button></div><span></span></div>
           <div class="set"><span>Xona turi</span><div class="seg" id="admPub"><button type="button" data-v="1">Ommaviy</button><button type="button" data-v="0">Yopiq</button></div><span></span></div>
-          <label class="set" for="admMode">Rejim <select id="admMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option></select><span></span></label>
-          <label class="set" for="admMap">Xarita <select id="admMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="registon">Registon</option><option value="saroy">Saroy</option></select><span></span></label>
+          <label class="set" for="admMode">Rejim <select id="admMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option><option value="arena">Aim — faqat nishon</option></select><span></span></label>
+          <label class="set" for="admMap">Xarita <select id="admMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="registon">Registon</option><option value="saroy">Saroy</option><optgroup label="Aim"><option value="maydon">Maydon</option><option value="chorraha">Chorraha</option><option value="hovli">Hovli</option></optgroup></select><span></span></label>
           <label class="set" for="admMax">Maks. o'yinchi <select id="admMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select><span></span></label>
         </div>
         <table id="admList"></table>
@@ -1152,6 +1152,159 @@ const MAPS = {
     '################tttttttttttt################',
     '################tttttttttttt################',
     '################tttttttttttt################',
+    '############################################',
+    '############################################',
+    '############################################'] },
+  maydon:{ name:"Maydon", desc:"Aim: ochiq maydon, o'rtada siniq devor — snayper va avtomat uchun", theme:{ wall:0xf2e6d2, floor:0xe8dcc4 }, aim:true,
+    holds:{"A":[[[12,14],[31,14]],[[16,18],[27,25]]],"B":[[[31,29],[12,29]],[[27,25],[16,18]]],"M":[[[20,21],[30,21]],[[23,22],[13,22]]]},
+    plan:{"A":{"stages":[],"spots":[],"looks":[]},"B":{"stages":[],"spots":[],"looks":[]}},
+    signs:[[8,10,"S","HUJUM",2.4,1.4],[33,10,"S","HIMOYA",2.4,1.4]],
+    cables:[],
+    lineups:[],
+    rows:[
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '########............................########',
+    '########...s....................s...########',
+    '########.............ss.............########',
+    '########......cc............cc......########',
+    '########............................########',
+    '########............................########',
+    '########.............ss.............########',
+    '########tt........c......c........kk########',
+    '########tt...c................c...kk########',
+    '########tt........................kk########',
+    '########tt..s........s.........s..kk########',
+    '########tt......c.....s....c......kk########',
+    '########tt......c..........c......kk########',
+    '########tt........................kk########',
+    '########tt........c......c........kk########',
+    '########.............ss.............########',
+    '########.....c................c.....########',
+    '########............................########',
+    '########............................########',
+    '########......cc.....ss.....cc......########',
+    '########...s....................s...########',
+    '########............................########',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################'] },
+  chorraha:{ name:"Chorraha", desc:"Aim: xoch shaklidagi chorraha — uzun ko'cha va ikki yon yo'l", theme:{ wall:0xe6c9a8, floor:0xdccab0 }, aim:true,
+    holds:{"A":[[[19,9],[21,30]],[[12,22],[31,22]]],"B":[[[24,34],[22,13]],[[31,21],[12,21]]],"M":[[[19,19],[24,24]],[[24,24],[19,19]]]},
+    plan:{"A":{"stages":[],"spots":[],"looks":[]},"B":{"stages":[],"spots":[],"looks":[]}},
+    signs:[[6,17,"S","HUJUM",2.2,1.3],[37,17,"S","HIMOYA",2.2,1.3]],
+    cables:[],
+    lineups:[],
+    rows:[
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '##################........##################',
+    '##################........##################',
+    '##################.c....c.##################',
+    '##################........##################',
+    '##################........##################',
+    '##################...cc...##################',
+    '##################........##################',
+    '##################........##################',
+    '##################..s..s..##################',
+    '##################........##################',
+    '################............################',
+    '################.c........c.################',
+    '######................................######',
+    '######tt...c....................c...kk######',
+    '######tt............................kk######',
+    '######tt......c......ss......c......kk######',
+    '######tt......c......cc......c......kk######',
+    '######tt............................kk######',
+    '######tt...c....................c...kk######',
+    '######................................######',
+    '################.c........c.################',
+    '################............################',
+    '##################........##################',
+    '##################..s..s..##################',
+    '##################........##################',
+    '##################........##################',
+    '##################...cc...##################',
+    '##################........##################',
+    '##################........##################',
+    '##################.c....c.##################',
+    '##################........##################',
+    '##################........##################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################'] },
+  hovli:{ name:"Hovli", desc:"Aim: o'rtasida to'rt eshikli uy — yaqin jang", theme:{ wall:0xd9c7a8, floor:0xd4c4a0 }, aim:true,
+    holds:{"A":[[[12,12],[26,26]],[[20,20],[24,24]]],"B":[[[31,31],[17,17]],[[23,23],[19,19]]],"M":[[[16,21],[27,22]],[[27,22],[16,21]]]},
+    plan:{"A":{"stages":[],"spots":[],"looks":[]},"B":{"stages":[],"spots":[],"looks":[]}},
+    signs:[[19,18,"N","UY",2,1.2],[24,25,"S","UY",2,1.2]],
+    cables:[],
+    lineups:[],
+    rows:[
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '#########.....................kkkkk#########',
+    '#########.....................kkkkk#########',
+    '#########............c........kkkkk#########',
+    '#########.....................kkkkk#########',
+    '#########..................c..kkkkk#########',
+    '#########....cc....................#########',
+    '#########...............s..........#########',
+    '#########..........................#########',
+    '#########..........................#########',
+    '#########.........###.####..s......#########',
+    '#########.........#......#.........#########',
+    '#########.........#......#.........#########',
+    '#########.........#..c..........c..#########',
+    '#########..c..........c..#.........#########',
+    '#########.........#......#.........#########',
+    '#########.........#......#.........#########',
+    '#########......s..####.###.........#########',
+    '#########..........................#########',
+    '#########..........................#########',
+    '#########..........s...............#########',
+    '#########....................cc....#########',
+    '#########ttttt..c..................#########',
+    '#########ttttt.....................#########',
+    '#########ttttt........c............#########',
+    '#########ttttt.....................#########',
+    '#########ttttt.....................#########',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
+    '############################################',
     '############################################',
     '############################################',
     '############################################'] }
@@ -2281,6 +2434,7 @@ function rayHitBot(o, d, b, maxT){
    har 2 o'ldirishda keyingi qurol, oxiri pichoq). Server versiyasida hisobni server yuritadi (g.sc). */
 const MODES = { comp:{ name:'Raqobat', desc:"Raundlar, bomba va iqtisod. Jamoa bo'lib o'ynaladi." },
   wm:{ name:'Wingman', desc:"2 ga 2, faqat A nuqta, 9 g'alabagacha. Raundlar qisqa (1,5 daqiqa), iqtisod raqobatdagidek." },
+  arena:{ name:'Aim', desc:"Faqat nishon olish: kichik xaritada jamoa jamoaga, bomba yo'q, raund raqib yo'q qilinganda tugaydi. Qurollar bepul — raund boshida B bilan tanlaysiz. 9 g'alabagacha." },
   rt:{ name:'Retake', desc:"Har raund boshida bomba allaqachon o'rnatilgan: hujum uni himoya qiladi, himoya bazadan kelib zararsizlantiradi. Qurollar beriladi." }, dm:{ name:'Deathmatch', desc:"Har kim har kimga qarshi, o'lgan zahoti qayta tug'ilasiz. 6 daqiqada eng ko'p o'ldirgan yutadi. Qurollar bepul." }, gg:{ name:'Qurol poygasi', desc:"Eng kuchli quroldan (snayper, pulemyot) boshlanadi, har 2 o'ldirishda kuchsizrog'i beriladi. Oxirgi bosqich — pichoq: u bilan birinchi o'ldirgan yutadi." } };
 // gun game ladder: the strongest weapon first, then weaker ones, the knife last
 const GG_LADDER = ['sniper','lmg','rifle','carbine','shotgun','smg','deagle','mpistol','pistol','knife'], GG_PER = 2, GG_WIN = (GG_LADDER.length - 1)*GG_PER + 1;
@@ -2395,7 +2549,8 @@ function drawRadar(){
 function liveTime(){ return MODE === 'online' ? NET.liveT : S.liveT; }
 function canBuy(){ if (!player.alive || S.phase === 'menu' || S.phase === 'over' || !player.team || TRAIN(curMode())) return false;
   if (respawnMode() && S.phase !== 'warmup') return curMode() === 'dm' && S.phase === 'live';
-  if (curMode() === 'rt' && S.phase !== 'warmup') return false;   /* Retake: loadouts are handed out */   /* deathmatch: anywhere, any time; gun game: never */ const inZone = cellT(wc(player.pos.x), wc(player.pos.z)) === (player.team === 'CT' ? CTSP : TSP); return inZone && (S.phase === 'warmup' || S.phase === 'freeze' || (S.phase === 'live' && liveTime() < 20)); }
+  if (curMode() === 'rt' && S.phase !== 'warmup') return false;
+  if (curMode() === 'arena' && S.phase === 'live' && liveTime() >= 10) return false;   /* Retake: loadouts are handed out */   /* deathmatch: anywhere, any time; gun game: never */ const inZone = cellT(wc(player.pos.x), wc(player.pos.z)) === (player.team === 'CT' ? CTSP : TSP); return inZone && (S.phase === 'warmup' || S.phase === 'freeze' || (S.phase === 'live' && liveTime() < 20)); }
 
 /* match format: halves, side swap and overtime (the same rules online and against bots) */
 const FMT = { short:8, long:12 }, OT_HALF = 3;
@@ -2429,13 +2584,13 @@ function setBotsPal(side){
 function startRound(){
   S.round++; const HH = S.H, newHalf = halfStart(S.round, HH), rih = isOT(S.round, HH) ? 3 : roundInHalf(S.round, HH);
   player.team = sideOfSquad('A', S.round, HH);
-  S.phase = 'freeze'; S.timer = S.round === 1 ? 7 : newHalf ? 9 : 5; S.liveT = 0; S.roundPlanted = false; S.deathT = 0; S.rk = 0; bots.forEach(b => b.rk = 0);
+  S.phase = 'freeze'; S.timer = S.md === 'arena' ? (S.round === 1 ? 4 : 3) : S.round === 1 ? 7 : newHalf ? 9 : 5; S.liveT = 0; S.roundPlanted = false; S.deathT = 0; S.rk = 0; bots.forEach(b => b.rk = 0);
   bomb.planted = false; bomb.mesh.visible = false; bomb.defuser = null; bomb.timer = 40; bomb.dropped = false; bomb.carrier = null; bomb.picker = null;
   if (newHalf){ player.alive = false; S.loss = 0; player.money = isOT(S.round, HH) ? 12500 : 800; }
   if (!player.alive || S.md === 'rt') resetInv();
   clearNades(); clearDrops(); killcamStop();
   spawnAt(player.team);
-  player.alive = true; player.hp = 100; player.bomb = player.team === 'T'; player.planting = 0; player.scope = 0; player.reloadT = 0; player.recoil = 0; player.punchY = player.punchX = 0;
+  player.alive = true; player.hp = 100; player.bomb = player.team === 'T' && S.md !== 'arena'; player.planting = 0; player.scope = 0; player.reloadT = 0; player.recoil = 0; player.punchY = player.punchX = 0;
   if (player.slot === 4 && !nadeTotal()) player.slot = 2;
   if (!player.inv[player.slot] && player.slot !== 5 && player.slot !== 4) player.slot = bestSlot(); if (player.slot === 5) player.slot = bestSlot();
   // refill ammo of kept weapons
@@ -2443,22 +2598,26 @@ function startRound(){
   drawWeapon();
   const side = botsSide(); setBotsPal(side);
   // Wingman: two bots; Retake: two attackers or three defenders; the rest sit out
-  const nBots = S.md === 'wm' ? 2 : S.md === 'rt' ? (side === 'T' ? 2 : 3) : bots.length;
+  const nBots = S.md === 'wm' || S.md === 'arena' ? 2 : S.md === 'rt' ? (side === 'T' ? 2 : 3) : bots.length;
   bots.forEach((b, i) => { b.off = i >= nBots; if (b.off){ b.alive = false; b.m.g.visible = false; } });
   if (S.md === 'rt'){ S.tSite = rand() < .5 ? 'A' : 'B'; const p = retakeSpot(S.tSite); bomb.planted = true; bomb.timer = 40; bomb.beepT = 0; bomb.site = S.tSite; bomb.defuser = null;
     bomb.pos.set(p.x, 0, p.z); bomb.mesh.position.copy(bomb.pos); bomb.mesh.visible = true; S.roundPlanted = true; player.money = 0; }
   const HOLDS = MAP.holds, holds = { A:shuffle(HOLDS.A.slice()), B:shuffle(HOLDS.B.slice()), M:shuffle(HOLDS.M.slice()) };
   const roles = S.md === 'wm' ? ['A','M'] : shuffle(['A','A','B','B','M']);
   const spawns = shuffle(SPAWNS.CT.slice()), tsp = shuffle(SPAWNS.T.slice());
-  const site = S.md === 'wm' ? 'A' : S.md === 'rt' ? S.tSite : rand() < .5 ? 'A' : 'B', plan = MAP.plan[site], carrier = S.md === 'rt' ? -1 : (rand()*nBots)|0;
+  const site = S.md === 'wm' ? 'A' : S.md === 'rt' ? S.tSite : rand() < .5 ? 'A' : 'B', plan = MAP.plan[site], carrier = S.md === 'rt' || S.md === 'arena' ? -1 : (rand()*nBots)|0;
   S.tSite = site; S.execT = 20 + rand()*22;
   bots.forEach((b, i) => {
     if (b.off) return;
     b.alive = true; b.hp = 100; b.armor = rih > 1 ? 100 : (rand() < .3 ? 100 : 0); b.helmet = rih > 2 || (rih === 2 && rand() < .4);
-    b.weapon = botWeaponFor(rih, i); b.mag = W[b.weapon].mag; b.reloadT = 0;
+    b.weapon = S.md === 'arena' ? ['rifle','rifle','carbine','sniper','scout','deagle','smg'][(rand()*7)|0] : botWeaponFor(rih, i); b.mag = W[b.weapon].mag; b.reloadT = 0;
+    if (S.md === 'arena'){ b.armor = 100; b.helmet = true; }
     b.mode = 'hold'; b.path = null; b.seeing = false; b.vis = null; b.lastKnown = null; b.lastSeen = -99; b.alertPos = null; b.alertT = -99; b.investigate = false; b.spotT = -99; b.defuse = 0; b.deadT = 0; b.deadT0 = -99; b.kneel = 0; b.stuck = 0; b.blindT = 0;
     b.hasBomb = false; b.planting = 0; b.atStage = false; b.postPos = null;
-    if (side === 'CT'){
+    if (S.md === 'arena'){   // aim: everyone hunts from their own base
+      const [sx, sz] = (side === 'CT' ? spawns : tsp)[i % (side === 'CT' ? spawns : tsp).length]; b.pos.set(cw(sx) + (rand()-.5)*.6, 0, cw(sz) + (rand()-.5)*.6);
+      b.yaw = Math.atan2(cw(22) - b.pos.x, cw(22) - b.pos.z); b.mode = 'roam'; b.roam = null; b.roamT = 0;
+    } else if (side === 'CT'){
       const [sx, sz] = spawns[i]; b.pos.set(cw(sx) + (rand()-.5), 0, cw(sz) + (rand()-.5)); b.yaw = Math.PI;
       let role = roles[i]; if (b.weapon === 'sniper') role = rand() < .5 ? 'M' : 'A';
       const h = holds[role].shift() || HOLDS[role][0]; b.hold = { pos:new V3(cw(h[0][0]), 0, cw(h[0][1])), look:new V3(cw(h[1][0]), 0, cw(h[1][1])) };
@@ -2474,8 +2633,10 @@ function startRound(){
     b.m.g.visible = true; b.m.g.rotation.set(0,0,0); b.m.g.position.copy(b.pos); poseSoldier(b.m, 0, false, 0); setSoldierWeapon(b.m, b.weapon);
   });
   if (S.md === 'rt'){ retakeLoadout(); if (player.team === 'T'){ player.pos.copy(retakeSpot(S.tSite, bomb.pos.x, bomb.pos.z)); } S.timer = 3; }
+  if (S.md === 'arena') aimLoadout();
   $('dead').hidden = true; H.scope.hidden = true; H.cross.style.display = ''; H.progBar.style.background = '';
   updatePips(); updateHUD();
+  if (S.md === 'arena'){ showMsg('Aim · ' + S.round + '-raund', 'Raqiblarni yo\'q qiling. ' + KB('B', 'Xarid') + ' — qurolni tanlash (bepul, keyingi raundlarda ham shu).', teamMsg(player.team), 3000); return; }
   if (S.md === 'rt'){ showMsg('Retake · ' + S.round + '-raund', 'Bomba ' + S.tSite + ' nuqtada. ' + (player.team === 'T' ? "Uni zararsizlantirishga yo'l qo'ymang!" : KB('E ni', 'BOMBA tugmasini') + ' bosib turib zararsizlantiring.'), teamMsg(player.team), 3600); return; }
   voMatchPoint(S.sA, S.sB, S.round, HH);
   const T = player.team === 'T', pistol = S.round === 1 || (newHalf && !isOT(S.round, HH)), swapped = newHalf && sideOfSquad('A', S.round - 1, HH) !== player.team;
@@ -2533,8 +2694,17 @@ function startMatch(){
 }
 
 /* ---------- Wingman and Retake ---------- */
-const roundTimeOf = md => md === 'wm' ? 90 : md === 'rt' ? 40 : 115;
-const fixedFm = md => md === 'wm' ? 8 : md === 'rt' ? 6 : 0;
+const roundTimeOf = md => md === 'wm' ? 90 : md === 'rt' ? 40 : md === 'arena' ? 60 : 115;
+const fixedFm = md => md === 'wm' || md === 'arena' ? 8 : md === 'rt' ? 6 : 0;
+// Aim: the gun you picked (B, free) comes back every round, with a Burgut .50 and full armour
+const AIM_PRIM = ['rifle','carbine','smg','shotgun','lmg','scout','sniper'], AIM_SEC = ['deagle','pistol','mpistol'];
+function aimLoadout(){
+  const prim = AIM_PRIM.includes(SET.aimW) ? SET.aimW : 'rifle', sec = AIM_SEC.includes(SET.aimS) ? SET.aimS : 'deagle';
+  player.inv = { 1:{ id:prim, mag:W[prim].mag, res:W[prim].res }, 2:{ id:sec, mag:W[sec].mag, res:W[sec].res }, 3:{ id:'knife' } };
+  player.nades = { he:0, flash:0, smoke:0, molly:0 }; player.nadeSel = null; player.taser = player.tsel = false;
+  player.armor = 100; player.helmet = true; player.kit = false; player.bomb = false; player.slot = 1; drawWeapon();
+}
+const isAimMap = id => !!(MAPS[id] && MAPS[id].aim);
 // Retake: everybody gets a loadout (no buying); defenders also get a defuse kit
 function retakeLoadout(){
   const prim = ['rifle','rifle','carbine','carbine','smg','sniper','shotgun','lmg','scout'][(rand()*9)|0], sec = rand() < .35 ? 'deagle' : rand() < .3 ? 'mpistol' : 'pistol';
@@ -2950,9 +3120,10 @@ function resultHTML(title, sub, rows, mvp){
     rows.map((r, i) => { const col = isFFA() ? 'var(--ink)' : r.side === 'CT' ? 'var(--def)' : 'var(--atk)';
       return `<tr class="${r.me ? 'mine' : ''}"><td>${i + 1}</td><td><span class="tag" style="background:${col}"></span>${esc(r.nm)}${r.me ? ' <small>(siz)</small>' : ''}</td><td class="r">${r.k}</td><td class="r">${r.d}</td><td class="r">${r.k ? Math.round(r.hs/r.k*100) : 0}%</td><td class="r">${r.dmg}</td>${!RM(md) ? `<td class="r stars">${r.mvp ? '★' + (r.mvp > 1 ? r.mvp : '') : ''}</td>` : ''}</tr>`; }).join('') + '</table>';
 }
+const voteIds = () => Object.keys(MAPS).filter(id => isAimMap(id) === isAimMap(MAP_ID));
 function voteHTML(g){
   if (!(NET.room && NET.room.vote)) return '';
-  const vt = g.vt || {}, ids = Object.keys(MAPS);
+  const vt = g.vt || {}, ids = voteIds();
   return `<div class="vote"><h4>Keyingi xarita uchun ovoz bering</h4><div class="vrow">` + ids.map((id, i) => `<button type="button" data-vote="${id}" aria-pressed="${NET.myVote === id}"><kbd>${i + 1}</kbd> ${escH(MAPS[id].name)}<b>${vt[id] || 0}</b></button>`).join('') + `</div></div>`;
 }
 function castVote(id){ if (!MAPS[id] || !(NET.room && NET.room.vote) || !NET.g || NET.g.ph !== 'over') return; NET.myVote = id; NET.room.vote(id); refreshVote(); }
@@ -3258,7 +3429,7 @@ function updateBot(b, dt){
     }
     if (b.weapon === 'knife'){ if (b.vis.dist > 1.6) goTo(b, player.pos, 5, dt); else if (b.react <= 0 && b.fireCd <= 0) botKnife(b); }
     else if (b.react <= 0 && off < .12 && b.fireCd <= 0 && b.pause <= 0 && b.reloadT <= 0) botFire(b);
-  } else if (RM(S.md) && MODE !== 'online'){
+  } else if ((RM(S.md) || S.md === 'arena') && MODE !== 'online'){
     roamThink(b, dt);
   } else if (b.side === 'T'){
     kneelTarget = tBotThink(b, dt);
@@ -3762,7 +3933,7 @@ document.addEventListener('pointerlockchange', () => {
 document.addEventListener('pointerlockerror', lockFailed);
 document.addEventListener('keydown', e => {
   if (!inGame()) return;
-  if (MODE === 'online' && NET.g && NET.g.ph === 'over' && /^Digit[1-5]$/.test(e.code)){ castVote(Object.keys(MAPS)[+e.code.slice(5) - 1]); return; }   // vote for the next map
+  if (MODE === 'online' && NET.g && NET.g.ph === 'over' && /^Digit[1-9]$/.test(e.code)){ castVote(voteIds()[+e.code.slice(5) - 1]); return; }   // vote for the next map
   keys[e.code] = true;
   if (['Space','Tab','ArrowUp','ArrowDown'].includes(e.code) || (KBLOCK && e.ctrlKey)) e.preventDefault();
   if ((e.code === 'ControlLeft' || e.code === 'ControlRight') && !KBLOCK && !e.repeat && S.time - (S.ctrlHint || -99) > 8){ S.ctrlHint = S.time; hint(IN_ARTIFACT ? "Cho'kkalash — C. Brauzerda Ctrl+W yorliqni yopib qo'yadi" : "Cho'kkalash — C. Ctrl ishlashi uchun to'liq ekranga o'ting (F11 emas, o'yin tugmasi orqali)", 3200); }
@@ -3819,8 +3990,9 @@ $('onlineBtn').addEventListener('click', () => { joinOnline(false); });
 $('shareBtn').addEventListener('click', () => linkShare());
 $('createBtn').addEventListener('click', () => { joinOnline(true); });
 $('mapSel').value = SET.map; $('newMap').value = SET.map;
-$('mapSel').addEventListener('change', () => { SET.map = $('mapSel').value; saveSet(); setMap(SET.map); });
-$('newMap').addEventListener('change', () => { SET.map = $('newMap').value; saveSet(); $('mapSel').value = SET.map; setMap(SET.map); });
+$('mapSel').addEventListener('change', () => { SET.map = $('mapSel').value; saveSet(); setMap(SET.map); aimPairMenu('map'); });
+$('newMap').addEventListener('change', () => { aimPairNew('map'); SET.map = $('newMap').value; saveSet(); $('mapSel').value = SET.map; setMap(SET.map); aimPairMenu('map'); });
+$('newMode').addEventListener('change', () => aimPairNew('mode'));
 $('admMode').addEventListener('change', () => { if (isOwner() && NET.room.admin && $('admMode').value !== curModeID()){ NET.room.admin({ a:'mode', m:$('admMode').value }); hint("Rejim almashtirilmoqda — o'yin isinishdan qayta boshlanadi", 3000); } });
 // the create form also offers team deathmatch ("tdm"); for playing against bots it is the usual deathmatch
 const newModeVal = () => SET.mode === 'dm' && SET.dmTeam ? 'tdm' : (MODES[SET.mode] ? SET.mode : 'comp');
@@ -3836,9 +4008,9 @@ let roomsT = 0;
    Map cards: how many people are playing on each map right now, and "O'ynash" drops you into that map's busiest room
    that still has space (an official room if nothing else; a fresh one if the map has none). Below, every public room
    with filters; a row opens a small sheet with who's playing and the score before you join. */
-const RB = { list:[], byMap:{}, open:null, detail:null, mapIds:Object.keys(MAPS), modeIds:['comp','wm','rt','dm','tdm','gg'] };
+const RB = { list:[], byMap:{}, open:null, detail:null, mapIds:Object.keys(MAPS), modeIds:['comp','wm','rt','dm','tdm','gg','arena'] };
 const rbFull = r => !!r.max && ((r.humans|0) + (r.official ? 0 : r.bots|0)) >= r.max;
-const rbTeamMode = md => md === 'comp' || md === 'wm' || md === 'rt' || md === 'tdm';
+const rbTeamMode = md => md === 'comp' || md === 'wm' || md === 'rt' || md === 'tdm' || md === 'arena';
 const rbStatus = r => rbFull(r) ? ["to'la", ''] : r.phase === 'warmup' || !r.phase ? ['isinish', 'warm'] : r.phase === 'post' || r.phase === 'over' ? ['tanaffus', ''] : ["o'yin", 'live'];
 function rbScore(r){
   if (!rbTeamMode(r.mode)) return r.phase === 'warmup' ? '' : r.mode === 'gg' ? 'qurol poygasi' : 'deathmatch';
@@ -3982,7 +4154,20 @@ diffBtns.forEach(b => b.addEventListener('click', () => { SET.diff = b.dataset.d
 // segmented settings: <div class="seg" data-set="key"><button data-v="value">
 function syncSegs(){ document.querySelectorAll('.seg[data-set]').forEach(g => g.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(SET[g.dataset.set]) === b.dataset.v ? 'true' : 'false'))); }
 document.querySelectorAll('.seg[data-set]').forEach(g => g.addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; SET[g.dataset.set] = b.dataset.v; saveSet(); syncSegs(); if (SEG_HOOK[g.dataset.set]) SEG_HOOK[g.dataset.set](); }));
-const SEG_HOOK = { voice(){ if (MODE === 'online' && voiceMode() && VOICE.mic === 'none') voiceMic(); }, mode(){ $('newMode').value = newModeVal(); modeNote(); } };
+const SEG_HOOK = { voice(){ if (MODE === 'online' && voiceMode() && VOICE.mic === 'none') voiceMic(); }, mode(){ aimPairMenu('mode'); $('newMode').value = newModeVal(); modeNote(); } };
+// aim maps are played only in the aim mode, and the aim mode only on aim maps: changing one moves the other
+function aimPairMenu(changed){
+  const aimMode = SET.mode === 'arena', aimMap = isAimMap(SET.map);
+  if (aimMode === aimMap) return;
+  if (changed === 'mode'){ SET.map = aimMode ? 'maydon' : 'qumtepa'; $('mapSel').value = SET.map; setMap(SET.map); }
+  else { SET.mode = aimMap ? 'arena' : 'comp'; syncSegs(); $('newMode').value = newModeVal(); modeNote(); }
+  saveSet();
+}
+function aimPairNew(changed){
+  const m = $('newMode'), p = $('newMap'), aimMode = m.value === 'arena', aimMap = isAimMap(p.value);
+  if (aimMode === aimMap) return;
+  if (changed === 'mode') p.value = aimMode ? 'maydon' : 'qumtepa'; else m.value = aimMap ? 'arena' : 'comp';
+}
 syncSegs();
 
 // settings (one panel moved between the menu and the pause sheet)
@@ -4015,7 +4200,7 @@ function closeBuy(silent){ S.buyOpen = false; $('buy').hidden = true; if (!silen
 $('buyClose').addEventListener('click', () => closeBuy());
 function owns(id){ if (W[id] && W[id].kind === 'nade') return player.nades[id] >= W[id].max; if (id === 'kit') return player.kit; if (id === 'taser') return !!player.taser;
   return (player.inv[1] && player.inv[1].id === id) || (player.inv[2] && player.inv[2].id === id) || (id === 'kevlar' && player.armor >= 100) || (id === 'helmet' && player.armor >= 100 && player.helmet); }
-function dmFree(){ return curMode() === 'dm' && S.phase === 'live'; }
+function dmFree(){ return (curMode() === 'dm' && S.phase === 'live') || curMode() === 'arena'; }
 function priceOf(id){ if (dmFree()) return 0; if (id === 'helmet' && player.armor >= 100 && !player.helmet) return 350; return (W[id] || GEAR[id]).price; }
 function renderBuy(){
   const g = $('buyGrid'); g.innerHTML = '';
@@ -4069,7 +4254,8 @@ function buy(id){
   if (W[id] && W[id].kind === 'nade'){ if (nadeTotal() >= NADE_MAX) return; player.nades[id]++; if (!player.nadeSel || !player.nades[player.nadeSel]) player.nadeSel = id; }
   else if (id === 'kit'){ if (player.team !== 'CT') return; player.kit = true; }
   else if (id === 'taser'){ player.taser = true; }
-  else if (W[id]){ const w = W[id]; if (player.inv[w.slot] && !respawnMode()) throwGun(w.slot, .7); player.inv[w.slot] = { id, mag:w.mag, res:w.res, bk:entry }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); }
+  else if (W[id]){ const w = W[id]; if (curMode() === 'arena'){ if (w.slot === 1) SET.aimW = id; else if (w.slot === 2) SET.aimS = id; saveSet(); }
+    if (player.inv[w.slot] && !respawnMode() && curMode() !== 'arena') throwGun(w.slot, .7); player.inv[w.slot] = { id, mag:w.mag, res:w.res, bk:entry }; player.lastSlot = player.slot; player.slot = w.slot; drawWeapon(); }
   else if (id === 'kevlar'){ player.armor = 100; }
   else if (id === 'helmet'){ player.armor = 100; player.helmet = true; }
   player.money -= price; sfxClick(); renderBuy(); updateHUD();
@@ -4587,6 +4773,7 @@ function spawnRound(g){
   else if (newHalf){ player.money = isOT(g.r, g.fm) ? 12500 : 800; NET.loss = 0; resetInv(); }
   else if (!survived) resetInv();
   refill(); killcamStop(); spawnAt(player.team);
+  if (g.md === 'arena') aimLoadout();
   if (g.md === 'rt'){ retakeLoadout(); if (player.team === 'T' && g.b){ const p = retakeSpot(g.b.s, g.b.x, g.b.z); player.pos.copy(p); player.yaw = Math.atan2(-(cw(22) - p.x), -(cw(22) - p.z)); } }
   player.alive = true; player.hp = 100; player.planting = 0; player.scope = 0; player.recoil = 0; player.punchX = player.punchY = 0;
   NET.inRound = g.r; NET.plant = null; NET.def = null; NET.planted = false; NET.liveT = 0; NET.defuseT = 0; S.deathT = 0;
@@ -4690,7 +4877,7 @@ function netStep(dt){
 }
 function defuseTime(){ return player.kit ? 4 : 7; }
 function netPlantDefuse(dt){
-  if (respawnMode()){ player.bomb = false; if (player.slot === 5){ player.slot = bestSlot(); drawWeapon(); } return; }
+  if (respawnMode() || curMode() === 'arena'){ player.bomb = false; if (player.slot === 5){ player.slot = bestSlot(); drawWeapon(); } return; }
   const g = NET.g, wantE = !!keys.KeyE && !S.paused;
   player.bomb = player.team === 'T' && !!g && (g.ph === 'live' || g.ph === 'freeze') && !g.b && !(NET.plant && NET.plant.r === g.r) && NET.inRound === g.r && player.alive;
   if (!player.bomb && player.slot === 5){ player.slot = bestSlot(); drawWeapon(); }
@@ -4827,7 +5014,7 @@ function linkParse(){
   const m = /^\/x\/([a-z0-9]+)\/([a-z0-9][a-z0-9_.-]{0,39})\/?$/.exec(location.pathname);
   if (!m || !MAPS[m[1]]) return null;
   const md = new URLSearchParams(location.search).get('mode');
-  return { map:m[1], code:m[2], mode:md && /^[a-z]{2,4}$/.test(md) ? md : '' };
+  return { map:m[1], code:m[2], mode:md && /^[a-z]{2,6}$/.test(md) ? md : '' };
 }
 const linkPath = () => '/x/' + (NET.g && MAPS[NET.g.m] ? NET.g.m : MAP_ID) + '/' + encodeURIComponent(NET.code);
 function linkSync(){
@@ -5398,7 +5585,12 @@ function step(dt){
   if (TRAIN(S.md)) trainStep(dt);
   else if (RM(S.md)) modeStepOffline(dt);
   else if (S.phase === 'freeze'){ S.timer -= dt; if (S.timer <= 0){ S.phase = 'live'; S.timer = roundTimeOf(S.md); showMsg('Boshladik!', '', 'atk', 1200); vo('start'); } }
-  else if (S.phase === 'live'){ S.liveT += dt; if (!bomb.planted){ S.timer -= dt; if (S.timer <= 0) endRound('CT', 'Vaqt tugadi — bomba o\'rnatilmadi', 'time'); } }
+  else if (S.phase === 'live'){ S.liveT += dt; if (!bomb.planted){ S.timer -= dt; if (S.timer <= 0){
+    if (S.md === 'arena'){   // time's up: more fighters alive wins, then more health; a dead heat goes to the defence
+      const mine = player.alive ? 1 : 0, theirs = bots.filter(b => b.alive && !b.off).length, hpM = player.alive ? player.hp : 0, hpT = bots.reduce((s, b) => s + (b.alive && !b.off ? b.hp : 0), 0);
+      const meWin = mine !== theirs ? mine > theirs : hpM !== hpT ? hpM > hpT : player.team === 'CT';
+      endRound(meWin ? player.team : (player.team === 'T' ? 'CT' : 'T'), "Vaqt tugadi — tirik qolganlar ko'proq jamoa yutdi", 'time');
+    } else endRound('CT', 'Vaqt tugadi — bomba o\'rnatilmadi', 'time'); } } }
   else if (S.phase === 'post'){ S.timer -= dt; if (S.timer <= 0){ if (matchWinner(S.sA, S.sB, S.round, S.H)) return matchOver(); startRound(); } }
   if (S.buyOpen && !canBuy()) closeBuy(true);
   if (S.buyOpen && S.round && !RM(S.md)) $('buyTime').textContent = S.phase === 'freeze' ? 'Raund boshlanmoqda' : 'Xarid uchun ' + Math.max(0, Math.ceil(20 - liveTime())) + ' soniya';

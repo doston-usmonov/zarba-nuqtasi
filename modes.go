@@ -26,7 +26,8 @@ const (
 	modeComp = "comp"
 	modeDM   = "dm"
 	modeGG   = "gg"
-	modeTDM  = "tdm" // tashqi nomi: xona yaratish va admin; ichkarida Md=dm, Tm=true
+	modeTDM  = "tdm"   // tashqi nomi: xona yaratish va admin; ichkarida Md=dm, Tm=true
+	modeAim  = "arena" // aim xaritalarida (brauzerdagi "aim" — nishon mashqi, shuning uchun boshqa nom): raundlar, bomba yo'q, qurollar bepul
 
 	dmTime       = 360.0 // soniya
 	ggTime       = 900.0
@@ -39,7 +40,7 @@ const (
 var ggLadder = []string{"sniper", "lmg", "rifle", "carbine", "shotgun", "smg", "deagle", "mpistol", "pistol", "knife"}
 
 func validMode(m string) bool {
-	return m == modeComp || m == modeDM || m == modeTDM || m == modeGG || m == modeWM || m == modeRT
+	return m == modeComp || m == modeDM || m == modeTDM || m == modeGG || m == modeWM || m == modeRT || m == modeAim
 }
 
 // setMode: tashqi rejim nomi (tdm ham) → Md va Tm.
@@ -235,6 +236,7 @@ func (r *room) tickModeLocked(now time.Time, dt float64, nA, nB int) {
 
 // changeModeLocked: xona boshqa rejimga o'tadi — o'yin isinishdan boshlanadi.
 func (r *room) changeModeLocked(m string, now time.Time) {
+	r.gs.M, _ = pairMapMode(r.gs.M, m, true)
 	r.gs.setMode(m)
 	if m == modeWM && (r.max == 0 || r.max > 4) {
 		r.max = 4 // Wingman: 2 ga 2
@@ -293,8 +295,44 @@ func (g *gameState) roundTime() float64 {
 		return 90
 	case modeRT:
 		return 40
+	case modeAim:
+		return 60
 	}
 	return 115
+}
+
+// freezeTime: raund oldidan kutish (aim'da qisqa — xarid yo'q, faqat qurol tanlash).
+func (g *gameState) freezeTime(first, newHalf bool) float64 {
+	switch {
+	case g.Md == modeAim:
+		return 3
+	case first:
+		return 6
+	case newHalf:
+		return 10
+	}
+	return 5
+}
+
+// aimTimeoutWinner: aim raundi vaqti tugadi — tirik qolganlar ko'p jamoa, keyin joni ko'p jamoa, teng bo'lsa himoya.
+func (r *room) aimTimeoutWinner() string {
+	n, hp := map[string]int{}, map[string]float64{}
+	for _, c := range r.clients {
+		if c.ps.alive && c.info.In == r.gs.R && (c.info.Tm == "T" || c.info.Tm == "CT") {
+			n[c.info.Tm]++
+			hp[c.info.Tm] += c.ps.hp
+		}
+	}
+	switch {
+	case n["T"] != n["CT"]:
+		if n["T"] > n["CT"] {
+			return "T"
+		}
+		return "CT"
+	case hp["T"] > hp["CT"]:
+		return "T"
+	}
+	return "CT"
 }
 
 // fixedFm: rejimning o'z formati (0 — o'yinchilar sozlamasi).
@@ -304,6 +342,8 @@ func (g *gameState) fixedFm() int {
 		return 8
 	case modeRT:
 		return 6
+	case modeAim:
+		return 8
 	}
 	return 0
 }
@@ -337,7 +377,7 @@ func (r *room) voteLocked(c *client, raw []byte) {
 	var v struct {
 		M string `json:"m"`
 	}
-	if json.Unmarshal(raw, &v) != nil || !validMap(v.M) {
+	if json.Unmarshal(raw, &v) != nil || !validMap(v.M) || isAimMap(v.M) != isAimMap(g.M) { // ovoz faqat shu turdagi xaritalarga
 		return
 	}
 	c.vote = v.M

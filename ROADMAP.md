@@ -49,6 +49,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Ikki yangi ixcham xarita: Bozor va Karvonsaroy (Qumtepa bilan birga 3 ta); xona yaratishda va xona egasi o'yin davomida tanlaydi
 - ✅ Registon (maydon, madrasa hovlisi — A, yopiq bozor — B; koshinli peshtoqlar, minoralar, gumbazlar) va Saroy (tepalikdagi qal'a: ichki zallar, devor bo'yi uzun yo'lak, zinapoyali yo'l; qal'a tishlari, minoralar, bayroqlar) — jami 5 ta xarita, ovoz berish 1–5 tugmalari
 - [ ] Yana bitta xarita (zavod)
+- ✅ Aim xaritalari (Maydon, Chorraha, Hovli) va «Aim» rejimi: raundlar, bomba yo'q, qurollar bepul, botlar ov qiladi; rasmiy `maydon-arena` xonasi
 - ✅ O'yin oxirida keyingi xarita uchun ovoz berish (1/2/3 tugmalari)
 
 ## 6. Ijtimoiy

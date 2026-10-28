@@ -84,7 +84,10 @@ type partyInvite struct {
 
 // mmRoom: navbatdan ochilgan xona — kim kira oladi va qaysi jamoada.
 type mmRoom struct {
-	sq map[int64]string
+	sq       map[int64]string
+	absent   map[int64]time.Time // xonada yo'q o'yinchilar: qachondan beri (leaver.go)
+	punished map[int64]bool      // tashlab ketgani yozilganlar
+	done     bool                // o'yin tugadi — endi hech kim jazolanmaydi
 }
 
 type matchmaker struct {
@@ -220,7 +223,9 @@ type queueStatus struct {
 	Leader  bool           `json:"leader,omitempty"` //
 	Found   *qFound        `json:"found,omitempty"`
 	Invite  *partyInvite   `json:"invite,omitempty"`
-	InQueue map[string]int `json:"inQueue"` // har rejimda navbatdagi o'yinchilar
+	Ban     int            `json:"ban,omitempty"`    // navbat taqiqi tugashiga soniya (leaver.go)
+	Rejoin  *mmRejoin      `json:"rejoin,omitempty"` // tashlab chiqilgan, hali qaytsa bo'ladigan o'yin
+	InQueue map[string]int `json:"inQueue"`          // har rejimda navbatdagi o'yinchilar
 }
 
 // status: o'yinchining holati. Bu so'rov «hali shu yerdaman» belgisi ham.
@@ -372,7 +377,7 @@ func (q *matchmaker) startLocked(group []*qTicket, now time.Time) {
 			sq[m.id] = side
 		}
 	}
-	mode, ids := group[0].mode, mapOrder()
+	mode, ids := group[0].mode, queueMaps()
 	gmap := ids[randIndex(len(ids))]
 	code := "mm-" + randHex(4)
 	if q.open != nil {
@@ -384,6 +389,17 @@ func (q *matchmaker) startLocked(group []*qTicket, now time.Time) {
 		}
 		q.dropLocked(t)
 	}
+}
+
+// queueMaps: reytingli o'yin xaritalari (aim xaritalari faqat Aim rejimi uchun).
+func queueMaps() []string {
+	var out []string
+	for _, id := range mapOrder() {
+		if !isAimMap(id) {
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 func randHex(n int) string {
@@ -408,8 +424,13 @@ func (h *hub) openMM(mode, gmap string, sq map[int64]string) string {
 	for h.rooms["zn-"+code] != nil {
 		code = "mm-" + randHex(4)
 	}
+	mm := &mmRoom{sq: sq, absent: map[int64]time.Time{}, punished: map[int64]bool{}}
+	now := time.Now()
+	for uid := range sq {
+		mm.absent[uid] = now // kelmagan o'yinchi ham «tashlab ketgan» hisoblanadi
+	}
 	r := &room{name: "zn-" + code, clients: map[string]*client{}, gs: newGameState(), stop: make(chan struct{}), pub: false, max: queueSize[mode], bans: map[string]time.Time{},
-		mm: &mmRoom{sq: sq}}
+		mm: mm}
 	r.gs.M = gmap
 	r.gs.setMode(mode)
 	h.rooms[r.name] = r
@@ -440,7 +461,18 @@ func (a *api) queueGet(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusUnauthorized, "Reytingli navbat uchun hisobga kiring")
 		return
 	}
-	writeJSON(w, http.StatusOK, a.queue.status(u.ID))
+	writeJSON(w, http.StatusOK, a.queueStatus(r, u.ID))
+}
+
+// queueStatus: navbat holati + taqiq va qayta ulanish ma'lumoti.
+func (a *api) queueStatus(r *http.Request, uid int64) queueStatus {
+	st := a.queue.status(uid)
+	now := time.Now()
+	if until := a.st.QueueBan(r.Context(), uid, now); !until.IsZero() {
+		st.Ban = int(until.Sub(now).Seconds()) + 1
+	}
+	st.Rejoin = a.hub.mmRejoinFor(uid, now)
+	return st
 }
 
 func (a *api) queuePost(w http.ResponseWriter, r *http.Request) {
@@ -459,6 +491,17 @@ func (a *api) queuePost(w http.ResponseWriter, r *http.Request) {
 	}
 	me := qMember{id: u.ID, name: u.Username, rating: u.Rating}
 	var err error
+	if req.Action == "join" || req.Action == "accept" {
+		now := time.Now()
+		if until := a.st.QueueBan(r.Context(), u.ID, now); !until.IsZero() {
+			writeErr(w, http.StatusForbidden, banError(until, now).Error())
+			return
+		}
+		if a.hub.mmRejoinFor(u.ID, now) != nil {
+			writeErr(w, http.StatusBadRequest, "Avval tashlab chiqqan reytingli o'yiningizga qayting")
+			return
+		}
+	}
 	switch req.Action {
 	case "join":
 		if a.hub != nil {
@@ -498,5 +541,5 @@ func (a *api) queuePost(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, a.queue.status(u.ID))
+	writeJSON(w, http.StatusOK, a.queueStatus(r, u.ID))
 }

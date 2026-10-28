@@ -43,7 +43,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Deathmatch (har kim har kimga yoki jamoa jamoaga — xona yaratishda tanlanadi; qayta tug'ilish, 6 daqiqa) va Qurol poygasi (snayperdan boshlab har 2 o'ldirishda kuchsizroq qurol, oxiri pichoq); hisobni server yuritadi
 - ✅ Wingman (2 ga 2, faqat A nuqta, MR8) va Retake (bomba raund boshidan o'rnatilgan, qurollar beriladi)
 - ✅ Partiya: do'stlar bilan birga navbatga turish (bitta jamoaga tushadi)
-- [ ] O'yinni tashlab ketganlik uchun jazo (vaqtincha navbat taqiqi)
+- ✅ O'yinni tashlab ketganlik uchun jazo: 2,5 daqiqada qaytmasa navbat taqiqi (5 daqiqa → 30 daqiqa → 2 soat), menyuda «Qayta ulanish»
 
 ## 5. Xaritalar
 - ✅ Ikki yangi ixcham xarita: Bozor va Karvonsaroy (Qumtepa bilan birga 3 ta); xona yaratishda va xona egasi o'yin davomida tanlaydi
@@ -76,7 +76,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Nishon mashqi: 60 soniya, qurolni o'zingiz tanlaysiz, nishonlar o'q uzmaydi, qiyinlikka qarab turadi, yuradi yoki cho'kkalaydi. Natija: ochko, aniqlik, boshga tekkani, o'rtacha reaksiya. Har qurol va qiyinlik uchun rekord brauzerda saqlanadi
 - ✅ Granata mashqi: cheksiz granata, tugma bosib turilganda uchish yo'li va tushadigan joy ko'rinadi (haqiqiy otish bilan aynan bir xil fizika), R — oxirgi otgan joyga qaytish, tushgan joylar belgilanib qoladi, o'z granatangiz zarar bermaydi
 - ✅ Tayyor tutun joylari: har xaritada A, B va o'rta uchun 3 tadan (jami 15), o'yin fizikasi bilan topilgan (`tools/lineups.py`); turish halqasi, nishon doirasi, L — keyingi joy
-- [ ] Xarita bo'yicha tayyor granata otish joylari (smoke lineup) to'plami
+- ✅ Xarita bo'yicha tayyor granata otish joylari (smoke lineup) to'plami — yuqoridagi «Tayyor tutun joylari»
 
 ## Ovoz
 - ✅ O'zbekcha diktor: raund boshi, bomba o'rnatildi/zararsizlantirildi, 10 soniya qoldi, g'olib tomon, ketma-ket o'ldirishlar, yarim vaqt, hal qiluvchi raund, o'yin tugadi (sozlamalarda o'chiriladi)

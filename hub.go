@@ -83,15 +83,16 @@ type room struct {
 }
 
 type hub struct {
-	mu         sync.Mutex
-	rooms      map[string]*room
-	perIP      map[string]int
-	maxPlayers int
-	store      *Store                      // nil yoki tayyor emas — hisoblar o'chirilgan
-	voice      voiceCfg                    // ovozli chat uchun STUN/TURN
-	debug      bool                        // ZARBA_DEBUG=1: e2e testlar raund holatini o'zgartira oladi (prod'da o'chiq)
-	loadouts   map[int64]map[string]string // hisob → qurol bo'yoqlari (progress.go)
-	soc        *social                     // kim qaysi xonada, xonaga chaqiriqlar (social.go)
+	mu          sync.Mutex
+	rooms       map[string]*room
+	perIP       map[string]int
+	maxPlayers  int
+	store       *Store                      // nil yoki tayyor emas — hisoblar o'chirilgan
+	voice       voiceCfg                    // ovozli chat uchun STUN/TURN
+	debug       bool                        // ZARBA_DEBUG=1: e2e testlar raund holatini o'zgartira oladi (prod'da o'chiq)
+	loadouts    map[int64]map[string]string // hisob → qurol bo'yoqlari (progress.go)
+	soc         *social                     // kim qaysi xonada, xonaga chaqiriqlar (social.go)
+	leaverGrace time.Duration               // 0 — leaverGrace (leaver.go); testlarda qisqa
 }
 
 func newHub(maxPlayers int, st *Store) *hub {
@@ -224,6 +225,7 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 	r.clients[c.id] = c
 	if acct != nil {
 		h.joinedLocked(acct.id, r)
+		r.mmPresentLocked(acct.id)
 	}
 	if r.owner == "" && !r.ownerless() {
 		r.owner = c.id
@@ -249,6 +251,7 @@ func (h *hub) leave(c *client) {
 	delete(r.clients, c.id)
 	if c.acct != nil {
 		h.leftLocked(c.acct.id, r)
+		r.mmAbsentLocked(c.acct.id, time.Now())
 	}
 	_, humans := r.botCountLocked()
 	empty := humans == 0 // botlar o'zi xonani ushlab turmaydi

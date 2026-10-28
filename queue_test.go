@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -218,6 +219,10 @@ func TestQueueAPI(t *testing.T) {
 	if got != want {
 		t.Fatalf("jamoa: %q, kerak %q", got, want)
 	}
+	// (o'yin tugadi deb hisoblaymiz: kelmagan o'yinchilar jazolanmaydi — bu TestLeaverPenalty'da)
+	r.mu.Lock()
+	r.mm.done, r.mm.absent = true, map[int64]time.Time{}
+	r.mu.Unlock()
 	// partiya chaqirig'i /api/social da ham keladi
 	cs[4].post(t, "/api/friends", map[string]any{"action": "add", "name": "Navbat1"})
 	cs[1].post(t, "/api/friends", map[string]any{"action": "add", "name": "Navbat4"})
@@ -244,5 +249,109 @@ func TestWingmanRated(t *testing.T) {
 	r.tr.phase(r, "warmup", time.Now())
 	if !r.tr.active || r.tr.epoch != "w1" {
 		t.Fatalf("Wingman o'yini kuzatilmayapti: %+v", r.tr)
+	}
+}
+
+// TestLeaverPenalty: navbat o'yiniga kelmagan yoki chiqib qaytmagan o'yinchi navbatga vaqtincha kira olmaydi.
+func TestLeaverPenalty(t *testing.T) {
+	srv, st, h := newTestServer(t)
+	defer srv.Close()
+	h.leaverGrace = 400 * time.Millisecond
+	var cs []*testClient
+	for i := 0; i < 4; i++ {
+		c := newTestClient(srv.URL)
+		if code, out := c.post(t, "/api/register", credentials{fmt.Sprintf("Qochoq%d", i), "parol123"}); code != 201 {
+			t.Fatalf("ro'yxat: %d %v", code, out)
+		}
+		c.post(t, "/api/queue", map[string]any{"action": "join", "mode": "wm"})
+		cs = append(cs, c)
+	}
+	_, s0 := cs[0].get(t, "/api/queue")
+	f, _ := s0["found"].(map[string]any)
+	if f == nil {
+		t.Fatalf("o'yin topilmadi: %v", s0)
+	}
+	room := "zn-" + f["room"].(string)
+	// 0, 1, 2 kiradi; 3 kelmaydi
+	var ws []*wsTest
+	for i := 0; i < 3; i++ {
+		ws = append(ws, dialWS(t, cs[i], room))
+	}
+	defer func() {
+		for _, w := range ws {
+			w.c.Close()
+		}
+	}()
+	time.Sleep(900 * time.Millisecond)
+	if code, out := cs[3].post(t, "/api/queue", map[string]any{"action": "join", "mode": "wm"}); code != 403 {
+		t.Fatalf("kelmagan o'yinchi navbatga turdi: %d %v", code, out)
+	}
+	if _, q := cs[3].get(t, "/api/queue"); q["ban"] == nil || q["ban"].(float64) < 250 || q["ban"].(float64) > 301 {
+		t.Fatalf("taqiq 5 daqiqa bo'lishi kerak: %v", q["ban"])
+	}
+	for i := 0; i < 3; i++ {
+		if _, q := cs[i].get(t, "/api/queue"); q["ban"] != nil {
+			t.Fatalf("xonadagi o'yinchi %d jazolandi: %v", i, q)
+		}
+	}
+	// 0 chiqadi va vaqtida qaytadi — jazo yo'q
+	ws[0].c.Close()
+	time.Sleep(150 * time.Millisecond)
+	_, q := cs[0].get(t, "/api/queue")
+	rj, _ := q["rejoin"].(map[string]any)
+	if rj == nil || rj["room"] != f["room"] || rj["sq"] != f["sq"] {
+		t.Fatalf("qayta ulanish taklifi yo'q: %v", q)
+	}
+	if code, _ := cs[0].post(t, "/api/queue", map[string]any{"action": "join", "mode": "comp"}); code != 400 {
+		t.Fatal("tashlab chiqqan o'yinchi yangi navbatga turdi")
+	}
+	ws[0] = dialWS(t, cs[0], room)
+	time.Sleep(600 * time.Millisecond)
+	if _, q := cs[0].get(t, "/api/queue"); q["ban"] != nil || q["rejoin"] != nil {
+		t.Fatalf("qaytgan o'yinchi jazolandi: %v", q)
+	}
+	// 1 chiqib qaytmaydi — jazo
+	ws[1].c.Close()
+	time.Sleep(700 * time.Millisecond)
+	if _, q := cs[1].get(t, "/api/queue"); q["ban"] == nil {
+		t.Fatalf("qaytmagan o'yinchi jazolanmadi: %v", q)
+	}
+	// o'yin tugagach chiqish jazolanmaydi
+	r := h.rooms[room]
+	r.mu.Lock()
+	r.gs.Ph = "over"
+	r.mu.Unlock()
+	time.Sleep(100 * time.Millisecond)
+	ws[2].c.Close()
+	time.Sleep(700 * time.Millisecond)
+	if _, q := cs[2].get(t, "/api/queue"); q["ban"] != nil {
+		t.Fatalf("o'yin tugagach chiqqan o'yinchi jazolandi: %v", q)
+	}
+	// zinapoya: 5 daqiqa, 30 daqiqa, 2 soat; 24 soatdan keyin boshidan
+	_, out := cs[3].get(t, "/api/me")
+	_ = out
+	ctx := context.Background()
+	id, _, _ := st.userID(ctx, "Qochoq2")
+	now := time.Now()
+	for i, want := range []time.Duration{5 * time.Minute, 30 * time.Minute, 2 * time.Hour, 2 * time.Hour} {
+		until, n, err := st.AddLeave(ctx, id, now.Add(time.Duration(i)*time.Minute))
+		if err != nil || n != i+1 || until.Sub(now.Add(time.Duration(i)*time.Minute)) != want {
+			t.Fatalf("%d-marta: %v %d %v", i+1, until, n, err)
+		}
+	}
+	if _, n, _ := st.AddLeave(ctx, id, now.Add(26*time.Hour)); n != 1 {
+		t.Fatalf("24 soatdan keyin hisob boshidan boshlanmadi: %d", n)
+	}
+}
+
+func TestQueueMaps(t *testing.T) {
+	ids := queueMaps()
+	if len(ids) < 5 {
+		t.Fatalf("xaritalar: %v", ids)
+	}
+	for _, id := range ids {
+		if isAimMap(id) {
+			t.Fatalf("navbatda aim xaritasi: %s", id)
+		}
 	}
 }

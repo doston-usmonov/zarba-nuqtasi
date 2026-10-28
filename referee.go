@@ -879,6 +879,11 @@ func (r *room) run(h *hub) {
 			dt := math.Min(now.Sub(last).Seconds(), 1)
 			last = now
 			r.mu.Lock()
+			if r.mm != nil { // navbat o'yini: qaytmagan o'yinchilar (bo'sh xonada ham)
+				if l := r.mmLeaversLocked(now, h.grace()); len(l) > 0 {
+					go h.punishLeavers(r.name, l)
+				}
+			}
 			if r.manual || len(r.clients) == 0 { // bo'sh (rasmiy) xona hech narsa hisoblamaydi
 				r.mu.Unlock()
 				continue

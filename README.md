@@ -19,6 +19,7 @@ zarba-server/
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── social.go          do'stlar, xonaga chaqiriqlar, klanlar (/api/social, /api/friends, /api/clan, /api/clans)
 ├── queue.go           «O'yin topish»: reytingli navbat, partiyalar, mm- xonalar (/api/queue)
+├── leaver.go          reytingli o'yinni tashlab ketganlik uchun navbat taqiqi, qayta ulanish
 ├── officials.go       doimiy (rasmiy) xonalar va ularni botlar bilan to'ldirish
 ├── deeplink.go        /x/<xarita>/<kod> xona havolalari va og: teglari
 ├── modes.go           o'yin rejimlari: deathmatch (hamma hammaga yoki jamoaviy), qurol poygasi, Wingman, Retake
@@ -119,7 +120,7 @@ O'q qayerga tekkanini otgan o'yinchining brauzeri aniqlaydi, server esa har bir 
 
 ### Ma'lumotlar bazasi (PostgreSQL 17)
 
-Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanadi), `matches`, `match_players`, `daily_progress`, `friends`, `clans`, `clan_members`, `clan_invites`. Sxema `migrations/NNN_*.sql` fayllarida. Server ishga tushganda yangi migratsiyalar avtomatik qo'llanadi: har biri o'z tranzaksiyasida, `pg_advisory_lock` bilan himoyalangan. O'yin natijasi va barcha o'yinchilarning reytingi bitta tranzaksiyada yoziladi.
+Jadvallar: `users`, `sessions` (tokenning o'zi emas, faqat sha256 xeshi saqlanadi), `matches`, `match_players`, `daily_progress`, `friends`, `clans`, `clan_members`, `clan_invites`, `leaver_bans`. Sxema `migrations/NNN_*.sql` fayllarida. Server ishga tushganda yangi migratsiyalar avtomatik qo'llanadi: har biri o'z tranzaksiyasida, `pg_advisory_lock` bilan himoyalangan. O'yin natijasi va barcha o'yinchilarning reytingi bitta tranzaksiyada yoziladi.
 
 - **Baza paroli:** `.env` faylidagi `ZARBA_DB_PASSWORD`. Fayl git'ga tushmaydi. `deploy/deploy.sh` uni birinchi marta o'zi yaratadi. **`.env` ni o'chirmang:** baza shu parol bilan yaratilgan.
 - **Port:** tashqariga ochilmaydi, bazaga faqat compose ichidagi xizmatlar ulanadi.
@@ -173,7 +174,8 @@ API: `GET /api/rooms` → `{rooms:[…], byMap:{qumtepa:3, …}}` (har qatorda `
 - *Deathmatch* — darhol eng ko'p odam o'ynayotgan ochiq deathmatch xonasiga (rasmiy xonalar ham) kirasiz; hisob shart emas.
 - *Raqobat* (5 ga 5) va *Wingman* (2 ga 2) — **reytingli navbat**, faqat hisobga kirganlar. Reytingingizga yaqin o'yinchilar qidiriladi: farq boshida ±150, har 20 soniyada ±50 kengayadi. Yetarli odam (10 yoki 4) yig'ilganda yangi yopiq xona `mm-<tasodifiy>` ochiladi, o'yinchilar reyting yig'indisi iloji boricha teng bo'lgan ikki jamoaga bo'linadi va hamma avtomatik shu xonaga tushadi. Xonaga faqat topilgan o'yinchilar kira oladi, egasi yo'q, bot qo'shib bo'lmaydi, jamoani server belgilaydi (M ishlamaydi) — shuning uchun natija reytingga yoziladi. Ekranning tepasida qidiruv holati: kutish vaqti, reyting oralig'i, navbatdagi o'yinchilar soni, «Bekor qilish».
 - **Partiya:** navbatga turishdan oldin menyudagi onlayn do'stlaringizni belgilaysiz (Raqobatda 4 tagacha, Wingman'da 1). Ularga chaqiriq keladi; «Qo'shilish»ni bosganlar siz bilan navbatda turadi va doim bitta jamoaga tushadi (partiya buzilmaydi). Boshliq chiqsa partiya ham navbatdan chiqadi.
-- Navbat server xotirasida: `POST /api/queue` (`join` + `mode` va `party`, `leave`, `accept`, `decline`), `GET /api/queue` — holat; brauzer navbatda turganda har 2 soniyada so'raydi, 15 soniya so'ramagan o'yinchi navbatdan chiqariladi. Partiya chaqirig'i `/api/social` javobida ham keladi. Hech kim kirmagan yoki hamma chiqib ketgan navbat xonasi 3 daqiqadan keyin o'chiriladi (shu vaqt ichida qayta ulanish mumkin).
+- Navbat server xotirasida: `POST /api/queue` (`join` + `mode` va `party`, `leave`, `accept`, `decline`), `GET /api/queue` — holat; brauzer navbatda turganda har 2 soniyada so'raydi, 15 soniya so'ramagan o'yinchi navbatdan chiqariladi. Partiya chaqirig'i `/api/social` javobida ham keladi. Hech kim kirmagan yoki hamma chiqib ketgan navbat xonasi 3 daqiqadan keyin o'chiriladi (shu vaqt ichida qayta ulanish mumkin). Reytingli o'yinlar faqat Raqobat xaritalarida (aim xaritalari navbatga tushmaydi).
+- **Tashlab ketganlik uchun jazo** (`leaver.go`): topilgan o'yinga kelmagan yoki o'yin tugamasdan chiqib 2,5 daqiqa ichida qaytmagan o'yinchi navbatga vaqtincha kira olmaydi — oxirgi 24 soatda 1-marta 5 daqiqa, 2-marta 30 daqiqa, keyin har safar 2 soat (`leaver_bans` jadvali). Pauzadagi «Bosh menyu» birinchi bosilganda ogohlantiradi; chiqib ketgan o'yinchiga menyuda «Qayta ulanish» tugmasi va qolgan vaqt ko'rinadi (`GET /api/queue` → `rejoin`), taqiq vaqtida «O'yin topish» o'chiq va qancha qolgani yoziladi (`ban`). Taqiq vaqtida yoki qaytilmagan o'yin turganda navbatga turish va partiyaga qo'shilish rad etiladi. O'yin tugagach chiqish jazolanmaydi.
 
 Wingman o'yinlari ham (botsiz bo'lsa) endi Raqobat kabi reytingga yoziladi.
 

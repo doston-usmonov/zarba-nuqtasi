@@ -5684,7 +5684,7 @@ function lbRowHTML(p, mine){
   return `<tr class="${mine ? 'mine' : ''}"><td class="r pos">${p.pos || '—'}</td><td><button type="button" class="link" data-p="${escH(p.username)}">${escH(p.username)}</button></td><td>${rankBadge(p.rank)}</td>` +
     `<td class="r pts">${p.rating}</td><td class="r">${p.matches}</td><td class="r">${p.winPct}%</td><td class="r">${Number(p.kd).toFixed(2)}</td><td class="r">${p.hsPct}%</td></tr>`;
 }
-async function openLB(){
+async function openLB(who){
   $('lb').hidden = false;
   $('lbBody').innerHTML = '<tr><td colspan="8" class="wrap">Yuklanmoqda…</td></tr>';
   const r = await apiCall('/api/leaderboard');
@@ -5695,7 +5695,8 @@ async function openLB(){
   $('lbBody').innerHTML = html || `<tr><td colspan="8" class="wrap">Hali reytingli o'yin bo'lmagan. Hisobga kiring va do'stlaringiz bilan onlayn o'ynang — birinchi o'rin sizniki bo'lishi mumkin.</td></tr>`;
   $('lbTiers').innerHTML = (d.tiers || []).map(t => `<span class="rk" style="--c:${safeColor(t.color)}"><i></i>${escH(t.name)} · ${t.min}+</span>`).join('') +
     `<span class="rk"><i></i>Dastlabki ${d.placement} ta o'yin — kalibrlash</span>`;
-  if (ACC.me) showProfile(ACC.me.username);
+  if (who) showProfile(who);
+  else if (ACC.me) showProfile(ACC.me.username);
   else $('lbProf').innerHTML = `<h3>Profil</h3><p class="note">Ro'yxatdan o'ting yoki hisobga kiring: onlayn o'yinlardagi g'alabalaringiz reytingingizni oshiradi. Botlarga qarshi o'yinlar reytingga ta'sir qilmaydi.</p><p class="note">Jadvaldagi istalgan o'yinchi nomini bosib, uning profilini ko'rishingiz mumkin.</p>`;
 }
 async function showProfile(name){
@@ -6142,6 +6143,11 @@ function touchFrame(){
 }
 setTimeout(linkBoot, 0);
 setTimeout(mmInit, 0);
+// https://<sayt>/#p=<login> — o'yinchi profili bilan ochiladi (Telegram botidagi «Profil» tugmasi)
+setTimeout(() => { const m = /^#p=([^&]{1,40})$/.exec(location.hash); if (!m) return;
+  let who = ''; try { who = decodeURIComponent(m[1]); } catch(e){ return; }
+  try { history.replaceState(null, '', location.pathname + location.search); } catch(e){}
+  if (who) openLB(who); }, 0);
 if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, demoPlay, DEMO, openTrn, TRN, joinOnline, specTargets, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= MAP SWITCHING ================= */

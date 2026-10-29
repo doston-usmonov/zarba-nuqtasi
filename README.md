@@ -18,6 +18,7 @@ zarba-server/
 ├── progress.go        XP, darajalar, kunlik vazifalar, qurol bo'yoqlari (/api/progress, /api/loadout)
 ├── medals.go          batafsil statistika (qurollar, xaritalar, rejimlar) va medallar
 ├── telegram.go        Telegram orqali kirish, hisobni ulash, parolni tiklash
+├── tgbot.go           Telegram bot: /start, /online, /top, /me
 ├── spectate.go        kuzatuvchilar (o'yinchilarga ko'rinmaydi, chati faqat kuzatuvchilarga)
 ├── tournaments.go     klanlar turniri: setka, o'yin xonalari, natijalar
 ├── metrics.go         /metrics — Prometheus ko'rsatkichlari (token bilan)
@@ -170,6 +171,7 @@ Shundan keyin kirish panelida «Log in with Telegram» tugmasi chiqadi:
 - **Ulash:** parol bilan kirgan o'yinchi hisob panelida Telegram'ini ulaydi. Bir Telegram — bitta hisob.
 - **Parolni tiklash:** «Parolni unutdingizmi?» → Telegram bilan kirasiz → «Parolni o'zgartirish»da eski parolsiz yangisini qo'yasiz. Oddiy (parol bilan) kirishda eski parol so'raladi. Parol o'zgarganda boshqa qurilmalardagi kirishlar yopiladi.
 - **Uzish:** faqat parol bilan kirilgan bo'lsa (aks holda hisobga kira olmay qolasiz).
+- **Bot:** xabarlarga ham javob beradi (`tgbot.go`): `/start` — salom va «O'ynash» tugmasi (Telegram ulangan bo'lsa — darajasi, reytingi va o'rni), `/online` — hozir nechta odam o'ynayapti va ochiq xonalar havolasi bilan, `/top` — reytingdagi eng yaxshi 10 o'yinchi, `/me` — o'z natijalari va profil tugmasi, `/help`. Guruhga qo'shilsa faqat buyruqlarga javob beradi. Server Telegram'dan xabarlarni o'zi so'rab turadi (long polling) — webhook, qo'shimcha port yoki nginx sozlamasi kerak emas, faqat serverdan `api.telegram.org` ga chiqish bo'lishi kerak. Ishga tushganda buyruqlar menyusi va bot tavsifi o'zi o'rnatiladi; logda «Telegram bot @… xabarlarga javob beryapti» chiqadi.
 - Xavfsizlik: Telegram bergan ma'lumotning imzosi server tomonida bot tokeni bilan tekshiriladi (HMAC-SHA256), 24 soatdan eski ma'lumot qabul qilinmaydi. API: `GET /api/telegram`, `POST /api/telegram/login`, `POST /api/telegram/link`, `POST /api/telegram/unlink`, `POST /api/password`.
 
 ### Medallar va batafsil statistika
@@ -208,6 +210,8 @@ Profildagi «Yozuvlar» — o'yinchi qatnashgan so'nggi 30 yozuv, «Ko'rish» tu
 | `TURN_PORT` | `3478` | TURN porti |
 | `TELEGRAM_BOT_TOKEN` | bo'sh (Docker'da `.env` dagi `ZARBA_TG_TOKEN`) | Telegram orqali kirish uchun bot tokeni. Bo'sh bo'lsa Telegram tugmasi chiqmaydi |
 | `TELEGRAM_BOT_NAME` | bo'sh (Docker'da `.env` dagi `ZARBA_TG_BOT`) | Botning nomi (`@` siz yoki bilan) |
+| `TELEGRAM_BOT_REPLIES` | yoqilgan | `0` — bot xabarlarga javob bermaydi (faqat kirish tugmasi ishlaydi) |
+| `PUBLIC_URL` | `https://game.telegap.uz` | O'yin manzili — botdagi «O'ynash» tugmasi va xona havolalari uchun |
 | `METRICS_TOKEN` | bo'sh (Docker'da `.env` dagi `ZARBA_METRICS_TOKEN`) | `/metrics` (Prometheus) uchun token. Bo'sh bo'lsa `/metrics` yopiq |
 | `OFFICIAL_ROOMS` | `registon:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4,maydon:arena:10,zavod:comp:10` | Doimiy (rasmiy) xonalar: `xarita:rejim:chegara`, vergul bilan. Kodi — `<xarita>-<rejim>`. `-` — o'chirish |
 

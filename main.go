@@ -7,6 +7,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
 	"io/fs"
@@ -54,6 +55,9 @@ func main() {
 	a.tg = tgConfig{token: strings.TrimSpace(os.Getenv("TELEGRAM_BOT_TOKEN")), bot: strings.TrimPrefix(strings.TrimSpace(os.Getenv("TELEGRAM_BOT_NAME")), "@")}
 	if a.tg.on() {
 		log.Printf("Telegram orqali kirish yoqilgan: @%s", a.tg.bot)
+	}
+	if a.tg.on() && os.Getenv("TELEGRAM_BOT_REPLIES") != "0" {
+		go newTgBot(a.tg, env("PUBLIC_URL", "https://game.telegap.uz"), h, st).run(context.Background())
 	}
 	h.voice = voiceFromEnv()
 	h.dataDir = os.Getenv("DATA_DIR")

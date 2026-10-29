@@ -62,6 +62,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Klanlar: nom va 2–5 belgili teg ([TEG] o'yinda ism oldida), do'stlarni taklif qilish, egasi a'zoni chiqaradi, klanlar reytingi (a'zolarning o'rtacha reytingi)
 - ✅ Batafsil statistika: qurollar, xaritalar va rejimlar bo'yicha, eng yaxshi natijalar (profilda «Statistika»)
 - ✅ Telegram orqali kirish, hisobni ulash, parolni tiklash (Telegram bilan kirib, eski parolsiz yangisini qo'yish)
+- ✅ Telegram bot: /start (O'ynash tugmasi), /online (kim o'ynayapti, ochiq xonalar), /top (reyting), /me (o'z natijalari)
 
 ## 7. Kosmetika va yutuqlar
 - ✅ To'rtta yangi qurol: Chaqmoq (avtomatik to'pponcha), Bo'ron (drobovik), Tog' (pulemyot), Sayyod (yengil snayper) — serverda tekshiriladi, botlar ham ishlatadi

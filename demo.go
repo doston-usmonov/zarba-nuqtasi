@@ -44,7 +44,7 @@ var demoMoving = []string{"sq", "tm", "x", "y", "z", "yw", "pt", "cr", "al", "hp
 var demoStatic = []string{"nm", "bot", "lv", "acc", "fn"}
 
 // hodisalar: "n" raqami oshganda
-var demoEvents = []string{"sh", "de", "gn"}
+var demoEvents = []string{"sh", "de", "gn", "sp"}
 
 type demoRec struct {
 	path    string

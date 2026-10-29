@@ -23,6 +23,7 @@ zarba-server/
 ├── tournaments.go     klanlar turniri: setka, o'yin xonalari, natijalar
 ├── metrics.go         /metrics — Prometheus ko'rsatkichlari (token bilan)
 ├── demo.go            o'yin yozuvlari (demo): yozish, ro'yxat, fayl
+├── spray.go           graffiti: devorga chizilgan rasmni tekshirish
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── social.go          do'stlar, xonaga chaqiriqlar, klanlar (/api/social, /api/friends, /api/clan, /api/clans)
 ├── queue.go           «O'yin topish»: reytingli navbat, partiyalar, mm- xonalar (/api/queue)
@@ -260,6 +261,8 @@ Telegram va boshqa messenjerlarda havola rasm va sarlavha bilan chiqadi: server 
 - **Saqlash** (hisob bilan, 30 tagacha): xarita galereyaga chiqadi — «Yangi», «Mashhur» (eng ko'p o'ynalgan), «Meniki». Galereyadan: botlar bilan o'ynash, onlayn xona ochish (`k<id>-xxxx` kodli ommaviy xona; xona xaritasi `k<id>`, server uni bazadan o'qiydi va botlari ham shu xaritada yuradi), havola (`/#xarita=<id>`), tahrirlash (o'ziniki) yoki nusxa olib o'zgartirish, o'chirish.
 - Xona havolasi (`/x/k<id>/<kod>`) oddiy xaritalardagidek ishlaydi. Foydalanuvchi xaritalaridagi o'yinlar statistikaning «xaritalar» bo'limiga yozilmaydi, turnirlarda tanlanmaydi.
 - API: `GET /api/maps?sort=new|top&user=<login>`, `GET /api/maps/{id}`, `POST /api/maps` (`id` bo'lsa — yangilash), `DELETE /api/maps/{id}`, `POST /api/maps/{id}/play`. Jadval: `custom_maps`.
+
+**Graffiti** (`spray.go`). Menyudagi «Ijod» → «🎨 Graffiti»: 16×16 piksel rasmni o'zingiz chizasiz (12 rang, qalam, bo'yash, o'chirg'ich, orqaga) yoki tayyorlaridan olasiz (nishon, smayl, yulduz, chaqmoq, yurak, ZN, olov). O'yinda **T** (sozlamalarda o'zgartiriladi; telefonda — «Graffiti» tugmasi): qarab turgan devoringizga 3 m gacha masofadan chiziladi, 10 soniyada bir marta, «pshsh» ovozi bilan; xaritada bir vaqtda 30 tagacha turadi. Onlayn o'yinda boshqalar ham ko'radi (o'yin yozuvlarida ham bor): rasm o'yinchi holatida bir necha soniya `sp` maydonida turadi, server tekshiradi — tirik o'yinchi, o'zidan 5 m ichida, haqiqiy tik devor yuzasida, 10 soniyada bir martadan ko'p emas, rasm formati to'g'ri. «Boshqa o'yinchilarning graffitisini ko'rsatish» belgisini olib qo'ysangiz — faqat o'zingiznikini ko'rasiz. Rasm brauzerda saqlanadi.
 
 **Aim xaritalari va «Aim» rejimi** — faqat nishon olish uchun kichik, simmetrik maydonlar (ikki tomon aynan bir xil sharoitda, `tools/mkaim.py` chizadi va tekshiradi):
 - *Maydon* — ochiq maydon, o'rtada baland yashiklardan siniq devor va past yashik qatorlari: uzoq masofa, snayper va avtomat.

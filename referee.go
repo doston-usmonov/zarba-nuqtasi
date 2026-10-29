@@ -200,6 +200,9 @@ type pstate struct {
 	dfN        int
 	deN        int
 	deadAt     time.Time // oxirgi o'lim (qayta tug'ilish vaqti uchun)
+	spN        int       // graffiti (spray.go)
+	spAt       time.Time
+	spJSON     json.RawMessage
 	spawnAt    time.Time // oxirgi tirilish (tug'ilgandagi himoya)
 	lvAt       time.Time // qurol poygasida oxirgi qurol almashgan vaqt
 	// iqtisod (economy.go)

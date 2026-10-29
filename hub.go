@@ -492,6 +492,7 @@ func (h *hub) reader(c *client) {
 		}
 		c.info = info
 		r.refereeLocked(c, fields, info, now)
+		r.sprayLocked(c, fields, now)
 		c.deSeen = true
 		if c.accJSON != nil {
 			fields["acc"] = c.accJSON

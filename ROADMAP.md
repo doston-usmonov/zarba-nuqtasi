@@ -51,6 +51,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Bekat (eski temiryo'l bekati: perron, depo — A, yuk ombori — B; soat minorasi, relslar; avvalgi Registon o'rniga) va Saroy (tepalikdagi qal'a: ichki zallar, devor bo'yi uzun yo'lak, zinapoyali yo'l; qal'a tishlari, minoralar, bayroqlar) — jami 5 ta xarita, ovoz berish 1–5 tugmalari
 - ✅ Zavod xaritasi: dastgohlar zali (A), konteynerli ombor (B), konveyer zali, qozonxona va ustaxona; mo'rilar, quvurlar; tayyor tutun joylari; rasmiy `zavod-comp` xonasi
 - ✅ Xarita muharriri: o'z xaritangizni chizish (simmetriya, tasodifiy xarita, shablonlar), botlar bilan sinash, galereya (yangi/mashhur/meniki), onlayn xona va havola
+- ✅ Graffiti: o'z 16×16 rasmingiz yoki tayyorlari, T — devorga chizish, onlayn boshqalar ham ko'radi (server tekshiradi), o'chirib qo'yish mumkin
 - ✅ Aim xaritalari (Maydon, Chorraha, Hovli) va «Aim» rejimi: raundlar, bomba yo'q, faqat snayper va pichoq (server ham tekshiradi), botlar ov qiladi; rasmiy `maydon-arena` xonasi
 - ✅ O'yin oxirida keyingi xarita uchun ovoz berish (1/2/3 tugmalari)
 

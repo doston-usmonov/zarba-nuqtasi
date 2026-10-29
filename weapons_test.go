@@ -81,8 +81,11 @@ func TestTaserAndDamageModel(t *testing.T) {
 	if line == "" || !strings.Contains(line, "dmg:"+ftoa(weaponSpecs["taser"].dmg)) || !strings.Contains(line, "price:"+itoa(shop["taser"].price)) || !strings.Contains(line, "range:4.6") {
 		t.Fatalf("brauzerdagi taser: %q", line)
 	}
-	if !strings.Contains(html, "const RANGE_U = "+ftoa(rangeUnit)+";") || !strings.Contains(html, "arms:1") || !strings.Contains(html, "const base = behind ? 180 :") {
+	if !strings.Contains(html, "const RANGE_U = "+ftoa(rangeUnit)+";") || !strings.Contains(html, "arms:1") || !strings.Contains(html, "const base = player.zombie ? ZM.claw : behind ? 180 :") {
 		t.Fatal("brauzer: masofa birligi, qo'llar zonasi yoki orqadan pichoq server bilan mos emas")
+	}
+	if !strings.Contains(html, "const ZM = { hp:"+ftoa(zmHP)+", claw:"+ftoa(zmClaw)+", netRound:"+ftoa(zmRoundTime)+",") {
+		t.Fatal("brauzer: zombining joni, tirnog'i yoki raund vaqti server bilan mos emas (zombie.go)")
 	}
 
 	r, x, y := newRefRoom()

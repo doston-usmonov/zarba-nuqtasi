@@ -134,6 +134,12 @@ func (r *room) removeClientLocked(c *client) {
 
 func (r *room) botSideLocked(c *client) string {
 	g := r.gs
+	if g.Md == modeZM && g.Ph != "warmup" { // zombilar — Hujum rangida, odamlar — Himoya
+		if g.Zm[c.id] {
+			return "T"
+		}
+		return "CT"
+	}
 	if g.R <= 0 || g.Ph == "warmup" {
 		if c.info.Sq == "B" {
 			return "CT"
@@ -215,7 +221,7 @@ func (r *room) spawnBotLocked(c *client, now time.Time) {
 		pos.Z += (rand.Float64() - .5) * 1.2
 	}
 	modeLive := g.respawns() && g.Ph == "live"
-	if modeLive && g.Md == modeDM {
+	if modeLive && (g.Md == modeDM || g.Md == modeZM) {
 		pos = r.dmSpawnLocked(c)
 	}
 	rih := 1
@@ -243,6 +249,7 @@ func (r *room) spawnBotLocked(c *client, now time.Time) {
 	if rih > 1 {
 		p.armor, p.helmet = 100, rih > 2
 	}
+	r.zmBotLifeLocked(c)
 	p.dueAt, p.spawnAt = time.Time{}, now
 	p.push(sample{t: now, p: pos})
 	if modeLive || g.Md == modeAim {
@@ -506,6 +513,9 @@ func (r *room) botFire(c *client, t *client, dist float64, now time.Time) {
 		}
 		b.hiSeq++
 		h := hitClaim{I: b.hiSeq, T: t.id, D: 55, Pn: spec.pen, P: "c", W: "knife"}
+		if r.gs.zombie(c.id) {
+			h.D = zmClaw
+		}
 		if t.bot == nil {
 			b.hits = append(b.hits, h)
 			if len(b.hits) > 8 {

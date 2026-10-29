@@ -40,7 +40,7 @@ const (
 var ggLadder = []string{"sniper", "lmg", "rifle", "carbine", "shotgun", "smg", "deagle", "mpistol", "pistol", "knife"}
 
 func validMode(m string) bool {
-	return m == modeComp || m == modeDM || m == modeTDM || m == modeGG || m == modeWM || m == modeRT || m == modeAim
+	return m == modeComp || m == modeDM || m == modeTDM || m == modeGG || m == modeWM || m == modeRT || m == modeAim || m == modeZM
 }
 
 // setMode: tashqi rejim nomi (tdm ham) → Md va Tm.
@@ -64,12 +64,15 @@ func ggWeapon(kills int) string { return ggLadder[ggLevel(kills)] }
 func ggWinKills() int           { return (len(ggLadder)-1)*ggPerLevel + 1 }
 
 func (g *gameState) ffa() bool      { return g.Md == modeDM && !g.Tm }
-func (g *gameState) respawns() bool { return g.Md == modeDM || g.Md == modeGG }
+func (g *gameState) respawns() bool { return g.Md == modeDM || g.Md == modeGG || g.Md == modeZM }
 
 // foes: a va b bir-biriga raqibmi (deathmatch'da — har kim).
 func (r *room) foes(a, b *client) bool {
 	if a == nil || b == nil || a == b || a.info.Sq == "" || b.info.Sq == "" {
 		return false
+	}
+	if r.gs.Md == modeZM { // zombilar odamlarga qarshi (jamoalar emas)
+		return r.gs.Zm[a.id] != r.gs.Zm[b.id]
 	}
 	return r.gs.ffa() || a.info.Sq != b.info.Sq
 }
@@ -79,7 +82,7 @@ func (r *room) spawnOKLocked(p vec3, side string) bool {
 	if r.gs.Md == modeRT && side == "T" && (r.gs.Ph == "freeze" || r.gs.Ph == "live") {
 		return r.retakeSpawnOK(p) && !r.gm().botSolid(wc(p.X), wc(p.Z))
 	}
-	if r.gs.Md == modeDM && r.gs.Ph == "live" {
+	if (r.gs.Md == modeDM || r.gs.Md == modeZM) && (r.gs.Ph == "live" || r.gs.Ph == "post") {
 		return !r.gm().botSolid(wc(p.X), wc(p.Z))
 	}
 	return side != "" && r.gm().inSpawn(p, side)
@@ -195,6 +198,10 @@ func (r *room) finishModeLocked(w *client) {
 // tickModeLocked: deathmatch va qurol poygasining vaqti va bosqichlari.
 func (r *room) tickModeLocked(now time.Time, dt float64, nA, nB int) {
 	g := r.gs
+	if g.Md == modeZM {
+		r.tickZombieLocked(now, dt)
+		return
+	}
 	ready := nA+nB >= 2
 	if g.Md == modeGG || g.Tm {
 		ready = nA > 0 && nB > 0

@@ -53,6 +53,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Xarita muharriri: o'z xaritangizni chizish (simmetriya, tasodifiy xarita, shablonlar), botlar bilan sinash, galereya (yangi/mashhur/meniki), onlayn xona va havola
 - ✅ Graffiti: o'z 16×16 rasmingiz yoki tayyorlari, T — devorga chizish, onlayn boshqalar ham ko'radi (server tekshiradi), o'chirib qo'yish mumkin
 - ✅ Kun vaqti (kunduz, kechqurun, tun) va ob-havo (yomg'ir va chaqmoq, qor, chang bo'roni): botlar bilan va onlayn xonalarda, rasmiy xonalarda tasodifiy
+- ✅ «Zombi» rejimi: onlayn yuqtirish (server zombilarni tanlaydi va tekshiradi), botlarga qarshi zombilar to'lqinidan omon qolish
 - ✅ Aim xaritalari (Maydon, Chorraha, Hovli) va «Aim» rejimi: raundlar, bomba yo'q, faqat snayper va pichoq (server ham tekshiradi), botlar ov qiladi; rasmiy `maydon-arena` xonasi
 - ✅ O'yin oxirida keyingi xarita uchun ovoz berish (1/2/3 tugmalari)
 

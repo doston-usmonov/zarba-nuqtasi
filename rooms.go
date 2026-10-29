@@ -19,7 +19,7 @@ import (
 
 const kickBan = 10 * time.Minute
 
-var modeNames = map[string]string{modeComp: "Raqobat", modeDM: "Deathmatch", modeTDM: "Jamoaviy deathmatch", modeGG: "Qurol poygasi", modeWM: "Wingman", modeRT: "Retake", modeAim: "Aim"}
+var modeNames = map[string]string{modeComp: "Raqobat", modeDM: "Deathmatch", modeTDM: "Jamoaviy deathmatch", modeGG: "Qurol poygasi", modeWM: "Wingman", modeRT: "Retake", modeAim: "Aim", modeZM: "Zombi"}
 
 type roomOpts struct {
 	create bool // "yaratish" tugmasi: bunday xona bor bo'lsa — xato

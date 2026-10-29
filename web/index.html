@@ -403,6 +403,8 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
 .chk{display:flex;gap:8px;align-items:center;font-size:14px}
 @media (max-width:760px){ .grGrid{grid-template-columns:1fr} }
 .edWrap{width:min(1180px,100%)}
+body.zmZ #c{filter:sepia(.35) hue-rotate(45deg) saturate(1.25) brightness(1.04)}
+.zmRole{color:#9ee36b}
 .atmRow{display:grid;grid-template-columns:1fr 1fr;gap:10px} .atmTag{color:var(--dim);white-space:nowrap} .edTop{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .edGrid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
 .edCanvasBox{display:flex;flex-direction:column;gap:6px;min-width:0}
@@ -738,7 +740,7 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
           <button type="button" data-d="normal">O'rta<small>Muvozanatli</small></button>
           <button type="button" data-d="hard">Qiyin<small>Tez va aniq</small></button>
         </div>
-        <div class="field"><span>Rejim</span><div class="seg modeSeg" data-set="mode"><button type="button" data-v="comp">Raqobat</button><button type="button" data-v="wm">Wingman</button><button type="button" data-v="rt">Retake</button><button type="button" data-v="dm">Deathmatch</button><button type="button" data-v="gg">Qurol poygasi</button><button type="button" data-v="arena">Aim</button></div></div>
+        <div class="field"><span>Rejim</span><div class="seg modeSeg" data-set="mode"><button type="button" data-v="comp">Raqobat</button><button type="button" data-v="wm">Wingman</button><button type="button" data-v="rt">Retake</button><button type="button" data-v="dm">Deathmatch</button><button type="button" data-v="gg">Qurol poygasi</button><button type="button" data-v="arena">Aim</button><button type="button" data-v="zm">Zombi</button></div></div>
         <p class="note" id="modeNote"></p>
         <div class="row trainQuick"><span class="note">Mashq:</span><button class="ghost sm" type="button" data-train="aim">Nishon mashqi</button><button class="ghost sm" type="button" data-train="nade">Granata mashqi</button></div>
         <div class="row trainQuick"><span class="note">Ijod:</span><button class="ghost sm" type="button" data-ed="edit">✏ Xarita muharriri</button><button class="ghost sm" type="button" data-ed="gal">Xaritalar galereyasi</button><button class="ghost sm" type="button" id="grOpen">🎨 Graffiti</button></div>
@@ -781,7 +783,7 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
         <div class="srv-only createrow">
           <label class="field" for="newCode"><span>Kod</span><input id="newCode" maxlength="40" autocomplete="off"></label>
           <label class="field" for="newPub"><span>Kimga</span><select id="newPub"><option value="1">Ommaviy</option><option value="0">Yopiq (kod bilan)</option></select></label>
-          <label class="field" for="newMode"><span>Rejim</span><select id="newMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option><option value="arena">Aim — faqat nishon</option></select></label>
+          <label class="field" for="newMode"><span>Rejim</span><select id="newMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option><option value="zm">Zombi</option><option value="arena">Aim — faqat nishon</option></select></label>
           <label class="field" for="newMap"><span>Xarita</span><select id="newMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="bekat">Bekat</option><option value="saroy">Saroy</option><option value="zavod">Zavod</option><optgroup label="Aim"><option value="maydon">Maydon</option><option value="chorraha">Chorraha</option><option value="hovli">Hovli</option></optgroup></select></label>
           <label class="field" for="newTime"><span>Vaqt</span><select id="newTime"><option value="day">Kunduz</option><option value="eve">Kechqurun</option><option value="night">Tun</option><option value="rand">Tasodifiy</option></select></label>
           <label class="field" for="newWx"><span>Ob-havo</span><select id="newWx"><option value="clear">Ochiq</option><option value="rain">Yomg'ir</option><option value="snow">Qor</option><option value="dust">Chang bo'roni</option><option value="rand">Tasodifiy</option></select></label>
@@ -886,7 +888,7 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
           <div class="row"><button class="ghost sm" type="button" data-adm="botT">+ Bot hujumga</button><button class="ghost sm" type="button" data-adm="botCT">+ Bot himoyaga</button></div>
           <div class="set"><span>Bot darajasi</span><div class="seg" data-set="botLv"><button type="button" data-v="easy">Oson</button><button type="button" data-v="normal">O'rta</button><button type="button" data-v="hard">Qiyin</button></div><span></span></div>
           <div class="set"><span>Xona turi</span><div class="seg" id="admPub"><button type="button" data-v="1">Ommaviy</button><button type="button" data-v="0">Yopiq</button></div><span></span></div>
-          <label class="set" for="admMode">Rejim <select id="admMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option><option value="arena">Aim — faqat nishon</option></select><span></span></label>
+          <label class="set" for="admMode">Rejim <select id="admMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option><option value="zm">Zombi</option><option value="arena">Aim — faqat nishon</option></select><span></span></label>
           <label class="set" for="admTime">Vaqt <select id="admTime"><option value="day">Kunduz</option><option value="eve">Kechqurun</option><option value="night">Tun</option></select></label>
           <label class="set" for="admWx">Ob-havo <select id="admWx"><option value="clear">Ochiq</option><option value="rain">Yomg'ir</option><option value="snow">Qor</option><option value="dust">Chang bo'roni</option></select></label>
           <label class="set" for="admMap">Xarita <select id="admMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="bekat">Bekat</option><option value="saroy">Saroy</option><option value="zavod">Zavod</option><optgroup label="Aim"><option value="maydon">Maydon</option><option value="chorraha">Chorraha</option><option value="hovli">Hovli</option></optgroup></select><span></span></label>
@@ -2483,6 +2485,7 @@ function camoTex(cols, seed){ return canvasTex(256, 256, (g, w, h) => { g.fillSt
   for (let k=1;k<cols.length;k++){ g.fillStyle = cols[k]; for (let i=0;i<24;i++){ const cx = r()*w, cy = r()*h; for (let j=0;j<6;j++){ const x = cx + (r()-.5)*44, y = cy + (r()-.5)*44, rad = 6 + r()*15; for (const ox of [-w,0,w]) for (const oy of [-h,0,h]){ g.beginPath(); g.arc(x + ox, y + oy, rad, 0, 7); g.fill(); } } } }
   speckle(g, w, h, 6000, ['rgba(0,0,0,.08)','rgba(255,255,255,.05)']); for (let y=0;y<h;y+=2){ g.fillStyle = 'rgba(0,0,0,.04)'; g.fillRect(0, y, w, 1); } }, [2, 2]); }
 const PAL_CT = { camo:['#4b5868','#3a4452','#58667a','#2c333c'], seed:3, vest:0x2b323b, vest2:0x353e49, helm:0x343e4a, glove:0x1b1c1e, boot:0x24211e, skin:0xa98470, hair:0x2b2119, lip:0x9a5f4c, knit:0x2a2e33, face:'helmet' };
+const PAL_Z  = { camo:['#4a5238','#363d29','#5a6343','#262b1d'], seed:13, vest:0x3a3328, vest2:0x463d30, helm:0x2a2a24, glove:0x5f7a4c, boot:0x2b241d, skin:0x7c9a5e, hair:0x1f231a, lip:0x4a2a24, knit:0x30352a, face:'mask', eye:0xd9d27a, iris:0xc0201a };
 const PAL_T  = { camo:['#7a6c4d','#5e5339','#8f8060','#433b29'], seed:9, vest:0x3f3a2b, vest2:0x4b4534, helm:0x232321, glove:0x262421, boot:0x3a2f24, skin:0x93705a, hair:0x1d1712, lip:0x8a5240, knit:0x3b3a30, face:'mask' };
 const matC = {};
 function MS(c, o){ const k = c + (o ? JSON.stringify(o) : ''); return matC[k] || (matC[k] = new THREE.MeshStandardMaterial(Object.assign({ color:lin(c), roughness:.85, metalness:0, envMapIntensity:.5 }, o||{}))); }
@@ -2490,7 +2493,7 @@ function palMats(pal){ if (pal._m) return pal._m; pal._camo = camoTex(pal.camo, 
   return pal._m = { cloth:new THREE.MeshStandardMaterial({ map:pal._camo, roughness:.96, envMapIntensity:.4 }), vest:MS(pal.vest, { roughness:.9 }), vest2:MS(pal.vest2, { roughness:.9 }), strap:MS(0x1e1e1c),
     helm:MS(pal.helm, { roughness:.65 }), glove:MS(pal.glove, { roughness:.88 }), boot:MS(pal.boot, { roughness:.75 }), skin:MS(pal.skin, { roughness:.72 }), mask:MS(0x1b1b1b, { roughness:.97 }),
     dark:MS(0x0f1012, { roughness:.15, metalness:.4 }), metal:MS(0x2b2d30, { metalness:.6, roughness:.4 }),
-    hair:MS(pal.hair, { roughness:1 }), lip:MS(pal.lip, { roughness:.6 }), eye:MS(0xe9e4da, { roughness:.25 }), iris:MS(0x2a1d14, { roughness:.2 }),
+    hair:MS(pal.hair, { roughness:1 }), lip:MS(pal.lip, { roughness:.6 }), eye:MS(pal.eye || 0xe9e4da, { roughness:.25 }), iris:MS(pal.iris || 0x2a1d14, pal.iris ? { roughness:.2, emissive:lin(pal.iris), emissiveIntensity:1.6 } : { roughness:.2 }),
     knit:MS(pal.knit, { roughness:1 }), lens:MS(0x101418, { roughness:.08, metalness:.6 }), sole:MS(0x161514, { roughness:.9 }) }; }
 
 /* ---------- first-person view: gun + gloved hands + sleeves ---------- */
@@ -2709,7 +2712,10 @@ function upgradeSoldier(m){
   // a face of its own: one of three heads (hair, beard, headgear) and one of three skin tones
   const v = SK.vn++ % 3, tone = (SK.vn * 7 + (m.pal === PAL_CT ? 1 : 0)) % SKIN_TONES.length, side = m.pal === PAL_CT ? 'CT' : 'T';
   for (let k=0;k<3;k++){ const h = root.getObjectByName('head_' + k); if (h) h.visible = k === v; }
-  root.traverse(o => { if (!o.isMesh) return; const swap = mt => { if (mt.name !== 'skin') return mt; const key = side + tone;
+  if (m.pal === PAL_Z) root.traverse(o => { if (!o.isMesh) return; const z = mt => SK.tones['Z:' + mt.name] || (SK.tones['Z:' + mt.name] = (() => { const c = mt.clone();   // a zombie: green skin, faded clothes
+      if (mt.name === 'skin'){ c.color.copy(lin(0x7c9a5e)); if (c.emissive) c.emissive.copy(lin(0x2c4a1c)); } else if (c.color) c.color.multiply(lin(0xa2ad8f)); return c; })());
+    o.material = Array.isArray(o.material) ? o.material.map(z) : z(o.material); });
+  else root.traverse(o => { if (!o.isMesh) return; const swap = mt => { if (mt.name !== 'skin') return mt; const key = side + tone;
       return SK.tones[key] || (SK.tones[key] = (() => { const c = mt.clone(); c.color.setScalar(SKIN_TONES[tone]); return c; })()); };
     o.material = Array.isArray(o.material) ? o.material.map(swap) : swap(o.material); });
   const b = {}; SK_BONES.forEach(n => b[n] = root.getObjectByName(n));
@@ -2833,13 +2839,16 @@ function rayHitBot(o, d, b, maxT){
 const MODES = { comp:{ name:'Raqobat', desc:"Raundlar, bomba va iqtisod. Jamoa bo'lib o'ynaladi." },
   wm:{ name:'Wingman', desc:"2 ga 2, faqat A nuqta, 9 g'alabagacha. Raundlar qisqa (1,5 daqiqa), iqtisod raqobatdagidek." },
   arena:{ name:'Aim', desc:"Faqat nishon olish: kichik xaritada jamoa jamoaga, faqat snayper va pichoq, bomba yo'q, raund raqib yo'q qilinganda tugaydi. 9 g'alabagacha." },
+  zm:{ name:'Zombi', desc:"Raund boshida hamma odam, qurollar bepul. Tez orada kimdir zombiga aylanadi: zombi tirnog'i bilan tekkanini o'ziga aylantiradi. Vaqt tugaguncha omon qolgan odamlar yutadi. Botlarga qarshi — zombilar to'lqinidan omon qoling." },
   rt:{ name:'Retake', desc:"Har raund boshida bomba allaqachon o'rnatilgan: hujum uni himoya qiladi, himoya bazadan kelib zararsizlantiradi. Qurollar beriladi." }, dm:{ name:'Deathmatch', desc:"Har kim har kimga qarshi, o'lgan zahoti qayta tug'ilasiz. 6 daqiqada eng ko'p o'ldirgan yutadi. Qurollar bepul." }, gg:{ name:'Qurol poygasi', desc:"Eng kuchli quroldan (snayper, pulemyot) boshlanadi, har 2 o'ldirishda kuchsizrog'i beriladi. Oxirgi bosqich — pichoq: u bilan birinchi o'ldirgan yutadi." } };
 // gun game ladder: the strongest weapon first, then weaker ones, the knife last
 const GG_LADDER = ['sniper','lmg','rifle','carbine','shotgun','smg','deagle','mpistol','pistol','knife'], GG_PER = 2, GG_WIN = (GG_LADDER.length - 1)*GG_PER + 1;
 const DM_TIME = 360, GG_TIME = 900, RESPAWN_T = 2, SHIELD_T = 1.5;
 const ggLevel = k => Math.min(GG_LADDER.length - 1, Math.floor(Math.max(0, k)/GG_PER));
 function curMode(){ return MODE === 'online' ? ((NET.g && MODES[NET.g.md]) ? NET.g.md : 'comp') : (S.md || 'comp'); }
-const RM = md => md === 'dm' || md === 'gg';   // modes where you respawn (no rounds)
+const RM = md => md === 'dm' || md === 'gg' || md === 'zm';   // modes where you respawn (zm also has rounds of its own)
+// «Zombi» (zombie.go): online the server picks the zombies (g.zm); against bots you survive the waves
+const ZM = { hp:400, claw:200, netRound:120, rounds:5, prep:8, time:75, won:0, lost:0 };
 function respawnMode(){ return RM(curMode()); }
 // team deathmatch: a deathmatch room created with the "jamoaviy" option (server sends g.tm)
 const TDM_INFO = { name:'Jamoaviy deathmatch', desc:"Ikki jamoa: faqat raqib jamoani o'ldirish mumkin, o'lgan zahoti qayta tug'ilasiz. 6 daqiqada ko'proq o'ldirgan jamoa yutadi. Qurollar bepul." };
@@ -2946,7 +2955,7 @@ function drawRadar(){
 /* ================= ROUND FLOW ================= */
 function liveTime(){ return MODE === 'online' ? NET.liveT : S.liveT; }
 function canBuy(){ if (!player.alive || S.phase === 'menu' || S.phase === 'over' || !player.team || TRAIN(curMode())) return false;
-  if (respawnMode() && S.phase !== 'warmup') return curMode() === 'dm' && S.phase === 'live';
+  if (respawnMode() && S.phase !== 'warmup') return (curMode() === 'dm' || (curMode() === 'zm' && !player.zombie)) && S.phase === 'live';
   if (curMode() === 'rt' && S.phase !== 'warmup') return false;
   if (curMode() === 'arena') return false;   /* Aim: sniper and knife only — no buying */   /* Retake: loadouts are handed out */   /* deathmatch: anywhere, any time; gun game: never */ const inZone = cellT(wc(player.pos.x), wc(player.pos.z)) === (player.team === 'CT' ? CTSP : TSP); return inZone && (S.phase === 'warmup' || S.phase === 'freeze' || (S.phase === 'live' && liveTime() < 20)); }
 
@@ -2972,10 +2981,10 @@ function swapNotice(r, H, score){
 function botsSide(){ return player.team === 'T' ? 'CT' : 'T'; }
 function sideScore(side){ return side === player.team ? S.sA : S.sB; }
 function setBotsPal(side){
-  for (const b of bots){ const key = side === 'T' ? 'mT' : 'mCT';
-    if (!b[key]) b[key] = buildBot(side === 'T' ? PAL_T : PAL_CT);
+  for (const b of bots){ const key = side === 'Z' ? 'mZ' : side === 'T' ? 'mT' : 'mCT';
+    if (!b[key]) b[key] = buildBot(side === 'Z' ? PAL_Z : side === 'T' ? PAL_T : PAL_CT);
     if (b.m !== b[key]){ scene.remove(b.m.g); b.m = b[key]; scene.add(b.m.g); }
-    b.side = side; }
+    b.side = side === 'Z' ? 'T' : side; }
 }
 
 
@@ -3081,6 +3090,7 @@ function checkRoundEnd(){
 
 function startMatch(){
   if (MM.st && MM.st.state === 'searching') mmLeave();
+  player.zombie = false; document.body.classList.remove('zmZ');
   MODE = 'bots'; player.team = 'T'; H.progBar.style.background = ''; bots.forEach(b => b.m.g.visible = true);
   DIFF = DIFFS[SET.diff] || DIFFS.normal; setMap(CUSTOM_PLAY && MAPS[CUSTOM_PLAY] ? CUSTOM_PLAY : SET.map);
   atmApply(atmPick(SET.atTime, ['day', 'day', 'eve', 'night']), atmPick(SET.atWx, ['clear', 'clear', 'rain', 'snow', 'dust']));
@@ -3121,8 +3131,9 @@ function retakeSpot(site, bx, bz){
 /* ---------- deathmatch / gun game: loadout, spawning, levels ---------- */
 function modeLoadout(keep){
   player.nades = { he:0, flash:0, smoke:0, molly:0 }; player.nadeSel = null; player.nadeHold = null; player.nadeT = 0; player.nadeNext = false;
-  player.kit = false; player.armor = 100; player.helmet = true; player.bomb = false; player.money = curMode() === 'dm' ? 16000 : 0;
+  player.kit = false; player.armor = 100; player.helmet = true; player.bomb = false; player.money = curMode() === 'dm' || curMode() === 'zm' ? 16000 : 0;
   if (curMode() === 'gg'){ player.ggLv = -1; ggEquip(false); return; }
+  if (curMode() === 'zm' && player.zombie){ player.money = 0; player.armor = 0; player.helmet = false; player.inv = { 1:null, 2:null, 3:{ id:'knife' } }; player.slot = 3; player.reloadT = 0; drawWeapon(); return; }
   if (!keep || (!player.inv[1] && !player.inv[2])) player.inv = { 1:{ id:'rifle', mag:W.rifle.mag, res:W.rifle.res }, 2:{ id:'pistol', mag:20, res:120 }, 3:{ id:'knife' } };
   refill(); player.slot = bestSlot(); drawWeapon();
 }
@@ -3146,9 +3157,9 @@ function dmSpawnPoint(enemies){
 }
 function modeEnemies(){ return MODE === 'online' ? [...NET.remotes.values()].filter(r => r.alive && foe(r)).map(r => r.pos) : bots.filter(b => b.alive).map(b => b.pos); }
 function modeSpawn(){ killcamStop();
-  if (isFFA()){ const p = dmSpawnPoint(modeEnemies()); player.pos.copy(p); player.vel.set(0, 0, 0); player.yaw = rand()*Math.PI*2; player.pitch = 0; }
+  if (isFFA() || curMode() === 'zm'){ const p = dmSpawnPoint(modeEnemies()); player.pos.copy(p); player.vel.set(0, 0, 0); player.yaw = rand()*Math.PI*2; player.pitch = 0; }
   else spawnAt(player.team);
-  player.alive = true; player.hp = 100; player.planting = 0; player.scope = 0; player.recoil = 0; player.punchX = player.punchY = 0; player.spawnT = S.time;
+  player.alive = true; player.hp = player.zombie ? ZM.hp : 100; player.planting = 0; player.scope = 0; player.recoil = 0; player.punchX = player.punchY = 0; player.spawnT = S.time;
   S.deathT = 0; $('dead').hidden = true; H.cross.style.display = ''; H.prog.hidden = true;
 }
 function modeRespawn(){ modeLoadout(true); modeSpawn(); if (MODE === 'online') NET.deadT = 0; updateHUD(); }
@@ -3164,6 +3175,7 @@ function modeHUD(){
   if (TRAIN(md) && inGame()) return trainHUD(el);
   const on = RM(md) && inGame();
   if (!on && inGame()) $('money').style.visibility = md === 'rt' ? 'hidden' : '';
+  if (on && md === 'zm') return zmHUD(el);
   const tdm = on && teamDM();
   $('scTL').textContent = tdm ? 'JAMOANGIZ' : on ? 'SIZ' : 'HUJUM'; $('scCTL').textContent = tdm ? 'RAQIB' : on ? 'YETAKCHI' : 'HIMOYA';
   if (on) $('money').style.visibility = live ? 'hidden' : '';
@@ -3179,26 +3191,41 @@ function modeHUD(){
   if (html !== el._h){ el._h = html; el.innerHTML = html; }
   el.hidden = false;
 }
+function zmHUD(el){
+  $('scTL').textContent = 'ZOMBILAR'; $('scCTL').textContent = 'ODAMLAR'; $('money').style.visibility = player.zombie || S.phase !== 'live' ? 'hidden' : '';
+  let humans, zombies, prep;
+  if (MODE === 'online'){ const g = NET.g || {}, zm = g.zm || {}, ents = [...NET.remotes.values()].filter(r => r.team);
+    zombies = ents.filter(r => zm[r.peer]).length + (player.zombie ? 1 : 0); humans = ents.filter(r => !zm[r.peer] && r.alive).length + (!player.zombie && player.alive ? 1 : 0); prep = g.ph === 'live' && !Object.keys(zm).length; }
+  else { zombies = S.zmState === 'run' ? bots.filter(b => b.alive).length : 0; humans = player.alive ? 1 : 0; prep = S.zmState === 'prep'; }
+  H.scT.textContent = zombies; H.scCT.textContent = humans;
+  const html = S.phase === 'warmup' ? '' : player.zombie ? `<b class="zmRole">ZOMBI</b><small>odamlarni tirnoq bilan tuting · jon ${Math.max(0, Math.ceil(player.hp))}</small>`
+    : prep ? `<b>Tarqaling!</b><small>${KB('B', 'Xarid tugmasi')} — qurol (bepul) · zombilar ${Math.ceil(zmPrepLeft())} soniyadan keyin</small>`
+    : `<b>Omon qoling</b><small>${MODE === 'online' ? 'zombilardan uzoqroq turing' : 'raundlar ' + ZM.won + ' : ' + ZM.lost + ' · ' + S.round + '/' + ZM.rounds}</small>`;
+  if (html !== el._h){ el._h = html; el.innerHTML = html; }
+  el.hidden = !html;
+}
 function modeBoardHTML(title){
   const md = curMode(), esc = escH, rows = modeRows();
   const tdm = teamDM() && NET.g ? ` · ${TEAM_NAME.T} ${NET.g.sA|0} : ${NET.g.sB|0} ${TEAM_NAME.CT}` : '';
-  return `<h3>${esc(title + tdm)}</h3><table><tr><th>#</th><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">${md === 'gg' ? 'QUROL' : 'HOLAT'}</th></tr>` +
+  return `<h3>${esc(title + tdm)}</h3><table><tr><th>#</th><th>O'yinchi</th><th class="r">${md === 'zm' && MODE === 'online' ? 'OCHKO' : "O'LD."}</th><th class="r">O'LIM</th><th class="r">${md === 'gg' ? 'QUROL' : 'HOLAT'}</th></tr>` +
     rows.map((r, i) => { const col = isFFA() ? 'var(--ink)' : r.team === 'CT' ? 'var(--def)' : 'var(--atk)';
       return `<tr class="${r.alive ? '' : 'dead'}"><td>${i + 1}</td><td><span class="tag" style="background:${col}"></span>${esc(r.name)}${r.bot ? '<small>bot</small>' : ''}</td><td class="r">${r.k}</td><td class="r">${r.d}</td><td class="r">${md === 'gg' ? esc(W[GG_LADDER[ggLevel(r.k)]].name) : r.alive ? 'tirik' : '—'}</td></tr>`; }).join('') + '</table>';
 }
 
 /* ---------- deathmatch / gun game against bots ---------- */
-function botModeWeapon(b){ return S.md === 'gg' ? GG_LADDER[ggLevel(b.kills)] : ['rifle','rifle','carbine','smg','sniper','deagle','shotgun','lmg','scout','mpistol'][(rand()*10)|0]; }
+function botModeWeapon(b){ return S.md === 'zm' ? 'knife' : S.md === 'gg' ? GG_LADDER[ggLevel(b.kills)] : ['rifle','rifle','carbine','smg','sniper','deagle','shotgun','lmg','scout','mpistol'][(rand()*10)|0]; }
 function botModeSpawn(b){
   b.alive = true; b.hp = 100; b.armor = 100; b.helmet = true; b.weapon = botModeWeapon(b); b.mag = W[b.weapon].mag || 0; b.reloadT = 0;
   b.mode = 'roam'; b.roam = null; b.path = null; b.seeing = false; b.vis = null; b.lastKnown = null; b.lastSeen = -99; b.alertPos = null; b.alertT = -99; b.investigate = false;
   b.spotT = -99; b.deadT = 0; b.deadT0 = -99; b.kneel = 0; b.stuck = 0; b.blindT = 0; b.hasBomb = false; b.planting = 0; b.protT = S.time + SHIELD_T;
-  if (S.md === 'dm') b.pos.copy(dmSpawnPoint(player.alive ? [player.pos] : []));
+  if (S.md === 'zm'){ b.hp = 150 + 40*S.round; b.armor = 0; b.helmet = false; b.groanT = rand()*4; }
+  if (S.md === 'dm' || S.md === 'zm') b.pos.copy(dmSpawnPoint(player.alive ? [player.pos] : []));
   else { const c = SPAWNS.CT[(rand()*SPAWNS.CT.length)|0]; b.pos.set(cw(c[0]) + (rand()-.5)*.6, 0, cw(c[1]) + (rand()-.5)*.6); }
   b.yaw = rand()*Math.PI*2;
   b.m.g.visible = true; b.m.g.rotation.set(0, 0, 0); b.m.g.position.copy(b.pos); poseSoldier(b.m, 0, false, 0); setSoldierWeapon(b.m, b.weapon);
 }
 function botRoamPoint(){
+  if (S.md === 'zm' && player.alive) return player.pos.clone().add(new V3((rand()-.5)*4, 0, (rand()-.5)*4));   // zombies smell the living
   if (rand() < .35 && player.alive) return player.pos.clone().add(new V3((rand()-.5)*10, 0, (rand()-.5)*10));   // they "hear" you
   const H2 = MAP.holds, all = [...H2.A, ...H2.B, ...H2.M];
   if (rand() < .6){ const h = all[(rand()*all.length)|0]; return new V3(cw(h[0][0]), 0, cw(h[0][1])); }
@@ -3213,9 +3240,10 @@ function roamThink(b, dt){
 }
 function botKnife(b){
   b.fireCd = .75 + rand()*.3; b.flashT = 0; sfxKnife();
-  if (b.vis && b.vis.dist < 2 && rand() < .8) damagePlayer(b, { name:W.knife.name, dmg:55, pen:.85, fall:1, kind:'knife', id:'knife' }, 'chest', 1);
+  if (b.vis && b.vis.dist < 2 && rand() < .8) damagePlayer(b, S.md === 'zm' ? { name:'Zombi tirnog\'i', dmg:50, pen:1, fall:1, kind:'knife', id:'knife' } : { name:W.knife.name, dmg:55, pen:.85, fall:1, kind:'knife', id:'knife' }, 'chest', 1);
 }
 function startModeOffline(){
+  if (S.md === 'zm') return zmStartOffline();
   Object.assign(S, { round:1, phase:'live', timer:S.md === 'dm' ? DM_TIME : GG_TIME, liveT:0, roundPlanted:false, deathT:0 });
   player.team = 'T'; setBotsPal('CT');
   bomb.planted = false; bomb.mesh.visible = false; bomb.defuser = null; bomb.dropped = false; bomb.carrier = null; bomb.picker = null;
@@ -3226,6 +3254,7 @@ function startModeOffline(){
   showMsg(MODES[S.md].name, MODES[S.md].desc, 'atk', 4200); vo('start');
 }
 function modeStepOffline(dt){
+  if (S.md === 'zm') return zmStepOffline(dt);
   if (S.phase !== 'live') return;
   S.timer -= dt; S.liveT += dt;
   if (S.timer <= 0) return modeOverOffline(null);
@@ -3659,7 +3688,7 @@ function knifeAttack(heavy){
   if (MODE === 'online') NET.shot = { n:++NET.shotN, w:'knife', sx:0, sy:0, sz:0, ex:0, ey:0, ez:0 };
   if (best){
     const b = best.b, behind = Math.cos(wrapA(Math.atan2(player.pos.x-b.pos.x, player.pos.z-b.pos.z) - b.yaw)) < -.3;
-    const base = behind ? 180 : heavy ? 65 : 40;   // from behind: one stab, light or heavy
+    const base = player.zombie ? ZM.claw : behind ? 180 : heavy ? 65 : 40;   // from behind: one stab, light or heavy; a zombie's claw takes anyone
     const pos = _hp.copy(_o).addScaledVector(_d, best.h.t);
     const kw = { name:W.knife.name, dmg:base, pen:.85, fall:1, kind:'knife', kill:1500, id:'knife' };
     if (MODE === 'online') netHit(b, kw, 'chest', 1, pos, true); else damageBot(b, kw, 'chest', 1, pos, true);
@@ -3730,7 +3759,8 @@ function playerDie(bt, w, hs){
   else if (w.kind === 'nade') feed('Siz', 'a', w.name, 'Siz', 'a', false, true);
   $('deadT').textContent = bt ? `${bt.name} sizni o'ldirdi` : "Siz halok bo'ldingiz";
   $('deadS').textContent = bt ? `${w.name}${hs ? ', boshga' : ''} · uning joni ${Math.max(1, Math.ceil(bt.hp))} qoldi` + (bomb.planted ? (' · ' + KB('Chap tugma', 'Ekranga bosing') + ' — kuzatiladigan botni almashtirish') : '') : '';
-  if (respawnMode() && S.phase === 'live') $('deadS').textContent += " · " + RESPAWN_T + " soniyadan keyin qayta tug'ilasiz";
+  if (curMode() === 'zm' && S.phase === 'live') $('deadS').textContent += MODE !== 'online' ? " · raund yutqazildi" : player.zombie ? " · " + RESPAWN_T + " soniyadan keyin qayta tug'ilasiz" : " · siz yuqtirildingiz — " + RESPAWN_T + " soniyadan keyin zombi bo'lib qaytasiz";
+  else if (respawnMode() && S.phase === 'live') $('deadS').textContent += " · " + RESPAWN_T + " soniyadan keyin qayta tug'ilasiz";
   else if (MODE === 'online') $('deadS').textContent += NET.g && NET.g.ph === 'warmup' ? " · 3 soniyadan keyin qayta tug'ilasiz" : (' · ' + KB('Chap tugma', 'Ekranga bosing') + ' — jamoadoshni kuzatish');
   $('dead').hidden = KC.on; H.scope.hidden = true; H.cross.style.display = 'none';
   updatePips(); if (MODE !== 'online' && !RM(S.md)) checkRoundEnd();
@@ -3827,7 +3857,7 @@ function updateBot(b, dt){
       const dir = b.strafe > 0 ? 1 : -1, sx = Math.cos(b.yaw)*dir, sz = -Math.sin(b.yaw)*dir;
       moveEntity(b.pos, sx*2.6*dt, sz*2.6*dt, .34, true); b.moving = true; b.speed = 2.6;
     }
-    if (b.weapon === 'knife'){ if (b.vis.dist > 1.6) goTo(b, player.pos, 5, dt); else if (b.react <= 0 && b.fireCd <= 0) botKnife(b); }
+    if (b.weapon === 'knife'){ if (b.vis.dist > 1.6) goTo(b, player.pos, S.md === 'zm' ? 5.3 : 5, dt); else if (b.react <= 0 && b.fireCd <= 0) botKnife(b); }
     else if (b.react <= 0 && off < .12 && b.fireCd <= 0 && b.pause <= 0 && b.reloadT <= 0) botFire(b);
   } else if ((RM(S.md) || S.md === 'arena') && MODE !== 'online'){
     roamThink(b, dt);
@@ -4506,7 +4536,7 @@ $('resumeBtn').addEventListener('click', () => { goFullscreen(); resumeGame(); }
 const mmRisk = () => MODE === 'online' && !!NET.roomInfo && NET.roomInfo.mm && !(NET.g && NET.g.ph === 'over');
 function quitReset(){ const b = $('quitBtn'); b.dataset.sure = ''; b.textContent = 'Bosh menyu'; $('quitWarn').hidden = true; }
 $('quitBtn').addEventListener('click', () => { if (mmRisk() && $('quitBtn').dataset.sure !== '1'){ $('quitBtn').dataset.sure = '1'; $('quitBtn').textContent = 'Baribir chiqish'; $('quitWarn').hidden = false; return; } quitReset(); S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); toMenu(); });
-function toMenu(){ if (MODE === 'online') leaveOnline(); menuAtm(); clearNades(); trainClearMarks(); clearDrops(); setTimeout(() => { if (S.phase === 'menu'){ setMap(SET.map); placeBackdrop(); } }, 0); S.phase = 'menu'; $('hud').hidden = true; $('dead').hidden = true; $('over').hidden = true; $('menu').hidden = false; showBoard(false); if (document.pointerLockElement) document.exitPointerLock(); bots.forEach(b => { b.m.g.visible = true; }); }
+function toMenu(){ if (MODE === 'online') leaveOnline(); menuAtm(); player.zombie = false; document.body.classList.remove('zmZ'); clearNades(); trainClearMarks(); clearDrops(); setTimeout(() => { if (S.phase === 'menu'){ setMap(SET.map); placeBackdrop(); } }, 0); S.phase = 'menu'; $('hud').hidden = true; $('dead').hidden = true; $('over').hidden = true; $('menu').hidden = false; showBoard(false); if (document.pointerLockElement) document.exitPointerLock(); bots.forEach(b => { b.m.g.visible = true; }); }
 $('onlineBtn').addEventListener('click', () => { joinOnline(false); });
 $('shareBtn').addEventListener('click', () => linkShare());
 $('createBtn').addEventListener('click', () => { joinOnline(true); });
@@ -5102,7 +5132,7 @@ function nameTag(text, team){
 }
 function makeRemote(p){ const pr = p.presence; return { peer:p.peer, team:null, name:'', m:null, tag:null, pos:new V3(num(pr.x), num(pr.y), num(pr.z)), tpos:new V3(), yaw:0, tyaw:0, kneel:0, cr:0, alive:false, hp:100, w:'pistol', mv:false, k:0, d:0, lastPres:null,
   shotN: pr.sh ? num(pr.sh.n) : 0, deathN: pr.de ? num(pr.de.n) : 0, nadeN: pr.gn ? num(pr.gn.n) : 0, spN: pr.sp ? num(pr.sp.n) : 0, dropN:0, pickN:0, chatN: Array.isArray(pr.ch) ? Math.max(0, ...pr.ch.map(e => num(e && e.n))) : 0, stepT:0, deadT:1, spotT:-99, walk:0, flashT:0, moving:false }; }
-function dressRemote(r){ if (r.m) scene.remove(r.m.g); r.m = buildBot(r.team === 'CT' ? PAL_CT : PAL_T); r.tag = nameTag(r.label || r.name, r.team); r.m.g.add(r.tag); scene.add(r.m.g); }
+function dressRemote(r){ if (r.m) scene.remove(r.m.g); r.m = buildBot(r.team === 'CT' ? PAL_CT : curMode() === 'zm' && NET.g && NET.g.ph !== 'warmup' ? PAL_Z : PAL_T); r.tag = nameTag(r.label || r.name, r.team); r.m.g.add(r.tag); scene.add(r.m.g); }
 function removeRemote(r){ if (r.m) scene.remove(r.m.g); }
 function hitMark(kill){ H.hit.className = ''; void H.hit.offsetWidth; H.hit.style.opacity = 1; H.hit.className = kill ? 'kill' : ''; hitFade = .18; }
 
@@ -5218,7 +5248,8 @@ function netHit(r, w, part, dist, pos, flat, pc){
 
 const PHS = ['warmup','freeze','live','post','over'];
 function sanitizeG(g){ const b = g.b && typeof g.b === 'object' ? { x:num(g.b.x), z:num(g.b.z), s:g.b.s === 'B' ? 'B' : 'A', t:num(g.b.t) } : 0;
-  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', rs:g.rs === 'B' ? 'B' : g.rs === 'A' ? 'A' : '', vt:sanitizeVt(g.vt), m:MAPS[g.m] || CUSTOM_RE.test(g.m) ? g.m : 'qumtepa', at:ATM_T[g.at] ? g.at : 'day', wx:ATM_W[g.wx] ? g.wx : 'clear', md:MODES[g.md] ? g.md : 'comp', tm:g.tm === true, sc:sanitizeSc(g.sc), wn:String(g.wn || '').slice(0, 40), wnm:cleanName(g.wnm), mv:String(g.mv || '').slice(0, 40), mvn:g.mvn ? cleanName(g.mvn) : '', mvr:String(g.mvr || '').slice(0, 8), st:sanitizeSt(g.st), t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : num(g.fm) === 6 ? 6 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
+  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', rs:g.rs === 'B' ? 'B' : g.rs === 'A' ? 'A' : '', vt:sanitizeVt(g.vt), m:MAPS[g.m] || CUSTOM_RE.test(g.m) ? g.m : 'qumtepa', at:ATM_T[g.at] ? g.at : 'day', wx:ATM_W[g.wx] ? g.wx : 'clear', zm:sanitizeZm(g.zm), md:MODES[g.md] ? g.md : 'comp', tm:g.tm === true, sc:sanitizeSc(g.sc), wn:String(g.wn || '').slice(0, 40), wnm:cleanName(g.wnm), mv:String(g.mv || '').slice(0, 40), mvn:g.mvn ? cleanName(g.mvn) : '', mvr:String(g.mvr || '').slice(0, 8), st:sanitizeSt(g.st), t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : num(g.fm) === 6 ? 6 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
+function sanitizeZm(z){ if (!z || typeof z !== 'object') return null; const o = {}; let n = 0; for (const k in z){ if (++n > 80) break; if (z[k] === true) o[String(k).slice(0, 40)] = true; } return o; }
 function sanitizeSt(st){ if (!Array.isArray(st)) return null; return st.slice(0, 32).filter(r => r && typeof r === 'object').map(r => ({ id:String(r.id || '').slice(0, 40), nm:cleanName(r.nm), sq:r.sq === 'B' ? 'B' : 'A', k:Math.max(0, num(r.k)|0), d:Math.max(0, num(r.d)|0), hs:Math.max(0, num(r.hs)|0), dmg:Math.max(0, num(r.dmg)|0), mvp:Math.max(0, num(r.mvp)|0) })); }
 function sanitizeVt(vt){ if (!vt || typeof vt !== 'object') return null; const o = {}; for (const k in MAPS) if (vt[k]) o[k] = Math.max(0, num(vt[k])|0); return o; }
 function sanitizeSc(sc){ if (!sc || typeof sc !== 'object') return null; const o = {}; let n = 0; for (const k in sc){ if (++n > 80) break; o[String(k).slice(0, 40)] = Math.max(0, num(sc[k])|0); } return o; }
@@ -5276,6 +5307,7 @@ function hostModeStep(g, dt, all, nA, nB){
   else if (g.ph === 'over'){ g.t -= dt; if (g.t <= 0){ g.ph = 'warmup'; g.r = 0; g.cd = 6; g.t = 0; } }
 }
 function modePhase(g){
+  if (g.md === 'zm') return zmPhase(g);
   const ph = g.ph; S.phase = ph === 'over' ? 'mover' : ph;
   const key = g.e + ':' + g.r;
   if (ph === 'warmup'){
@@ -5304,6 +5336,77 @@ function modePhase(g){
   }
   NET.lastPh = ph; NET.lastMd = g.md;
 }
+function zmTint(){ document.body.classList.toggle('zmZ', !!player.zombie && inGame()); }
+const zmPrepLeft = () => MODE === 'online' ? Math.max(0, (NET.g ? NET.g.t : 0) - ZM.netRound) : Math.max(0, S.timer - ZM.time);
+function zmPhase(g){
+  const ph = g.ph, zm = g.zm || {}, me = !!(NET.me && zm[NET.me]);
+  S.phase = ph === 'over' ? 'mover' : ph;
+  if (ph === 'warmup'){
+    if (NET.lastPh !== 'warmup' || NET.lastMd !== g.md){ NET.roundKey = ''; player.zombie = false; zmTint(); player.team = NET.sq === 'B' ? 'CT' : 'T'; enterWarmup(); }
+    if (!player.alive && NET.deadT > 3) respawnWarm();
+    if (g.t > 0){ const c = Math.ceil(g.t); if (c !== NET.cdShown){ NET.cdShown = c; showMsg(MODES.zm.name + ' ' + c + ' soniyada boshlanadi', MODES.zm.desc, 'atk', 1100); } } else NET.cdShown = -1;
+  } else if (ph === 'live' || ph === 'post'){
+    const key = g.e + ':' + g.r;
+    if (key !== NET.roundKey){   // a new round: everybody is human again, somewhere new
+      const first = !NET.roundKey || NET.roundKey.split(':')[0] !== g.e;
+      NET.roundKey = key; NET.inRound = g.r; NET.zmOn = false; player.zombie = me; player.team = me ? 'T' : 'CT'; zmTint();
+      if (first){ player.kills = player.deaths = player.hs = 0; player.dmg = 0; }
+      resetInv(); clearNades(); clearDrops(); bomb.planted = false; bomb.mesh.visible = false; modeLoadout(false); modeSpawn();
+      showMsg(g.r + '-raund · Zombi', "Tarqaling va qurollaning (" + KB('B', 'Xarid tugmasi') + " — bepul). Tez orada kimdir zombiga aylanadi!", 'def', 4200); if (first) vo('start');
+    }
+    if (me !== player.zombie){   // the server turned me
+      player.zombie = me; player.team = me ? 'T' : 'CT'; zmTint();
+      if (me){ if (player.alive){ player.hp = ZM.hp; modeLoadout(false); } showMsg('Siz zombisiz!', "Odamlarni tirnog'ingiz bilan tuting — bitta tegish yetadi", 'atk', 3200); sfxGroan(player.pos); }
+    }
+    if (!NET.zmOn && Object.keys(zm).length){ NET.zmOn = true; if (!me) showMsg('Infeksiya boshlandi!', 'Zombilardan qoching — vaqt tugaguncha omon qoling', 'def', 2800); }
+    if (ph === 'live' && !player.alive && NET.deadT >= RESPAWN_T) modeRespawn();
+    if (ph === 'post' && NET.lastPh !== 'post'){ const hw = g.w === 'CT'; showMsg(hw ? 'Odamlar omon qoldi!' : "Zombilar g'alaba qildi!", hw ? "Omon qolganlarga +3 ochko" : "Hammani yuqtirishdi", hw ? 'def' : 'atk', 3500); sfxChord(hw !== player.zombie); }
+    if (g.sc && NET.me && g.sc[NET.me] !== undefined) player.kills = g.sc[NET.me];
+  } else if (ph === 'over' && NET.lastPh !== 'over'){
+    showNetResult(g);
+    const mine = (g.wn && g.wn === NET.me) || (!g.wn && g.wnm === NET.name), rows = modeRows(), place = rows.findIndex(r => r.me) + 1;
+    showMsg(mine ? "Siz yutdingiz!" : (g.wnm || "Kimdir") + ' yutdi', "Zombi tugadi. Siz " + place + "-o'rindasiz, " + player.kills + " ochko. Isinish 10 soniyadan keyin boshlanadi.", mine ? 'atk' : '', 9000);
+    sfxChord(mine); if (S.buyOpen) closeBuy(true); player.zombie = false; zmTint();
+  }
+  NET.lastPh = ph; NET.lastMd = g.md;
+}
+function sfxGroan(pos){ if (!ac) return; const sp = spatial(pos); noiseHit(sp, .32, 1.1, 170 + rand()*70, 4); noiseHit(sp, .2, .8, 330 + rand()*90, 5, .25); }
+// zombies groan now and then when they're near
+function zmAmbient(dt){
+  const list = MODE === 'online' ? [...NET.remotes.values()].filter(r => r.alive && r.team === 'T' && NET.g && NET.g.zm && NET.g.zm[r.peer]) : bots.filter(b => b.alive && !b.off);
+  for (const z of list){ z.groanT = (z.groanT ?? rand()*5) - dt; if (z.groanT <= 0){ z.groanT = 4 + rand()*6; if (z.pos.distanceTo(player.pos) < 30) sfxGroan(z.pos); } } }
+// against bots: survive the waves
+function zmStartOffline(){
+  Object.assign(S, { round:0, phase:'live', liveT:0, roundPlanted:false, deathT:0 }); ZM.won = ZM.lost = 0;
+  player.team = 'CT'; player.zombie = false; zmTint(); setBotsPal('Z');
+  bomb.planted = false; bomb.mesh.visible = false; bomb.defuser = null; bomb.dropped = false; bomb.carrier = null; bomb.picker = null;
+  clearNades(); clearDrops(); resetInv();
+  $('dead').hidden = true; H.scope.hidden = true; H.progBar.style.background = '';
+  zmRoundOffline(); vo('start');
+}
+function zmRoundOffline(){
+  S.round++; S.timer = ZM.prep + ZM.time; S.zmState = 'prep'; S.liveT = 0; S.deathT = 0;
+  player.team = 'CT'; modeLoadout(false); modeSpawn(); $('dead').hidden = true; H.cross.style.display = '';
+  bots.forEach(b => { b.off = true; b.alive = false; b.m.g.visible = false; });
+  showMsg(S.round + '-raund / ' + ZM.rounds, "Qurollaning (" + KB('B', 'Xarid tugmasi') + " — bepul) va qulay joy toping: " + ZM.prep + " soniyadan keyin zombilar keladi!", 'def', 3800); updateHUD();
+}
+function zmStepOffline(dt){
+  if (S.phase !== 'live') return;
+  S.timer -= dt; S.liveT += dt;
+  if (S.zmState === 'prep'){ if (S.timer <= ZM.time){ S.zmState = 'run'; bots.forEach(b => { b.off = false; botModeSpawn(b); }); showMsg('Zombilar keldi!', 'Vaqt tugaguncha omon qoling', 'atk', 2400); sfxGroan(player.pos); } return; }
+  if (S.zmState === 'run'){
+    if (!player.alive) return zmRoundEndOffline(false);
+    if (S.timer <= 0) return zmRoundEndOffline(true);
+    for (const b of bots) if (!b.alive && !b.off && S.time - b.deadT0 >= RESPAWN_T + .4) botModeSpawn(b);
+    return; }
+  if (S.timer <= 0){ if (S.round >= ZM.rounds) modeOverOffline(ZM.won > ZM.lost ? 'Siz' : 'Zombilar'); else zmRoundOffline(); }
+}
+function zmRoundEndOffline(won){
+  S.zmState = 'post'; S.timer = 4; if (won) ZM.won++; else ZM.lost++;
+  bots.forEach(b => { b.off = true; });
+  showMsg(won ? 'Omon qoldingiz!' : 'Zombilar sizni tutdi', ZM.won + ' : ' + ZM.lost + ' · ' + (S.round >= ZM.rounds ? "o'yin tugadi" : 'keyingi raund 4 soniyadan keyin'), won ? 'def' : 'atk', 3600); sfxChord(won);
+}
+
 // the server's final table (the Claude version builds one from what everybody reported)
 function showNetResult(g){
   vo('over');
@@ -5600,6 +5703,8 @@ setInterval(() => { if (MODE !== 'online' || !NET.room) return; const now = perf
 
 function clockText(){
   if (MODE !== 'online' && TRAIN(S.md)) return S.md === 'aim' ? fmt(Math.max(0, S.timer)) : 'MASHQ';
+  if (curMode() === 'zm' && inGame()){ if (MODE !== 'online') return S.zmState === 'prep' ? fmt(zmPrepLeft()) : S.zmState === 'run' ? fmt(S.timer) : fmt(0);
+    const g = NET.g; if (g && g.ph === 'live') return g.zm && Object.keys(g.zm).length ? fmt(g.t) : fmt(zmPrepLeft()); }
   if (MODE !== 'online' && RM(S.md)) return S.phase === 'live' ? fmt(S.timer) : fmt(0);
   if (MODE === 'online'){ const g = NET.g; if (!g) return '—'; if (g.ph === 'warmup') return g.t > 0 ? fmt(g.t) : 'ISINISH'; if (RM(g.md)) return g.ph === 'live' ? fmt(g.t) : fmt(0); if (bomb.planted) return 'BOMBA'; if (g.ph === 'freeze' || g.ph === 'live') return fmt(g.t); return fmt(0); }
   return bomb.planted ? 'BOMBA' : (S.phase === 'freeze' || S.phase === 'live') ? fmt(S.timer) : fmt(0);
@@ -6352,7 +6457,7 @@ setTimeout(() => { const m = /^#p=([^&]{1,40})$/.exec(location.hash); if (!m) re
   let who = ''; try { who = decodeURIComponent(m[1]); } catch(e){ return; }
   try { history.replaceState(null, '', location.pathname + location.search); } catch(e){}
   if (who) openLB(who); }, 0);
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, get ATM(){ return ATM; }, atmApply, get WXP(){ return WXP; }, get STARS(){ return STARS; }, hemi, sun, get GR(){ return GR; }, rayGrid, sprayDo, sprayPlace, grPattern, get GR_PRESETS(){ return GR_PRESETS; }, get ED(){ return ED; }, edValidate, edAutoPlan, ensureMap, get CUSTOM_PLAY(){ return CUSTOM_PLAY; }, toMenu, demoPlay, DEMO, openTrn, TRN, joinOnline, specTargets, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, ZM, zmPhase, damagePlayer, canBuy, get ATM(){ return ATM; }, atmApply, get WXP(){ return WXP; }, get STARS(){ return STARS; }, hemi, sun, get GR(){ return GR; }, rayGrid, sprayDo, sprayPlace, grPattern, get GR_PRESETS(){ return GR_PRESETS; }, get ED(){ return ED; }, edValidate, edAutoPlan, ensureMap, get CUSTOM_PLAY(){ return CUSTOM_PLAY; }, toMenu, demoPlay, DEMO, openTrn, TRN, joinOnline, specTargets, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= GRAFFITI =================
    A 16×16 picture (12 colours + see-through), one hex digit a pixel. T sprays it on the wall you look at; online it rides
@@ -6717,6 +6822,7 @@ function frame(now){
 
 function step(dt){
   if (S.phase === 'menu' || S.phase === 'over'){ if (KC.on) killcamStop(); return; }
+  if (curMode() === 'zm') zmAmbient(dt);
   recFrame();
   if (MODE === 'online'){ netFrame(dt); return; }
   // timers
@@ -6762,7 +6868,7 @@ function updatePlayer(dt){
   if (canMove && !S.paused){ if (keys.KeyW || keys.ArrowUp) fwd += 1; if (keys.KeyS || keys.ArrowDown) fwd -= 1; if (keys.KeyD) str += 1; if (keys.KeyA) str -= 1; if (TOUCH.mag > .12){ fwd -= TOUCH.my; str += TOUCH.mx; } }
   const sy = Math.sin(player.yaw), cyy = Math.cos(player.yaw);
   let wx = -sy*fwd + cyy*str, wz = -cyy*fwd - sy*str; const wl = Math.hypot(wx,wz); if (wl > 0){ wx /= wl; wz /= wl; }
-  let maxSp = w.speed * (keys.ShiftLeft || keys.ShiftRight || (TOUCH.mag > .12 && TOUCH.mag < .6) ? .52 : 1) * (player.crouch > .5 ? .34 : 1) * (player.scope > 0 ? .55 : 1);
+  let maxSp = w.speed * (player.zombie ? 1.12 : 1) * (keys.ShiftLeft || keys.ShiftRight || (TOUCH.mag > .12 && TOUCH.mag < .6) ? .52 : 1) * (player.crouch > .5 ? .34 : 1) * (player.scope > 0 ? .55 : 1);
   if (player.tagT > 0){ player.tagT -= dt; maxSp *= .55; }
   const v = player.vel;
   if (player.ground){
@@ -6841,7 +6947,7 @@ function matchOver(){
     const rows = modeRows(), place = rows.findIndex(r => r.me) + 1, win = S.endWinner === 'Siz';
     $('overEyebrow').textContent = MODES[S.md].name + ' · ' + ({ easy:'Oson', normal:"O'rta", hard:'Qiyin' }[SET.diff]) + ' botlar';
     $('overTitle').textContent = win ? "G'alaba" : "O'yin tugadi"; $('overTitle').style.color = win ? 'var(--atk)' : 'var(--ink)';
-    $('overLead').textContent = (win ? (S.md === 'gg' ? "Siz qurol poygasini birinchi bo'lib tugatdingiz." : "Siz eng ko'p o'ldirdingiz.") : S.endWinner + ' yutdi. ') + (win ? '' : 'Siz ' + place + "-o'rindasiz (" + player.kills + " o'ldirish).");
+    $('overLead').textContent = S.md === 'zm' ? 'Omon qolgan raundlar: ' + ZM.won + ' / ' + ZM.rounds + ', ' + player.kills + " ta zombi yiqitildi." : (win ? (S.md === 'gg' ? "Siz qurol poygasini birinchi bo'lib tugatdingiz." : "Siz eng ko'p o'ldirdingiz.") : S.endWinner + ' yutdi. ') + (win ? '' : 'Siz ' + place + "-o'rindasiz (" + player.kills + " o'ldirish).");
     $('stK').textContent = player.kills; $('stD').textContent = player.deaths; $('stHS').textContent = (player.kills ? Math.round(player.hs/player.kills*100) : 0) + '%'; $('stDmg').textContent = Math.round(player.dmg);
     $('stMvpBox').hidden = true; $('over').hidden = false; sfxChord(win); return;
   }

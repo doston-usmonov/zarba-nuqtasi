@@ -98,13 +98,14 @@ type gameState struct {
 	Wn  string         `json:"wn,omitempty"`  // g'olib id
 	Wnm string         `json:"wnm,omitempty"` // g'olib ismi
 	// statistika (stats.go)
-	Mv  string         `json:"mv,omitempty"`  // raund MVP id
-	Mvn string         `json:"mvn,omitempty"` // raund MVP ismi
-	Mvr string         `json:"mvr,omitempty"` // sabab: "k3" (3 o'ldirish), "bomb", "defuse"
-	St  []statRow      `json:"st,omitempty"`  // o'yin oxiridagi jadval
-	Vt  map[string]int `json:"vt,omitempty"`  // keyingi xarita uchun ovozlar
-	At  string         `json:"at,omitempty"`  // kun vaqti: eve | night ("" — kunduz), atm.go
-	Wx  string         `json:"wx,omitempty"`  // ob-havo: rain | snow | dust ("" — ochiq)
+	Mv  string          `json:"mv,omitempty"`  // raund MVP id
+	Mvn string          `json:"mvn,omitempty"` // raund MVP ismi
+	Mvr string          `json:"mvr,omitempty"` // sabab: "k3" (3 o'ldirish), "bomb", "defuse"
+	St  []statRow       `json:"st,omitempty"`  // o'yin oxiridagi jadval
+	Vt  map[string]int  `json:"vt,omitempty"`  // keyingi xarita uchun ovozlar
+	At  string          `json:"at,omitempty"`  // kun vaqti: eve | night ("" — kunduz), atm.go
+	Zm  map[string]bool `json:"zm,omitempty"`  // «Zombi» rejimida zombilar (zombie.go)
+	Wx  string          `json:"wx,omitempty"`  // ob-havo: rain | snow | dust ("" — ochiq)
 
 	liveAt time.Time // jonli faza boshlangan vaqt (xarid vaqtini bilish uchun)
 }
@@ -320,9 +321,15 @@ func (r *room) refereeLocked(c *client, f map[string]json.RawMessage, info presI
 		if !g.respawns() && g.Ph != "warmup" {
 			r.ecoNewLifeLocked(c, survived, now)
 		}
+		if g.zombie(c.id) {
+			p.hp = zmHP
+		}
 	}
 	if info.Tm != p.tm {
-		p.tm, p.posOK = info.Tm, false // jamoa almashdi: boshqa bazaga o'tadi
+		p.tm = info.Tm
+		if g.Md != modeZM || g.Ph == "warmup" { // zombi rejimida jamoa joyida almashadi (yuqtirilganda)
+			p.posOK = false // jamoa almashdi: boshqa bazaga o'tadi
+		}
 	}
 	if !claimAlive {
 		if p.alive {
@@ -490,6 +497,9 @@ func (r *room) validHitLocked(c *client, h hitClaim, now time.Time) string {
 	if g.Md == modeAim && h.W != "sniper" && h.W != "knife" {
 		return "aim'da faqat snayper va pichoq: " + h.W
 	}
+	if g.zombie(c.id) && h.W != "knife" {
+		return "zombi faqat tirnog'i bilan uradi: " + h.W
+	}
 	if !ok || !okp {
 		return "noma'lum qurol"
 	}
@@ -499,6 +509,9 @@ func (r *room) validHitLocked(c *client, h hitClaim, now time.Time) string {
 	limit := spec.dmg * mult
 	if spec.melee || spec.taser {
 		limit = spec.dmg
+	}
+	if spec.melee && g.zombie(c.id) {
+		limit = zmClaw
 	}
 	if spec.pellets > 1 { // saochmalar har xil joyga tegadi: eng yomon holat — hammasi qism ko'paytmasi bilan
 		limit = spec.dmg * math.Max(mult, partMult["s"]) * float64(min(max(h.Pc, 1), spec.pellets))

@@ -547,6 +547,7 @@ body.zmZ #c{filter:sepia(.35) hue-rotate(45deg) saturate(1.25) brightness(1.04)}
 [data-t="swap"]{right:calc(196px + env(safe-area-inset-right,0px));bottom:calc(62px + env(safe-area-inset-bottom,0px))}
 [data-t="use"]{right:calc(198px + env(safe-area-inset-right,0px));bottom:calc(136px + env(safe-area-inset-bottom,0px));font-size:11px}
 [data-t="scope"]{right:calc(110px + env(safe-area-inset-right,0px));bottom:calc(176px + env(safe-area-inset-bottom,0px))}
+[data-t="spray"]{left:calc(26px + env(safe-area-inset-left,0px));top:calc(168px + env(safe-area-inset-top,0px));width:46px;height:46px}
 [data-t="mic"]{right:calc(196px + env(safe-area-inset-right,0px));bottom:calc(208px + env(safe-area-inset-bottom,0px))}
 .tb.sm{position:static;width:auto;height:36px;border-radius:18px;padding:0 13px;font-size:12px}
 #tTop{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:max(12px, env(safe-area-inset-right,0px));display:flex;gap:8px;pointer-events:none}
@@ -665,7 +666,6 @@ body.zmZ #c{filter:sepia(.35) hue-rotate(45deg) saturate(1.25) brightness(1.04)}
     <button class="tb sm" type="button" data-t="team" id="tTeam">Jamoa</button>
     <button class="tb sm" type="button" data-t="drop" id="tDrop">Tashlash</button>
     <button class="tb sm" type="button" data-t="chat" id="tChat">Chat</button>
-    <button class="tb sm" type="button" data-t="spray">Graffiti</button>
     <button class="tb sm" type="button" data-t="board">Hisob</button>
     <button class="tb sm" type="button" data-t="pause" aria-label="Pauza">II</button>
   </div>
@@ -675,6 +675,7 @@ body.zmZ #c{filter:sepia(.35) hue-rotate(45deg) saturate(1.25) brightness(1.04)}
   <button class="tb" type="button" data-t="reload" aria-label="Qayta o'qlash"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg></button>
   <button class="tb" type="button" data-t="swap" aria-label="Qurolni almashtirish"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3-3M20 16H6l3 3"/></svg></button>
   <button class="tb" type="button" data-t="use" id="tUse">BOMBA</button>
+  <button class="tb" type="button" data-t="spray" aria-label="Graffiti"><svg viewBox="0 0 24 24"><rect x="8" y="9" width="8" height="12" rx="2"/><path d="M10 9V6h4v3M12 3v1M16 4l1-1M8 4 7 3"/></svg></button>
   <button class="tb" type="button" data-t="mic" id="tMic" aria-label="Gapirish (bosib turing)" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
   <button class="tb" type="button" data-t="scope" id="tScope" aria-label="Optika"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
 </div>
@@ -3192,7 +3193,7 @@ function modeHUD(){
   el.hidden = false;
 }
 function zmHUD(el){
-  $('scTL').textContent = 'ZOMBILAR'; $('scCTL').textContent = 'ODAMLAR'; $('money').style.visibility = player.zombie || S.phase !== 'live' ? 'hidden' : '';
+  $('scTL').textContent = 'ZOMBI'; $('scCTL').textContent = 'ODAM'; $('money').style.visibility = player.zombie || S.phase !== 'live' ? 'hidden' : '';
   let humans, zombies, prep;
   if (MODE === 'online'){ const g = NET.g || {}, zm = g.zm || {}, ents = [...NET.remotes.values()].filter(r => r.team);
     zombies = ents.filter(r => zm[r.peer]).length + (player.zombie ? 1 : 0); humans = ents.filter(r => !zm[r.peer] && r.alive).length + (!player.zombie && player.alive ? 1 : 0); prep = g.ph === 'live' && !Object.keys(zm).length; }

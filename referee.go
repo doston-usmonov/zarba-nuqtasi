@@ -103,6 +103,8 @@ type gameState struct {
 	Mvr string         `json:"mvr,omitempty"` // sabab: "k3" (3 o'ldirish), "bomb", "defuse"
 	St  []statRow      `json:"st,omitempty"`  // o'yin oxiridagi jadval
 	Vt  map[string]int `json:"vt,omitempty"`  // keyingi xarita uchun ovozlar
+	At  string         `json:"at,omitempty"`  // kun vaqti: eve | night ("" — kunduz), atm.go
+	Wx  string         `json:"wx,omitempty"`  // ob-havo: rain | snow | dust ("" — ochiq)
 
 	liveAt time.Time // jonli faza boshlangan vaqt (xarid vaqtini bilish uchun)
 }
@@ -960,7 +962,7 @@ func (r *room) gm() *gameMap {
 
 // reset: yangi o'yin (xarita saqlanadi).
 func (g *gameState) reset() {
-	m, md, tm := g.M, g.Md, g.Tm
+	m, md, tm, at, wx := g.M, g.Md, g.Tm, g.At, g.Wx
 	*g = *newGameState()
-	g.M, g.Md, g.Tm = m, md, tm
+	g.M, g.Md, g.Tm, g.At, g.Wx = m, md, tm, at, wx
 }

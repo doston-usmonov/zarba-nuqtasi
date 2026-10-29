@@ -77,6 +77,7 @@ func (h *hub) startOfficial(list []officialRoom) {
 		r := &room{name: name, clients: map[string]*client{}, gs: newGameState(), stop: make(chan struct{}), pub: true, max: o.max, bans: map[string]time.Time{}, official: &o}
 		r.gs.M = o.gmap
 		r.gs.setMode(o.mode)
+		r.gs.setAtm(randomAtm())
 		h.rooms[name] = r
 		go r.run(h)
 	}
@@ -172,6 +173,8 @@ func (r *room) emptyOfficialLocked() {
 		}
 	}
 	r.gs.M = r.official.gmap
+	r.gs.At, r.gs.Wx = "", ""
+	r.gs.setAtm(randomAtm())
 	r.gs.setMode(r.official.mode)
 	r.gs.reset()
 	r.st, r.stE, r.planter, r.defuser = nil, "", "", ""

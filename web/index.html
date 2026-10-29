@@ -402,7 +402,8 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
 #grPrev{width:128px;height:128px;image-rendering:pixelated}
 .chk{display:flex;gap:8px;align-items:center;font-size:14px}
 @media (max-width:760px){ .grGrid{grid-template-columns:1fr} }
-.edWrap{width:min(1180px,100%)} .edTop{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.edWrap{width:min(1180px,100%)}
+.atmRow{display:grid;grid-template-columns:1fr 1fr;gap:10px} .atmTag{color:var(--dim);white-space:nowrap} .edTop{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .edGrid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
 .edCanvasBox{display:flex;flex-direction:column;gap:6px;min-width:0}
 #edCv{width:100%;max-width:min(704px,calc(100vh - 170px));aspect-ratio:1;touch-action:none;border:1px solid var(--line);border-radius:8px;cursor:crosshair;image-rendering:pixelated;background:#2a251e}
@@ -742,6 +743,7 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
         <div class="row trainQuick"><span class="note">Mashq:</span><button class="ghost sm" type="button" data-train="aim">Nishon mashqi</button><button class="ghost sm" type="button" data-train="nade">Granata mashqi</button></div>
         <div class="row trainQuick"><span class="note">Ijod:</span><button class="ghost sm" type="button" data-ed="edit">✏ Xarita muharriri</button><button class="ghost sm" type="button" data-ed="gal">Xaritalar galereyasi</button><button class="ghost sm" type="button" id="grOpen">🎨 Graffiti</button></div>
         <label class="field" for="mapSel"><span>Xarita</span><select id="mapSel"><option value="qumtepa">Qumtepa — Klassik: uzun yo'lak, o'rta va tunnel</option><option value="bozor">Bozor — Ixcham: rastalar, tor o'rta, ko'prikcha</option><option value="karvon">Karvonsaroy — Ixcham: markazda hovli, ikki qanot</option><option value="bekat">Bekat — Temiryo'l bekati: perron, depo, yuk ombori</option><option value="saroy">Saroy — Qal'a: ichki zallar, devor bo'yi yo'lak</option><option value="zavod">Zavod — Fabrika: dastgohlar zali, konteynerli ombor</option><optgroup label="Aim xaritalari"><option value="maydon">Maydon — ochiq maydon, siniq devor</option><option value="chorraha">Chorraha — xoch shaklidagi ko'chalar</option><option value="hovli">Hovli — o'rtada to'rt eshikli uy</option></optgroup></select></label>
+        <div class="fields atmRow"><label class="field" for="atTime"><span>Vaqt</span><select id="atTime"><option value="day">Kunduz</option><option value="eve">Kechqurun</option><option value="night">Tun</option><option value="rand">Tasodifiy</option></select></label><label class="field" for="atWx"><span>Ob-havo</span><select id="atWx"><option value="clear">Ochiq</option><option value="rain">Yomg'ir</option><option value="snow">Qor</option><option value="dust">Chang bo'roni</option><option value="rand">Tasodifiy</option></select></label></div>
         <button class="cta" id="startBtn" type="button">Botlar bilan o'ynash</button>
       </div>
       <div class="panel" id="trainPanel">
@@ -781,6 +783,8 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
           <label class="field" for="newPub"><span>Kimga</span><select id="newPub"><option value="1">Ommaviy</option><option value="0">Yopiq (kod bilan)</option></select></label>
           <label class="field" for="newMode"><span>Rejim</span><select id="newMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option><option value="arena">Aim — faqat nishon</option></select></label>
           <label class="field" for="newMap"><span>Xarita</span><select id="newMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="bekat">Bekat</option><option value="saroy">Saroy</option><option value="zavod">Zavod</option><optgroup label="Aim"><option value="maydon">Maydon</option><option value="chorraha">Chorraha</option><option value="hovli">Hovli</option></optgroup></select></label>
+          <label class="field" for="newTime"><span>Vaqt</span><select id="newTime"><option value="day">Kunduz</option><option value="eve">Kechqurun</option><option value="night">Tun</option><option value="rand">Tasodifiy</option></select></label>
+          <label class="field" for="newWx"><span>Ob-havo</span><select id="newWx"><option value="clear">Ochiq</option><option value="rain">Yomg'ir</option><option value="snow">Qor</option><option value="dust">Chang bo'roni</option><option value="rand">Tasodifiy</option></select></label>
           <label class="field" for="newMax"><span>Maks. o'yinchi</span><select id="newMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select></label>
         </div>
         <button class="ghost srv-only" id="createBtn" type="button">O'yin yaratish</button>
@@ -883,6 +887,8 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
           <div class="set"><span>Bot darajasi</span><div class="seg" data-set="botLv"><button type="button" data-v="easy">Oson</button><button type="button" data-v="normal">O'rta</button><button type="button" data-v="hard">Qiyin</button></div><span></span></div>
           <div class="set"><span>Xona turi</span><div class="seg" id="admPub"><button type="button" data-v="1">Ommaviy</button><button type="button" data-v="0">Yopiq</button></div><span></span></div>
           <label class="set" for="admMode">Rejim <select id="admMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option><option value="arena">Aim — faqat nishon</option></select><span></span></label>
+          <label class="set" for="admTime">Vaqt <select id="admTime"><option value="day">Kunduz</option><option value="eve">Kechqurun</option><option value="night">Tun</option></select></label>
+          <label class="set" for="admWx">Ob-havo <select id="admWx"><option value="clear">Ochiq</option><option value="rain">Yomg'ir</option><option value="snow">Qor</option><option value="dust">Chang bo'roni</option></select></label>
           <label class="set" for="admMap">Xarita <select id="admMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="bekat">Bekat</option><option value="saroy">Saroy</option><option value="zavod">Zavod</option><optgroup label="Aim"><option value="maydon">Maydon</option><option value="chorraha">Chorraha</option><option value="hovli">Hovli</option></optgroup></select><span></span></label>
           <label class="set" for="admMax">Maks. o'yinchi <select id="admMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select><span></span></label>
         </div>
@@ -1080,7 +1086,7 @@ const KB = (desk, touch) => isTouch ? touch : desk;
 
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
-const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', xs:'dyn', xl:8, xw:2, xg:4, xd:'off', xo:'on', xa:1, diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa', mode:'comp', kc:'on', vo:'on', trainW:'rifle', dmTeam:false }, loadSet());
+const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', xs:'dyn', xl:8, xw:2, xg:4, xd:'off', xo:'on', xa:1, diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa', mode:'comp', kc:'on', vo:'on', trainW:'rifle', dmTeam:false, atTime:'day', atWx:'clear' }, loadSet());
 if (SET.map === 'registon') SET.map = 'bekat';   // Registon o'rniga Bekat
 function saveSet(){ try { localStorage.setItem('zn-set', JSON.stringify(SET)); } catch(e){} }
 const XH_DEF = { xs:'dyn', xl:8, xw:2, xg:4, xd:'off', xo:'on', xa:1, xc:'#5cff8a' };
@@ -1684,11 +1690,11 @@ scene.add(camera);
 
 const vmScene = new THREE.Scene();
 const vmCam = new THREE.PerspectiveCamera(60, 1, .01, 10); vmScene.add(vmCam);
-vmCam.add(new THREE.HemisphereLight(lin(0xf2f4ff), lin(0x6b5a44), .85));
+const vmHemi = new THREE.HemisphereLight(lin(0xf2f4ff), lin(0x6b5a44), .85); vmCam.add(vmHemi);
 const vmSun = new THREE.DirectionalLight(lin(0xfff0da), 1.5); vmSun.position.set(.5,1,.2); vmCam.add(vmSun);
 
 const MAPW = GW*CELL, MAPH = GH*CELL;
-scene.add(new THREE.HemisphereLight(lin(0xdfe9f7), lin(0x8a7253), .62));
+const hemi = new THREE.HemisphereLight(lin(0xdfe9f7), lin(0x8a7253), .62); scene.add(hemi);
 const SUN_DIR = new V3(46, 84, 30).normalize();
 const sun = new THREE.DirectionalLight(lin(0xffe9cc), 2.4);
 sun.position.copy(SUN_DIR).multiplyScalar(110).add(new V3(MAPW/2, 0, MAPH/2)); sun.target.position.set(MAPW/2, 0, MAPH/2);
@@ -1726,6 +1732,7 @@ function pixelTex(w, h, fn, rep, nStrength){
 }
 
 // sky: painted equirect dome (sun placed where the shadows come from) + image-based light from it
+const SKY = { envs:{} };
 (function sky(){
   const W2 = 2048, H2 = 1024, c = mkCanvas(W2, H2), g = c.getContext('2d');
   const gr = g.createLinearGradient(0, 0, 0, H2);
@@ -1743,8 +1750,87 @@ function pixelTex(w, h, fn, rep, nStrength){
   const dome = new THREE.Mesh(new THREE.SphereGeometry(900, 48, 24), mat); dome.position.set(MAPW/2, 0, MAPH/2); dome.renderOrder = -1; scene.add(dome);
   const envScene = new THREE.Scene(); envScene.add(new THREE.Mesh(new THREE.SphereGeometry(20, 32, 16), mat));
   const ground = new THREE.Mesh(new THREE.CircleGeometry(19.5, 32), new THREE.MeshBasicMaterial({ color:lin(0xb49c76) })); ground.rotation.x = -Math.PI/2; ground.position.y = -2; envScene.add(ground);
-  const pm = new THREE.PMREMGenerator(renderer); const env = pm.fromScene(envScene, .02).texture; scene.environment = env; vmScene.environment = env; pm.dispose();
+  Object.assign(SKY, { mat, dome, envScene, ground });
+  const env = skyEnv(0xffffff, 0xb49c76); scene.environment = env; vmScene.environment = env;
 })();
+// image-based light for a tinted sky (dusk, night, overcast) — made once per tint
+function skyEnv(tint, groundCol){ const key = tint + '/' + groundCol; if (SKY.envs[key]) return SKY.envs[key];
+  SKY.mat.color.copy(lin(tint)); SKY.ground.material.color.copy(lin(groundCol)); const pm = new THREE.PMREMGenerator(renderer); const env = pm.fromScene(SKY.envScene, .02).texture; pm.dispose();
+  return (SKY.envs[key] = env); }
+
+/* ---------- time of day and weather (atm.go): lights, sky, fog, falling rain / snow / dust ----------
+   Day is the look everything was tuned for; the others tint it. The server only stores the choice (g.at, g.wx). */
+const LAMPS = [], HILLS = { mat:null };
+const ATM_T = {
+  day:   { dome:0xffffff, gnd:0xb49c76, hs:0xdfe9f7, hg:0x8a7253, hemi:.62, sun:0xffe9cc, sunI:2.4, fog:0xe2d7c3, near:60, far:240, exp:1, lamp:.5, hill:0xb8a998, vm:1, stars:false },
+  eve:   { dome:0xffa27a, gnd:0x8a5a44, hs:0xffcaa8, hg:0x6b4a3a, hemi:.52, sun:0xff9a55, sunI:1.55, fog:0xd29b7a, near:45, far:210, exp:.97, lamp:.9, hill:0x9a6a58, vm:.8, stars:false },
+  night: { dome:0x26304e, gnd:0x1e1c24, hs:0x6f84c4, hg:0x1c1a22, hemi:.36, sun:0xa9bcff, sunI:.55, fog:0x121a2b, near:28, far:150, exp:1.08, lamp:1.5, hill:0x1d2232, vm:.55, stars:true }
+};
+const ATM_W = {
+  clear: { dome:0xffffff, sun:1, hemi:1, fog:null },
+  rain:  { dome:0x9aa4ae, sun:.32, hemi:1.08, fog:0x9aa3ab, near:22, far:150, mix:.75 },
+  snow:  { dome:0xd8dee6, sun:.5, hemi:1.18, fog:0xdfe5ec, near:20, far:140, mix:.8, white:.38 },
+  dust:  { dome:0xe8c8a0, sun:.55, hemi:.98, fog:0xdcc29e, near:9, far:74, mix:.92, sunCol:0xffcf9a }
+};
+const ATM = { at:'day', wx:'clear', flash:0, boltT:20 };
+const mulHex = (a, b) => { const A = new THREE.Color(a), B = new THREE.Color(b); return A.multiply(B).getHex(); };
+function atmApply(at, wx, force){
+  at = ATM_T[at] ? at : 'day'; wx = ATM_W[wx] ? wx : 'clear'; if (!force && at === ATM.at && wx === ATM.wx) return; ATM.at = at; ATM.wx = wx;
+  const T = ATM_T[at], Wt = ATM_W[wx], dome = mulHex(T.dome, Wt.dome);
+  SKY.mat.color.copy(lin(dome)); const env = skyEnv(dome, mulHex(T.gnd, Wt.dome)); SKY.mat.color.copy(lin(dome)); scene.environment = env; vmScene.environment = env;
+  hemi.color.copy(lin(T.hs)); hemi.groundColor.copy(lin(T.hg)); hemi.intensity = T.hemi*Wt.hemi; ATM.hemi = hemi.intensity;
+  sun.color.copy(lin(Wt.sunCol && at !== 'night' ? Wt.sunCol : T.sun)); sun.intensity = T.sunI*Wt.sun;
+  const fogC = new THREE.Color(T.fog); if (Wt.fog) fogC.lerp(new THREE.Color(mulHex(Wt.fog, T.dome === 0xffffff ? 0xffffff : T.dome)), Wt.mix);
+  scene.fog.color.copy(lin(fogC.getHex())); scene.fog.near = Wt.fog ? Math.min(T.near, Wt.near) : T.near; scene.fog.far = Wt.fog ? Math.min(T.far, Wt.far) : T.far; scene.background = lin(fogC.getHex());
+  renderer.toneMappingExposure = T.exp; vmHemi.intensity = .85*T.vm; vmSun.intensity = 1.5*T.vm;
+  LAMPS.forEach(l => { l.material.opacity = Math.min(1, T.lamp); const k = T.lamp > 1 ? 1.7 : 1.1; l.scale.set(k, k, 1); });
+  if (HILLS.mat){ const hc = lin(mulHex(T.hill, Wt.dome)); if (Wt.white) hc.lerp(lin(mulHex(0xf4f6fa, T.dome)), .6); HILLS.mat.color.copy(hc); }
+  const fc = lin(MAP.theme.floor); if (Wt.white) fc.lerp(lin(0xffffff), Wt.white); floor.material.color.copy(fc);
+  STARS.visible = T.stars && wx === 'clear';
+  wxBuild(wx); wxSound(wx); renderer.shadowMap.needsUpdate = true;
+}
+const atmSync = g => atmApply(g && g.at, g && g.wx);
+function atmPick(v, list){ return v === 'rand' ? list[(Math.random()*list.length)|0] : v; }
+// what the menu shows: the bot match settings (a random choice shows day)
+const menuAtm = () => atmApply(SET.atTime === 'rand' ? 'day' : SET.atTime, SET.atWx === 'rand' ? 'clear' : SET.atWx);
+const STARS = (() => { const n = 900, p = new Float32Array(n*3), r = mulberry(77); for (let i=0; i<n; i++){ const a = r()*Math.PI*2, e = Math.asin(.08 + r()*.92), R = 860;
+  p[i*3] = MAPW/2 + Math.cos(a)*Math.cos(e)*R; p[i*3 + 1] = Math.sin(e)*R; p[i*3 + 2] = MAPH/2 + Math.sin(a)*Math.cos(e)*R; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+  const m = new THREE.Points(g, new THREE.PointsMaterial({ color:0xdfe6ff, size:2.2, sizeAttenuation:false, fog:false, transparent:true, opacity:.85, depthWrite:false })); m.visible = false; m.renderOrder = -1; m.frustumCulled = false; scene.add(m); return m; })();
+// falling rain (streaks), snow (soft flakes) or dust (blown grit) in a box that follows the camera
+const WXP = { kind:'clear', obj:null, p:null, v:null, n:0, t:0 };
+const flakeTex = canvasTex(32, 32, g => { const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.5, 'rgba(255,255,255,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 32, 32); });
+function wxBuild(kind){
+  if (WXP.obj){ scene.remove(WXP.obj); WXP.obj.geometry.dispose(); WXP.obj.material.dispose(); WXP.obj = null; } WXP.kind = kind; if (kind === 'clear') return;
+  const k = GFX.level === 'min' ? .3 : GFX.level === 'low' ? .55 : 1, n = Math.round((kind === 'rain' ? 2600 : kind === 'snow' ? 2200 : 1800)*k), c = camera.position;
+  const p = new Float32Array(n*(kind === 'rain' ? 6 : 3)), v = new Float32Array(n), r = Math.random;
+  for (let i=0; i<n; i++){ const x = c.x + (r() - .5)*44, y = r()*(kind === 'dust' ? 7 : 20), z = c.z + (r() - .5)*44; v[i] = r();
+    if (kind === 'rain'){ p.set([x, y, z, x + .03, y + .6, z + .02], i*6); } else p.set([x, y, z], i*3); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+  const obj = kind === 'rain' ? new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color:lin(0xc4cfda), transparent:true, opacity:.42, depthWrite:false }))
+    : new THREE.Points(g, new THREE.PointsMaterial({ map:flakeTex, color:kind === 'snow' ? 0xffffff : lin(0xc9a070), size:kind === 'snow' ? .26 : .12, transparent:true, opacity:kind === 'snow' ? 1 : .7, depthWrite:false }));
+  obj.frustumCulled = false; scene.add(obj); Object.assign(WXP, { obj, p, v, n }); }
+function wxStep(dt){
+  if (WXP.kind === 'clear' || !WXP.obj) return; const c = camera.position, p = WXP.p, v = WXP.v, n = WXP.n, t = (WXP.t += dt);
+  const wrap = (a, o) => a - o > 22 ? a - 44 : a - o < -22 ? a + 44 : a;
+  if (WXP.kind === 'rain'){ for (let i=0; i<n; i++){ const j = i*6; let y = p[j + 1] - (17 + v[i]*5)*dt, x = wrap(p[j] + 1.2*dt, c.x), z = wrap(p[j + 2], c.z); if (y < 0) y += 20;
+      p[j] = x; p[j + 1] = y; p[j + 2] = z; p[j + 3] = x + .04; p[j + 4] = y + .6; p[j + 5] = z + .02; } }
+  else if (WXP.kind === 'snow'){ for (let i=0; i<n; i++){ const j = i*3; let y = p[j + 1] - (1 + v[i]*.7)*dt; if (y < 0) y += 20;
+      p[j] = wrap(p[j] + Math.sin(t*.8 + i)*.35*dt + .2*dt, c.x); p[j + 1] = y; p[j + 2] = wrap(p[j + 2] + Math.cos(t*.6 + i*1.7)*.3*dt, c.z); } }
+  else { for (let i=0; i<n; i++){ const j = i*3; p[j] = wrap(p[j] + (6 + v[i]*5)*dt, c.x); p[j + 1] = Math.max(.05, p[j + 1] + Math.sin(t*2 + i)*.4*dt); p[j + 2] = wrap(p[j + 2] + Math.sin(t + i*.3)*.8*dt, c.z); } }
+  WXP.obj.geometry.attributes.position.needsUpdate = true;
+  // lightning now and then when it rains
+  if (WXP.kind === 'rain'){ ATM.boltT -= dt; if (ATM.boltT <= 0){ ATM.boltT = 14 + Math.random()*26; ATM.flash = .35; if (ac) setTimeout(() => noiseHit(spatial(camera.position), .45, 2.4, 120, .5), 400 + Math.random()*1400); } }
+  if (ATM.flash > 0){ ATM.flash = Math.max(0, ATM.flash - dt); hemi.intensity = ATM.hemi + (ATM.flash > .25 || (ATM.flash > .1 && ATM.flash < .16) ? 2.2 : 0); }
+}
+// a quiet loop for the weather (rain hiss, wind)
+const WXS = { src:null, kind:'clear' };
+function wxSound(kind){
+  if (WXS.kind === kind && (WXS.src || kind === 'clear')) return; if (WXS.src){ try { WXS.src.stop(); } catch(e){} WXS.src = null; } WXS.kind = kind;
+  if (kind === 'clear' || !ac || !noiseBuf) return;
+  const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); src.buffer = noiseBuf; src.loop = true;
+  f.type = kind === 'rain' ? 'highpass' : 'lowpass'; f.frequency.value = kind === 'rain' ? 900 : kind === 'dust' ? 700 : 380; g.gain.value = kind === 'rain' ? .045 : kind === 'dust' ? .05 : .03;
+  src.connect(f); f.connect(g); g.connect(master); src.start(); WXS.src = src; }
 
 /* ---------- surface textures (colour + normal from a height field) ---------- */
 const WALL_T = pixelTex(512, 512, (x, y, u, v) => {          // 2 m × 2 m of sandstone blocks with plaster patches
@@ -1812,7 +1898,7 @@ function clearWorld(){
   while (WG.children.length) WG.remove(WG.children[0]);
 }
 function buildWorld(){
-  const SIGNS = MAP.signs || [];
+  const SIGNS = MAP.signs || []; LAMPS.length = 0;
   floor.material.color = lin(MAP.theme.floor);
   const walls = [], crates = [], stacks = [];
   for (let z=0;z<GH;z++) for (let x=0;x<GW;x++){
@@ -1915,7 +2001,7 @@ function buildWorld(){
   place(new THREE.InstancedMesh(new THREE.BoxGeometry(.05, .05, .34), new THREE.MeshStandardMaterial({ color:lin(0x232220), metalness:.5, roughness:.5 }), lampF.length), lampF, 3.9, .17);
   place(new THREE.InstancedMesh(new THREE.SphereGeometry(.085, 12, 8), new THREE.MeshStandardMaterial({ color:lin(0xffe2a8), emissive:lin(0xffc66b), emissiveIntensity:2.2 }), lampF.length), lampF, 3.78, .34);
   const lampGlow = canvasTex(64, 64, (g) => { const gr = g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0, 'rgba(255,220,160,1)'); gr.addColorStop(1, 'rgba(255,200,120,0)'); g.fillStyle = gr; g.fillRect(0,0,64,64); });
-  lampF.forEach(f => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:lampGlow, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:.5 })); s.position.set(f.px + f.dx*.34, 3.78, f.pz + f.dz*.34); s.scale.set(1.1, 1.1, 1); WG.add(s); });
+  lampF.forEach(f => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:lampGlow, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:.5 })); LAMPS.push(s); s.position.set(f.px + f.dx*.34, 3.78, f.pz + f.dz*.34); s.scale.set(1.1, 1.1, 1); WG.add(s); });
   // sagging cables across the streets
   const cableMat = new THREE.MeshStandardMaterial({ color:lin(0x1c1b1a), roughness:.7 });
   (MAP.cables || []).forEach(([x0,z0,x1,z1], i) => {
@@ -1928,7 +2014,7 @@ function buildWorld(){
     const k = r();
     if (k < .14){ const tk = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 2.6, 12), domeMat); tk.position.set(b.position.x, h + 1.3, b.position.z); WG.add(tk); }   // suv baki
     else if (k < .32){ const rf = new THREE.Mesh(new THREE.ConeGeometry(Math.min(w, dd)*.74, 2.2, 4), roofMat); rf.position.set(b.position.x, h + 1.1, b.position.z); rf.rotation.y = b.rotation.y + Math.PI/4; WG.add(rf); } }
-  const hillMat = new THREE.MeshBasicMaterial({ color:lin(0xb8a998), fog:false });
+  const hillMat = HILLS.mat = new THREE.MeshBasicMaterial({ color:lin(0xb8a998), fog:false });
   for (let i=0;i<16;i++){ const a = i/16*Math.PI*2 + r()*.2, d = 520 + r()*120, h = 50 + r()*90; const c = new THREE.Mesh(new THREE.ConeGeometry(120 + r()*120, h, 7), hillMat); c.position.set(MAPW/2 + Math.cos(a)*d, h/2 - 6, MAPH/2 + Math.sin(a)*d); WG.add(c); }
   SIGNS.forEach(s => sign(...s));
   if (MAP.style) buildStyle(faces, walls);
@@ -2997,6 +3083,7 @@ function startMatch(){
   if (MM.st && MM.st.state === 'searching') mmLeave();
   MODE = 'bots'; player.team = 'T'; H.progBar.style.background = ''; bots.forEach(b => b.m.g.visible = true);
   DIFF = DIFFS[SET.diff] || DIFFS.normal; setMap(CUSTOM_PLAY && MAPS[CUSTOM_PLAY] ? CUSTOM_PLAY : SET.map);
+  atmApply(atmPick(SET.atTime, ['day', 'day', 'eve', 'night']), atmPick(SET.atWx, ['clear', 'clear', 'rain', 'snow', 'dust']));
   Object.assign(S, { round:0, sA:0, sB:0, H:fmtH(), loss:0, paused:false, md:TR.pick || (MODES[SET.mode] ? SET.mode : 'comp') });
   if (fixedFm(S.md)) S.H = fixedFm(S.md);
   Object.assign(player, { money:800, kills:0, deaths:0, hs:0, dmg:0, alive:false }); resetInv();
@@ -4419,11 +4506,14 @@ $('resumeBtn').addEventListener('click', () => { goFullscreen(); resumeGame(); }
 const mmRisk = () => MODE === 'online' && !!NET.roomInfo && NET.roomInfo.mm && !(NET.g && NET.g.ph === 'over');
 function quitReset(){ const b = $('quitBtn'); b.dataset.sure = ''; b.textContent = 'Bosh menyu'; $('quitWarn').hidden = true; }
 $('quitBtn').addEventListener('click', () => { if (mmRisk() && $('quitBtn').dataset.sure !== '1'){ $('quitBtn').dataset.sure = '1'; $('quitBtn').textContent = 'Baribir chiqish'; $('quitWarn').hidden = false; return; } quitReset(); S.paused = false; $('pause').hidden = true; $('settingsPanel').appendChild($('settingsPanelInner')); toMenu(); });
-function toMenu(){ if (MODE === 'online') leaveOnline(); clearNades(); trainClearMarks(); clearDrops(); setTimeout(() => { if (S.phase === 'menu'){ setMap(SET.map); placeBackdrop(); } }, 0); S.phase = 'menu'; $('hud').hidden = true; $('dead').hidden = true; $('over').hidden = true; $('menu').hidden = false; showBoard(false); if (document.pointerLockElement) document.exitPointerLock(); bots.forEach(b => { b.m.g.visible = true; }); }
+function toMenu(){ if (MODE === 'online') leaveOnline(); menuAtm(); clearNades(); trainClearMarks(); clearDrops(); setTimeout(() => { if (S.phase === 'menu'){ setMap(SET.map); placeBackdrop(); } }, 0); S.phase = 'menu'; $('hud').hidden = true; $('dead').hidden = true; $('over').hidden = true; $('menu').hidden = false; showBoard(false); if (document.pointerLockElement) document.exitPointerLock(); bots.forEach(b => { b.m.g.visible = true; }); }
 $('onlineBtn').addEventListener('click', () => { joinOnline(false); });
 $('shareBtn').addEventListener('click', () => linkShare());
 $('createBtn').addEventListener('click', () => { joinOnline(true); });
 $('mapSel').value = SET.map; $('newMap').value = SET.map;
+$('atTime').value = ATM_T[SET.atTime] || SET.atTime === 'rand' ? SET.atTime : 'day'; $('atWx').value = ATM_W[SET.atWx] || SET.atWx === 'rand' ? SET.atWx : 'clear';
+['atTime', 'atWx'].forEach(id => $(id).addEventListener('change', () => { SET.atTime = $('atTime').value; SET.atWx = $('atWx').value; saveSet(); menuAtm(); }));
+setTimeout(menuAtm, 0);
 $('mapSel').addEventListener('change', () => { SET.map = $('mapSel').value; saveSet(); setMap(SET.map); aimPairMenu('map'); });
 $('newMap').addEventListener('change', () => { aimPairNew('map'); SET.map = $('newMap').value; saveSet(); $('mapSel').value = SET.map; setMap(SET.map); aimPairMenu('map'); });
 $('newMode').addEventListener('change', () => aimPairNew('mode'));
@@ -4434,6 +4524,7 @@ $('newMode').value = newModeVal();
 $('newMode').addEventListener('change', () => { const v = $('newMode').value; SET.dmTeam = v === 'tdm'; SET.mode = v === 'tdm' ? 'dm' : v; saveSet(); syncSegs(); modeNote(); });
 function modeNote(){ $('modeNote').textContent = MODES[SET.mode] ? MODES[SET.mode].desc : ''; }
 modeNote();
+['admTime', 'admWx'].forEach(id => $(id).addEventListener('change', () => { if (isOwner()) NET.room.admin({ a:'atm', at:$('admTime').value, wx:$('admWx').value }); }));
 $('admMap').addEventListener('change', () => { if (isOwner() && $('admMap').value !== (NET.g && NET.g.m)){ NET.room.admin({ a:'map', m:$('admMap').value }); hint("Xarita almashtirilmoqda — o'yin isinishdan qayta boshlanadi", 3000); } });
 $('newCode').value = 'xona-' + Math.floor(1000 + Math.random()*9000);
 /* public games on the home screen (server version) */
@@ -4472,7 +4563,7 @@ function renderRooms(){
   if (!list.length){ el.innerHTML = `<p class="note">Bu filtrga mos xona yo'q — filtrni o'zgartiring yoki xarita kartochkasidagi «O'ynash»ni bosing.</p>`; return; }
   el.innerHTML = list.map(r => { const code = String(r.code || ''), [st, cls] = rbStatus(r), sc = rbScore(r);
     return `<button type="button" class="rm${r.official ? ' off' : ''}${rbFull(r) ? ' full' : ''}" data-open="${escH(code)}"><img src="${rbThumb(r.map)}" alt="" loading="lazy" width="64" height="36">`
-      + `<span class="rmMain"><b>${r.official ? '<span class="offTag">RASMIY</span>' : ''}${escH(code)}</b><small>${escH(modeInfo(r.mode).name)} · ${escH(mapTitle(r.map, r.mapName))}${sc ? ' · ' + escH(sc) : ''}${r.official || !r.owner ? '' : ' · ' + escH(r.owner)}</small></span>`
+      + `<span class="rmMain"><b>${r.official ? '<span class="offTag">RASMIY</span>' : ''}${escH(code)}</b><small>${escH(modeInfo(r.mode).name)} · ${escH(mapTitle(r.map, r.mapName))}${atmTag(r)}${sc ? ' · ' + escH(sc) : ''}${r.official || !r.owner ? '' : ' · ' + escH(r.owner)}</small></span>`
       + `<span class="rmSide"><b title="${r.humans|0} odam${r.bots ? ', ' + (r.bots|0) + ' bot' : ''}">${rbPeople(r)}</b><small class="st ${cls}">${st}</small></span></button>`; }).join('');
 }
 async function loadRooms(){
@@ -4560,7 +4651,7 @@ function renderAdmin(){
   if (ri.official) $('admInfo').textContent = 'Kod: ' + NET.code + " · rasmiy xona, doim ochiq · ko'pi bilan " + ri.max + " o'yinchi. Egasi yo'q: botlar o'zi qo'shiladi va odam kirganda joy bo'shatadi, xaritani o'yin oxiridagi ovoz almashtiradi.";
   $('admCtl').hidden = !own;
   $('admPub').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === (ri.pub ? '1' : '0'))));
-  $('admMax').value = String(ri.max || 0); if (NET.g && NET.g.m) $('admMap').value = NET.g.m; if (NET.g && document.activeElement !== $('admMode')) $('admMode').value = curModeID();
+  $('admMax').value = String(ri.max || 0); if (NET.g && NET.g.m) $('admMap').value = NET.g.m; if (NET.g){ $('admTime').value = NET.g.at || 'day'; $('admWx').value = NET.g.wx || 'clear'; } if (NET.g && document.activeElement !== $('admMode')) $('admMode').value = curModeID();
   const rows = [...NET.remotes.values()].filter(r => r.team).sort((a, b) => (a.team > b.team ? 1 : -1) || (a.bot - b.bot));
   $('admList').innerHTML = `<tr><td class="${player.team === 'CT' ? 'ct' : 't'}">${escH(NET.name)} <small>siz${own ? ', egasi' : ''}</small></td><td class="r"></td></tr>` +
     rows.map(r => `<tr><td class="${r.team === 'CT' ? 'ct' : 't'}">${escH(r.name)}${r.bot ? ' <small>bot · ' + ({ easy:'oson', normal:"o'rta", hard:'qiyin' }[r.lv] || '') + '</small>' : r.peer === ri.owner ? ' <small>egasi</small>' : ''}</td><td class="r">${own ? `<button class="ghost sm" type="button" data-kick="${escH(r.peer)}">${kickSure(r.peer) ? 'Tasdiqlash' : 'Chiqarish'}</button>` : ''}</td></tr>`).join('');
@@ -4748,7 +4839,7 @@ function wsJoin(name, opts){
   return new Promise((resolve, reject) => {
     opts = opts || {};
     const url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?room=' + encodeURIComponent(name) +
-      (opts.create ? '&create=1&pub=' + (opts.pub ? 1 : 0) + '&max=' + (opts.max|0) + '&map=' + encodeURIComponent(opts.map || 'qumtepa') + '&mode=' + encodeURIComponent(opts.mode || 'comp')
+      (opts.create ? '&create=1&pub=' + (opts.pub ? 1 : 0) + '&max=' + (opts.max|0) + '&map=' + encodeURIComponent(opts.map || 'qumtepa') + '&mode=' + encodeURIComponent(opts.mode || 'comp') + '&time=' + encodeURIComponent(opts.time || 'day') + '&wx=' + encodeURIComponent(opts.wx || 'clear')
         : opts.map ? '&map=' + encodeURIComponent(opts.map) + (opts.mode ? '&mode=' + encodeURIComponent(opts.mode) : '') : '') + (opts.spec ? '&spec=1' : '');
     const others = new Map(); let ws = null, me = null, conn = false, closed = false, mine = {}, snap = [], dirty = true, settled = false, tries = 0;
     const api = {
@@ -5127,7 +5218,7 @@ function netHit(r, w, part, dist, pos, flat, pc){
 
 const PHS = ['warmup','freeze','live','post','over'];
 function sanitizeG(g){ const b = g.b && typeof g.b === 'object' ? { x:num(g.b.x), z:num(g.b.z), s:g.b.s === 'B' ? 'B' : 'A', t:num(g.b.t) } : 0;
-  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', rs:g.rs === 'B' ? 'B' : g.rs === 'A' ? 'A' : '', vt:sanitizeVt(g.vt), m:MAPS[g.m] || CUSTOM_RE.test(g.m) ? g.m : 'qumtepa', md:MODES[g.md] ? g.md : 'comp', tm:g.tm === true, sc:sanitizeSc(g.sc), wn:String(g.wn || '').slice(0, 40), wnm:cleanName(g.wnm), mv:String(g.mv || '').slice(0, 40), mvn:g.mvn ? cleanName(g.mvn) : '', mvr:String(g.mvr || '').slice(0, 8), st:sanitizeSt(g.st), t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : num(g.fm) === 6 ? 6 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
+  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', rs:g.rs === 'B' ? 'B' : g.rs === 'A' ? 'A' : '', vt:sanitizeVt(g.vt), m:MAPS[g.m] || CUSTOM_RE.test(g.m) ? g.m : 'qumtepa', at:ATM_T[g.at] ? g.at : 'day', wx:ATM_W[g.wx] ? g.wx : 'clear', md:MODES[g.md] ? g.md : 'comp', tm:g.tm === true, sc:sanitizeSc(g.sc), wn:String(g.wn || '').slice(0, 40), wnm:cleanName(g.wnm), mv:String(g.mv || '').slice(0, 40), mvn:g.mvn ? cleanName(g.mvn) : '', mvr:String(g.mvr || '').slice(0, 8), st:sanitizeSt(g.st), t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : num(g.fm) === 6 ? 6 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
 function sanitizeSt(st){ if (!Array.isArray(st)) return null; return st.slice(0, 32).filter(r => r && typeof r === 'object').map(r => ({ id:String(r.id || '').slice(0, 40), nm:cleanName(r.nm), sq:r.sq === 'B' ? 'B' : 'A', k:Math.max(0, num(r.k)|0), d:Math.max(0, num(r.d)|0), hs:Math.max(0, num(r.hs)|0), dmg:Math.max(0, num(r.dmg)|0), mvp:Math.max(0, num(r.mvp)|0) })); }
 function sanitizeVt(vt){ if (!vt || typeof vt !== 'object') return null; const o = {}; for (const k in MAPS) if (vt[k]) o[k] = Math.max(0, num(vt[k])|0); return o; }
 function sanitizeSc(sc){ if (!sc || typeof sc !== 'object') return null; const o = {}; let n = 0; for (const k in sc){ if (++n > 80) break; o[String(k).slice(0, 40)] = Math.max(0, num(sc[k])|0); } return o; }
@@ -5329,7 +5420,7 @@ function netStep(dt){
   NET.host = !room.ref && !!player.team && host === mine;
   if (room.ref){   // the game server runs the round (server version)
     const sg = NET.srvG;
-    if (sg && sg !== NET.gSrc){ NET.gSrc = sg; NET.g = sanitizeG(sg); }
+    if (sg && sg !== NET.gSrc){ NET.gSrc = sg; NET.g = sanitizeG(sg); atmSync(NET.g); }
     else if (NET.g){ NET.g.t = Math.max(0, NET.g.t - dt); if (NET.g.b && NET.g.ph === 'live') NET.g.b.t = Math.max(0, NET.g.b.t - dt); }
   } else if (NET.host) hostStep(dt, valid);
   else {
@@ -5554,7 +5645,7 @@ async function joinOnline(create, codeOverride, spec, extra){
   if (create) $('newCode').value = NET.code; else { $('roomCode').value = NET.code; SET.room = NET.code; }
   saveSet();
   const deep = !create && LINK.want && LINK.want.code === NET.code ? LINK.want : null;   // opened from /x/<map>/<code>: create it on that map if it isn't there
-  let opts = create ? { create:true, pub:$('newPub').value === '1', max:+$('newMax').value || 0, map:$('newMap').value, mode:$('newMode').value } : deep ? { map:deep.map, mode:deep.mode } : null;
+  let opts = create ? { create:true, pub:$('newPub').value === '1', max:+$('newMax').value || 0, map:$('newMap').value, mode:$('newMode').value, time:$('newTime').value, wx:$('newWx').value } : deep ? { map:deep.map, mode:deep.mode } : null;
   if (spec) opts = { spec:true };
   if (create && extra) Object.assign(opts, extra);
   btn.disabled = true; note.textContent = 'Ulanmoqda…';
@@ -6261,7 +6352,7 @@ setTimeout(() => { const m = /^#p=([^&]{1,40})$/.exec(location.hash); if (!m) re
   let who = ''; try { who = decodeURIComponent(m[1]); } catch(e){ return; }
   try { history.replaceState(null, '', location.pathname + location.search); } catch(e){}
   if (who) openLB(who); }, 0);
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, get GR(){ return GR; }, rayGrid, sprayDo, sprayPlace, grPattern, get GR_PRESETS(){ return GR_PRESETS; }, get ED(){ return ED; }, edValidate, edAutoPlan, ensureMap, get CUSTOM_PLAY(){ return CUSTOM_PLAY; }, toMenu, demoPlay, DEMO, openTrn, TRN, joinOnline, specTargets, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, get ATM(){ return ATM; }, atmApply, get WXP(){ return WXP; }, get STARS(){ return STARS; }, hemi, sun, get GR(){ return GR; }, rayGrid, sprayDo, sprayPlace, grPattern, get GR_PRESETS(){ return GR_PRESETS; }, get ED(){ return ED; }, edValidate, edAutoPlan, ensureMap, get CUSTOM_PLAY(){ return CUSTOM_PLAY; }, toMenu, demoPlay, DEMO, openTrn, TRN, joinOnline, specTargets, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
 
 /* ================= GRAFFITI =================
    A 16×16 picture (12 colours + see-through), one hex digit a pixel. T sprays it on the wall you look at; online it rides
@@ -6403,6 +6494,8 @@ function ensureMap(id){
   if (!MAPLOAD[id]) MAPLOAD[id] = (async () => { try { const r = await fetch('/api/maps/' + id.slice(1)); if (!r.ok) return false; const d = await r.json(); if (edValidate(String(d.map.rows || '').split(''))) return false; MAPS[id] = customDef(d.map); return true; }
     catch(e){ return false; } finally { setTimeout(() => { delete MAPLOAD[id]; }, 8000); } })();
   return MAPLOAD[id]; }
+const ATM_ICON = { eve:'🌇 kechqurun', night:'🌙 tun', rain:"🌧 yomg'ir", snow:'❄ qor', dust:'🌪 chang' };
+const atmTag = r => [r.at, r.wx].filter(k => ATM_ICON[k]).map(k => ` · <span class="atmTag">${ATM_ICON[k]}</span>`).join('');
 const mapTitle = (id, name) => MAPS[id] ? MAPS[id].name : (name || id || '');
 
 const ED = { g:null, ch:'#', brush:1, sym:'', undo:[], redo:[], id:0, drag:false, rect:null, hover:null, sort:'new', list:[], focus:0, delArm:0 };
@@ -6546,7 +6639,7 @@ setTimeout(() => { const m = /^#xarita=(\d{1,12})$/.exec(location.hash); if (!m)
 function setMap(id){
   if (!MAPS[id]){ if (CUSTOM_RE.test(id)){ ensureMap(id); return false; } id = 'qumtepa'; }
   if (id === MAP_ID && WG.children.length) return false;
-  loadGrid(id); clearWorld(); buildWorld(); drawMapImg(); recomputeSpawns(); sprayClear();
+  loadGrid(id); clearWorld(); buildWorld(); drawMapImg(); recomputeSpawns(); sprayClear(); atmApply(ATM.at, ATM.wx, true);
   clearNades(); clearDrops(); bomb.planted = false; bomb.mesh.visible = false; bomb.dropped = false;
   renderer.shadowMap.needsUpdate = true; placeBackdrop();
   return true;
@@ -6616,7 +6709,7 @@ function frame(now){
   const dt = Math.min(.05, (now - last)/1000); last = now;
   const t0 = performance.now();
   if (!S.paused || MODE === 'online'){ S.time += dt; step(dt); }
-  render(dt);
+  wxStep(dt); render(dt);
   GFX.cpu = GFX.cpu*.9 + (performance.now() - t0)*.1;
   perfFrame(now);
   touchFrame();

@@ -28,6 +28,7 @@ type roomOpts struct {
 	gmap   string // xarita
 	mode   string // o'yin rejimi
 	spec   bool   // kuzatuvchi bo'lib kirish (spectate.go)
+	at, wx string // kun vaqti va ob-havo (atm.go)
 }
 
 func parseRoomOpts(q map[string][]string) roomOpts {
@@ -49,6 +50,7 @@ func parseRoomOpts(q map[string][]string) roomOpts {
 	if m, err := strconv.Atoi(get("max")); err == nil && m >= 2 && m <= 64 {
 		o.max = m
 	}
+	o.at, o.wx = atmOpt(get("time"), get("wx"))
 	return o
 }
 
@@ -115,6 +117,8 @@ func (h *hub) adminLocked(r *room, c *client, d json.RawMessage, now time.Time) 
 		Pub *bool  `json:"pub"`
 		Max *int   `json:"max"`
 		M   string `json:"m"`
+		At  string `json:"at"`
+		Wx  string `json:"wx"`
 	}
 	if json.Unmarshal(d, &m) != nil {
 		return
@@ -153,6 +157,9 @@ func (h *hub) adminLocked(r *room, c *client, d json.RawMessage, now time.Time) 
 		}
 		r.changeMapLocked(m.M, now)
 		r.broadcast(jsonMsg(map[string]string{"t": "note", "msg": "Xarita: " + mapByID(m.M).name + " — o'yin isinishdan qayta boshlanadi"}), "")
+	case "atm": // kun vaqti va ob-havo: o'yin to'xtamaydi
+		at, wx := atmOpt(m.At, m.Wx)
+		r.gs.setAtm(at, wx) // holat 100 ms ichida hammaga boradi
 	case "set":
 		if m.Pub != nil {
 			r.pub = *m.Pub
@@ -173,6 +180,10 @@ func (r *room) changeMapLocked(id string, now time.Time) {
 		g.setMode(m)
 	}
 	g.M = id
+	if r.official != nil { // rasmiy xonalarda har o'yin — yangi havo
+		g.At, g.Wx = "", ""
+		g.setAtm(randomAtm())
+	}
 	if isCustomMapID(id) {
 		r.cmap = customMaps.get(id)
 	}
@@ -208,6 +219,8 @@ type roomListing struct {
 	Spec     int    `json:"spec"`              // kuzatuvchilar
 	MM       bool   `json:"mm"`                // reytingli navbat o'yini (kuzatib bo'lmaydi)
 	MapName  string `json:"mapName,omitempty"` // foydalanuvchi xaritasining nomi
+	At       string `json:"at,omitempty"`      // kun vaqti va ob-havo (atm.go)
+	Wx       string `json:"wx,omitempty"`
 }
 
 func (r *room) customNameLocked() string {
@@ -225,7 +238,7 @@ func (r *room) listingLocked() roomListing {
 		owner = cleanGuestName(o.info.Nm)
 	}
 	return roomListing{Code: strings.TrimPrefix(r.name, "zn-"), Owner: owner, Humans: humans, Bots: bots, Max: r.max, Map: r.gs.M, Mode: r.gs.modeID(),
-		Phase: r.gs.Ph, Round: r.gs.R, SA: r.gs.SA, SB: r.gs.SB, Fm: r.gs.Fm, Official: r.official != nil, Spec: r.specCountLocked(), MM: r.mm != nil, MapName: r.customNameLocked()}
+		Phase: r.gs.Ph, Round: r.gs.R, SA: r.gs.SA, SB: r.gs.SB, Fm: r.gs.Fm, Official: r.official != nil, Spec: r.specCountLocked(), MM: r.mm != nil, MapName: r.customNameLocked(), At: r.gs.At, Wx: r.gs.Wx}
 }
 
 func (h *hub) roomList() []*room {

@@ -214,6 +214,9 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 		if opts.mode != "" {
 			r.gs.setMode(opts.mode)
 		}
+		if r.trn == nil {
+			r.gs.setAtm(opts.at, opts.wx)
+		}
 		if r.gs.Md == modeWM && (r.max == 0 || r.max > 4) {
 			r.max = 4 // Wingman: 2 ga 2
 		}

@@ -24,6 +24,7 @@ zarba-server/
 ├── metrics.go         /metrics — Prometheus ko'rsatkichlari (token bilan)
 ├── demo.go            o'yin yozuvlari (demo): yozish, ro'yxat, fayl
 ├── spray.go           graffiti: devorga chizilgan rasmni tekshirish
+├── atm.go             kun vaqti va ob-havo (xona sozlamasi)
 ├── stats.go           o'yin statistikasi: raund MVP va yakuniy jadval
 ├── social.go          do'stlar, xonaga chaqiriqlar, klanlar (/api/social, /api/friends, /api/clan, /api/clans)
 ├── queue.go           «O'yin topish»: reytingli navbat, partiyalar, mm- xonalar (/api/queue)
@@ -263,6 +264,8 @@ Telegram va boshqa messenjerlarda havola rasm va sarlavha bilan chiqadi: server 
 - API: `GET /api/maps?sort=new|top&user=<login>`, `GET /api/maps/{id}`, `POST /api/maps` (`id` bo'lsa — yangilash), `DELETE /api/maps/{id}`, `POST /api/maps/{id}/play`. Jadval: `custom_maps`.
 
 **Graffiti** (`spray.go`). Menyudagi «Ijod» → «🎨 Graffiti»: 16×16 piksel rasmni o'zingiz chizasiz (12 rang, qalam, bo'yash, o'chirg'ich, orqaga) yoki tayyorlaridan olasiz (nishon, smayl, yulduz, chaqmoq, yurak, ZN, olov). O'yinda **T** (sozlamalarda o'zgartiriladi; telefonda — «Graffiti» tugmasi): qarab turgan devoringizga 3 m gacha masofadan chiziladi, 10 soniyada bir marta, «pshsh» ovozi bilan; xaritada bir vaqtda 30 tagacha turadi. Onlayn o'yinda boshqalar ham ko'radi (o'yin yozuvlarida ham bor): rasm o'yinchi holatida bir necha soniya `sp` maydonida turadi, server tekshiradi — tirik o'yinchi, o'zidan 5 m ichida, haqiqiy tik devor yuzasida, 10 soniyada bir martadan ko'p emas, rasm formati to'g'ri. «Boshqa o'yinchilarning graffitisini ko'rsatish» belgisini olib qo'ysangiz — faqat o'zingiznikini ko'rasiz. Rasm brauzerda saqlanadi.
+
+**Kun vaqti va ob-havo** (`atm.go`). Botlarga qarshi o'yinda (menyuda «Vaqt» va «Ob-havo») va onlayn xona yaratishda tanlanadi: kunduz, kechqurun (to'q sariq quyosh, uzun soyalar), tun (yulduzlar, yorqin chiroqlar, qorong'i tuman); ochiq havo, yomg'ir (tomchilar, shovqin, ba'zan chaqmoq va momaqaldiroq), qor (yog'ayotgan qor, oqargan yer), chang bo'roni (qalin tuman, uchayotgan qum — uzoqni ko'rish qiyinlashadi); «Tasodifiy» ham bor. Menyuda tanlaganingiz orqa fondagi xaritada darhol ko'rinadi. Xona egasi o'yin davomida almashtiradi (pauza menyusida), o'yin to'xtamaydi. Rasmiy xonalarda har o'yin havosi tasodifiy (ko'pincha kunduz va ochiq), reytingli navbat va turnirlarda doim kunduz va ochiq. Xonalar ro'yxatida havo belgisi (🌙, 🌧, ❄, 🌪) chiqadi. Server faqat tanlovni saqlaydi (`at`, `wx`), chizishni brauzer qiladi; zaif qurilmalarda yog'in kamroq zarra bilan chiziladi.
 
 **Aim xaritalari va «Aim» rejimi** — faqat nishon olish uchun kichik, simmetrik maydonlar (ikki tomon aynan bir xil sharoitda, `tools/mkaim.py` chizadi va tekshiradi):
 - *Maydon* — ochiq maydon, o'rtada baland yashiklardan siniq devor va past yashik qatorlari: uzoq masofa, snayper va avtomat.

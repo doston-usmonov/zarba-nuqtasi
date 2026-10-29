@@ -5,14 +5,16 @@ package main
 // Havolani ochgan odam to'g'ri o'sha xonaga tushadi (bo'lmasa shu xaritada yaratiladi) — buni
 // brauzer qiladi (web/index.html: location.pathname). Server esa /x/ yo'llariga o'sha index.html ni
 // qaytaradi, faqat <title> va og: teglarini shu xona uchun to'ldirib: Telegram va boshqa
-// messenjerlarda havola «Registon — umumiy · 6/16 o'yinchi» bo'lib chiqadi.
+// messenjerlarda havola «Bekat — umumiy · 6/16 o'yinchi» bo'lib chiqadi.
 
 import (
+	"context"
 	"html"
 	"io/fs"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -43,15 +45,18 @@ func parseDeepLink(path string) (gmap, code string, ok bool) {
 	}
 	rest = strings.TrimSuffix(rest, "/")
 	gmap, code, found = strings.Cut(rest, "/")
-	if !found || !validMap(gmap) || !roomName.MatchString("zn-"+code) || strings.Contains(code, "/") {
+	if !found || (!validMap(gmap) && !isCustomMapID(gmap)) || !roomName.MatchString("zn-"+code) || strings.Contains(code, "/") {
 		return "", "", false
 	}
 	return gmap, code, true
 }
 
-// mapDisplayName: "registon" → "Registon".
+// mapDisplayName: "bekat" → "Bekat".
 func mapDisplayName(id string) string {
 	if m := gameMaps[id]; m != nil {
+		return m.name
+	}
+	if m := customMaps.get(id); m != nil {
 		return m.name
 	}
 	return id
@@ -74,12 +79,19 @@ func (h *hub) linkMeta(gmap, code, qmode string) (title, desc, img string) {
 			players += " o'yinchi · "
 		}
 	}
+	img = "/og/" + gmap + ".png"
+	if isCustomMapID(gmap) { // foydalanuvchi xaritasi: nomi bazadan, rasmi umumiy
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		loadCustomMap(ctx, h.store, gmap)
+		cancel()
+		img = "/og/qumtepa.png"
+	}
 	title = mapDisplayName(gmap) + " — " + code + " · " + players + siteName
 	desc = modeNames[mode] + " · " + mapDisplayName(gmap) + " xaritasi. Havolani oching — brauzerda, yuklab olmasdan o'ynaysiz."
 	if players == "" {
 		desc = "Xona hozircha bo'sh — birinchi bo'lib kiring. " + desc
 	}
-	return title, desc, "/og/" + gmap + ".png"
+	return title, desc, img
 }
 
 // fillMeta: index.html dagi sarlavha va og: teglarini almashtiradi (qiymatlar html.EscapeString dan o'tadi).
@@ -110,6 +122,15 @@ func webHandler(sub fs.FS, h *hub) http.Handler {
 	index, _ := fs.ReadFile(sub, "index.html")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
+		// eski xarita nomlari: Registon o'rniga Bekat — eski havolalar yangisiga o'tadi
+		if rest, ok := strings.CutPrefix(r.URL.Path, "/x/registon/"); ok {
+			to := "/x/bekat/" + rest
+			if r.URL.RawQuery != "" {
+				to += "?" + r.URL.RawQuery
+			}
+			http.Redirect(w, r, to, http.StatusMovedPermanently)
+			return
+		}
 		if r.URL.Path == "/" || r.URL.Path == "/index.html" || strings.HasPrefix(r.URL.Path, "/x/") {
 			// /x/ yo'llari hech qachon fayl tizimiga tushmaydi: noto'g'ri havola — oddiy bosh sahifa
 			title, desc, img := siteName, siteDesc, "/og/qumtepa.png"

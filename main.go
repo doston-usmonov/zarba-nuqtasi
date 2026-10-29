@@ -95,7 +95,7 @@ func main() {
 		if err != nil {
 			return
 		}
-		h.serve(ws, room, clientIP(r), r.Host, acct, parseRoomOpts(r.URL.Query()))
+		h.serve(ws, room, clientIP(r), r.Host, acct, roomOptsFor(r, st))
 	})
 	a.routes(mux)
 	mux.Handle("GET /metrics", metricsSrc{h: h, st: st, queue: a.queue, token: strings.TrimSpace(os.Getenv("METRICS_TOKEN"))})

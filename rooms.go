@@ -173,6 +173,9 @@ func (r *room) changeMapLocked(id string, now time.Time) {
 		g.setMode(m)
 	}
 	g.M = id
+	if isCustomMapID(id) {
+		r.cmap = customMaps.get(id)
+	}
 	g.reset()
 	for _, c := range r.clients {
 		if c.ps == nil {
@@ -201,9 +204,17 @@ type roomListing struct {
 	Fm     int    `json:"fm"`
 	// Official: doimiy xona — odam bo'lmasa ham ro'yxatda
 	Official bool   `json:"official"`
-	Region   string `json:"region"` // hozircha bitta server; keyin ikkinchisi qo'shilsa kerak bo'ladi
-	Spec     int    `json:"spec"`   // kuzatuvchilar
-	MM       bool   `json:"mm"`     // reytingli navbat o'yini (kuzatib bo'lmaydi)
+	Region   string `json:"region"`            // hozircha bitta server; keyin ikkinchisi qo'shilsa kerak bo'ladi
+	Spec     int    `json:"spec"`              // kuzatuvchilar
+	MM       bool   `json:"mm"`                // reytingli navbat o'yini (kuzatib bo'lmaydi)
+	MapName  string `json:"mapName,omitempty"` // foydalanuvchi xaritasining nomi
+}
+
+func (r *room) customNameLocked() string {
+	if isCustomMapID(r.gs.M) {
+		return r.gm().name
+	}
+	return ""
 }
 
 // listingLocked: ro'yxatdagi bitta qator (r.mu ushlangan holda).
@@ -214,7 +225,7 @@ func (r *room) listingLocked() roomListing {
 		owner = cleanGuestName(o.info.Nm)
 	}
 	return roomListing{Code: strings.TrimPrefix(r.name, "zn-"), Owner: owner, Humans: humans, Bots: bots, Max: r.max, Map: r.gs.M, Mode: r.gs.modeID(),
-		Phase: r.gs.Ph, Round: r.gs.R, SA: r.gs.SA, SB: r.gs.SB, Fm: r.gs.Fm, Official: r.official != nil, Spec: r.specCountLocked(), MM: r.mm != nil}
+		Phase: r.gs.Ph, Round: r.gs.R, SA: r.gs.SA, SB: r.gs.SB, Fm: r.gs.Fm, Official: r.official != nil, Spec: r.specCountLocked(), MM: r.mm != nil, MapName: r.customNameLocked()}
 }
 
 func (h *hub) roomList() []*room {

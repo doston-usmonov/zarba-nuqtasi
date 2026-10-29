@@ -274,7 +274,7 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
 .field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dim);min-width:0}
 .field input{background:rgba(243,239,230,.06);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-family:var(--f-body);font-size:16px;min-width:0;user-select:text;-webkit-user-select:text}
 .field input:focus{border-color:var(--atk);outline:none}
-.field select,.set select{background:#1b1915;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:9px 10px;font-family:var(--f-body);font-size:15px;min-width:0}
+.field select,.set select,.edRow select{background:#1b1915;border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:9px 10px;font-family:var(--f-body);font-size:15px;min-width:0}
 .ghost.sm{padding:7px 12px;font-size:13px}
 .subh{font-family:var(--f-display);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:2px 0 -4px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .subh button{background:none;border:0;color:var(--dim);font-size:12px;cursor:pointer;padding:0;letter-spacing:.05em;text-transform:none}
@@ -390,6 +390,25 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
 #accPanel .fields{grid-template-columns:1fr}
 #socOv{background:#14120e;align-items:start;grid-template-columns:minmax(0,1fr)}
 #trnOv{background:#14120e;align-items:start}
+#edOv{background:#14120e;align-items:start;z-index:60}
+.edWrap{width:min(1180px,100%)} .edTop{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.edGrid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+.edCanvasBox{display:flex;flex-direction:column;gap:6px;min-width:0}
+#edCv{width:100%;max-width:min(704px,calc(100vh - 170px));aspect-ratio:1;touch-action:none;border:1px solid var(--line);border-radius:8px;cursor:crosshair;image-rendering:pixelated;background:#2a251e}
+.edSide{display:flex;flex-direction:column;gap:12px;min-width:0}
+.edTools{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.edTools button{display:flex;align-items:center;gap:8px;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:7px 8px;font-size:13px;font-weight:600;text-align:left}
+.edTools button i{width:16px;height:16px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.4)} .edTools button small{margin-left:auto;color:var(--dim);font-weight:400}
+.edTools button[aria-pressed="true"]{border-color:var(--atk);background:rgba(242,181,68,.12)}
+.edRow{display:flex;gap:8px;flex-wrap:wrap;align-items:center} .edRow select{flex:1;min-width:120px}
+.edCheck{margin:0;font-size:14px;line-height:1.35} .edCheck.ok{color:var(--good)} .edCheck.bad{color:var(--bad)}
+.edGallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:12px}
+.edCard{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;gap:12px;background:rgba(243,239,230,.04)}
+.edCard canvas{width:88px;height:88px;border-radius:6px;flex:none;image-rendering:pixelated}
+.edCard div{display:flex;flex-direction:column;gap:4px;min-width:0} .edCard b{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .edCard small{color:var(--dim)}
+.edCard .edRow{margin-top:auto;gap:6px} .edCard .edRow button{padding:5px 8px;font-size:12px}
+.edCard.hl{border-color:var(--atk)}
+@media (max-width:860px){ .edGrid{grid-template-columns:1fr} #edCv{max-width:100%} }
 .trnGrid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr);gap:18px;align-items:start}
 @media (max-width:900px){ .trnGrid{grid-template-columns:minmax(0,1fr)} }
 .trnList{display:flex;flex-direction:column;gap:6px}
@@ -709,7 +728,8 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
         <div class="field"><span>Rejim</span><div class="seg modeSeg" data-set="mode"><button type="button" data-v="comp">Raqobat</button><button type="button" data-v="wm">Wingman</button><button type="button" data-v="rt">Retake</button><button type="button" data-v="dm">Deathmatch</button><button type="button" data-v="gg">Qurol poygasi</button><button type="button" data-v="arena">Aim</button></div></div>
         <p class="note" id="modeNote"></p>
         <div class="row trainQuick"><span class="note">Mashq:</span><button class="ghost sm" type="button" data-train="aim">Nishon mashqi</button><button class="ghost sm" type="button" data-train="nade">Granata mashqi</button></div>
-        <label class="field" for="mapSel"><span>Xarita</span><select id="mapSel"><option value="qumtepa">Qumtepa — Klassik: uzun yo'lak, o'rta va tunnel</option><option value="bozor">Bozor — Ixcham: rastalar, tor o'rta, ko'prikcha</option><option value="karvon">Karvonsaroy — Ixcham: markazda hovli, ikki qanot</option><option value="registon">Registon — Maydon, madrasa hovlisi, yopiq bozor</option><option value="saroy">Saroy — Qal'a: ichki zallar, devor bo'yi yo'lak</option><option value="zavod">Zavod — Fabrika: dastgohlar zali, konteynerli ombor</option><optgroup label="Aim xaritalari"><option value="maydon">Maydon — ochiq maydon, siniq devor</option><option value="chorraha">Chorraha — xoch shaklidagi ko'chalar</option><option value="hovli">Hovli — o'rtada to'rt eshikli uy</option></optgroup></select></label>
+        <div class="row trainQuick"><span class="note">Ijod:</span><button class="ghost sm" type="button" data-ed="edit">✏ Xarita muharriri</button><button class="ghost sm" type="button" data-ed="gal">Xaritalar galereyasi</button></div>
+        <label class="field" for="mapSel"><span>Xarita</span><select id="mapSel"><option value="qumtepa">Qumtepa — Klassik: uzun yo'lak, o'rta va tunnel</option><option value="bozor">Bozor — Ixcham: rastalar, tor o'rta, ko'prikcha</option><option value="karvon">Karvonsaroy — Ixcham: markazda hovli, ikki qanot</option><option value="bekat">Bekat — Temiryo'l bekati: perron, depo, yuk ombori</option><option value="saroy">Saroy — Qal'a: ichki zallar, devor bo'yi yo'lak</option><option value="zavod">Zavod — Fabrika: dastgohlar zali, konteynerli ombor</option><optgroup label="Aim xaritalari"><option value="maydon">Maydon — ochiq maydon, siniq devor</option><option value="chorraha">Chorraha — xoch shaklidagi ko'chalar</option><option value="hovli">Hovli — o'rtada to'rt eshikli uy</option></optgroup></select></label>
         <button class="cta" id="startBtn" type="button">Botlar bilan o'ynash</button>
       </div>
       <div class="panel" id="trainPanel">
@@ -748,7 +768,7 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
           <label class="field" for="newCode"><span>Kod</span><input id="newCode" maxlength="40" autocomplete="off"></label>
           <label class="field" for="newPub"><span>Kimga</span><select id="newPub"><option value="1">Ommaviy</option><option value="0">Yopiq (kod bilan)</option></select></label>
           <label class="field" for="newMode"><span>Rejim</span><select id="newMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option><option value="arena">Aim — faqat nishon</option></select></label>
-          <label class="field" for="newMap"><span>Xarita</span><select id="newMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="registon">Registon</option><option value="saroy">Saroy</option><option value="zavod">Zavod</option><optgroup label="Aim"><option value="maydon">Maydon</option><option value="chorraha">Chorraha</option><option value="hovli">Hovli</option></optgroup></select></label>
+          <label class="field" for="newMap"><span>Xarita</span><select id="newMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="bekat">Bekat</option><option value="saroy">Saroy</option><option value="zavod">Zavod</option><optgroup label="Aim"><option value="maydon">Maydon</option><option value="chorraha">Chorraha</option><option value="hovli">Hovli</option></optgroup></select></label>
           <label class="field" for="newMax"><span>Maks. o'yinchi</span><select id="newMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select></label>
         </div>
         <button class="ghost srv-only" id="createBtn" type="button">O'yin yaratish</button>
@@ -851,7 +871,7 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
           <div class="set"><span>Bot darajasi</span><div class="seg" data-set="botLv"><button type="button" data-v="easy">Oson</button><button type="button" data-v="normal">O'rta</button><button type="button" data-v="hard">Qiyin</button></div><span></span></div>
           <div class="set"><span>Xona turi</span><div class="seg" id="admPub"><button type="button" data-v="1">Ommaviy</button><button type="button" data-v="0">Yopiq</button></div><span></span></div>
           <label class="set" for="admMode">Rejim <select id="admMode"><option value="comp">Raqobat</option><option value="wm">Wingman</option><option value="rt">Retake</option><option value="dm">Deathmatch — hamma hammaga</option><option value="tdm">Deathmatch — jamoa jamoaga</option><option value="gg">Qurol poygasi</option><option value="arena">Aim — faqat nishon</option></select><span></span></label>
-          <label class="set" for="admMap">Xarita <select id="admMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="registon">Registon</option><option value="saroy">Saroy</option><option value="zavod">Zavod</option><optgroup label="Aim"><option value="maydon">Maydon</option><option value="chorraha">Chorraha</option><option value="hovli">Hovli</option></optgroup></select><span></span></label>
+          <label class="set" for="admMap">Xarita <select id="admMap"><option value="qumtepa">Qumtepa</option><option value="bozor">Bozor</option><option value="karvon">Karvonsaroy</option><option value="bekat">Bekat</option><option value="saroy">Saroy</option><option value="zavod">Zavod</option><optgroup label="Aim"><option value="maydon">Maydon</option><option value="chorraha">Chorraha</option><option value="hovli">Hovli</option></optgroup></select><span></span></label>
           <label class="set" for="admMax">Maks. o'yinchi <select id="admMax"><option value="0">Cheksiz</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="32">32</option></select><span></span></label>
         </div>
         <table id="admList"></table>
@@ -896,6 +916,37 @@ body.spec #bl,body.spec #br,body.spec #money,body.spec #buyHint,body.spec #cross
       <p class="roMeta" id="roMeta"></p>
       <div class="roList"><table id="roPlayers"></table></div>
       <div class="row"><button class="cta" id="roJoin" type="button">Kirish</button><button class="ghost" id="roSpec" type="button">Kuzatish</button><button class="ghost" id="roCopy" type="button">Havolani nusxalash</button><button class="ghost" id="roClose" type="button">Yopish</button></div>
+    </div>
+  </div>
+</section>
+<section id="edOv" class="overlay" hidden aria-label="Xarita muharriri">
+  <div class="lbWrap edWrap">
+    <div class="buyHead">
+      <div><span class="eyebrow">O'z xaritangizni chizing, botlar bilan sinang va do'stlaringizga ulashing</span><h2>Xarita muharriri</h2></div>
+      <div class="edTop"><div class="seg" id="edTabs"><button type="button" data-et="edit" aria-pressed="true">Muharrir</button><button type="button" data-et="gal" aria-pressed="false">Galereya</button></div><button class="ghost" type="button" id="edClose">Yopish</button></div>
+    </div>
+    <div id="edEdit" class="edGrid">
+      <div class="edCanvasBox"><canvas id="edCv" width="704" height="704" aria-label="Xarita panjarasi"></canvas><p class="note" id="edCell">Sichqoncha yoki barmoq bilan chizing.</p></div>
+      <div class="edSide">
+        <div class="panel"><h3>Chizish</h3>
+          <div class="edTools" id="edTools"></div>
+          <div class="field"><span>Mo'yqalam</span><div class="seg" id="edBrush"><button type="button" data-b="1">1</button><button type="button" data-b="2">2</button><button type="button" data-b="3">3</button><button type="button" data-b="r">▭ To'rtburchak</button></div></div>
+          <div class="field"><span>Simmetriya</span><div class="seg" id="edSym"><button type="button" data-s="">Yo'q</button><button type="button" data-s="x">Chap ↔ o'ng</button><button type="button" data-s="z">Tepa ↕ past</button></div></div>
+          <div class="edRow"><button class="ghost sm" type="button" id="edUndo" title="Ctrl+Z">↶ Orqaga</button><button class="ghost sm" type="button" id="edRedo" title="Ctrl+Y">↷ Oldinga</button><select id="edTpl" aria-label="Shablon"><option value="">Shablon…</option><option value="rand">🎲 Tasodifiy xarita</option><option value="blank">Bo'sh maydon</option></select></div>
+        </div>
+        <div class="panel"><h3>Xarita</h3>
+          <label class="field" for="edName"><span>Nomi</span><input id="edName" maxlength="32" placeholder="Masalan: Tog' qishlog'i" autocomplete="off"></label>
+          <label class="field" for="edStyle"><span>Ko'rinishi</span><select id="edStyle"></select></label>
+          <p class="edCheck" id="edCheck"></p>
+          <div class="edRow"><button class="cta" type="button" id="edPlay">Botlar bilan sinash</button><button class="ghost" type="button" id="edSave">Saqlash</button></div>
+          <div class="edRow"><button class="ghost sm" type="button" id="edOnline" disabled>Onlayn xona ochish</button><button class="ghost sm" type="button" id="edShare" disabled>Havolani nusxalash</button><button class="ghost sm" type="button" id="edNew">Yangi xarita</button></div>
+          <p class="note" id="edNote"></p>
+        </div>
+      </div>
+    </div>
+    <div id="edGal" hidden>
+      <div class="edTop"><div class="seg" id="edSort"><button type="button" data-s="new" aria-pressed="true">Yangi</button><button type="button" data-s="top" aria-pressed="false">Mashhur</button><button type="button" data-s="mine" aria-pressed="false">Meniki</button></div></div>
+      <div class="edGallery" id="edList"><p class="note">Yuklanmoqda…</p></div>
     </div>
   </div>
 </section>
@@ -998,6 +1049,7 @@ const KB = (desk, touch) => isTouch ? touch : desk;
 /* ================= SETTINGS ================= */
 function loadSet(){ try { return JSON.parse(localStorage.getItem('zn-set') || '{}'); } catch(e){ return {}; } }
 const SET = Object.assign({ sens:2.0, vol:.7, fov:90, xc:'#5cff8a', xs:'dyn', xl:8, xw:2, xg:4, xd:'off', xo:'on', xa:1, diff:'normal', fmt:'long', voice:'team', mic:'ptt', vvol:.9, ptt:'KeyK', gfx:'auto', perf:'off', botLv:'normal', map:'qumtepa', mode:'comp', kc:'on', vo:'on', trainW:'rifle', dmTeam:false }, loadSet());
+if (SET.map === 'registon') SET.map = 'bekat';   // Registon o'rniga Bekat
 function saveSet(){ try { localStorage.setItem('zn-set', JSON.stringify(SET)); } catch(e){} }
 const XH_DEF = { xs:'dyn', xl:8, xw:2, xg:4, xd:'off', xo:'on', xa:1, xc:'#5cff8a' };
 // crosshair look → CSS variables on the HUD crosshair and the settings preview (the gap is set every frame in render)
@@ -1176,13 +1228,14 @@ const MAPS = {
     '############################################',
     '############################################',
     '############################################'] },
-  registon:{ name:"Registon", desc:"Maydon, madrasa hovlisi va yopiq bozor", theme:{ wall:0xf2d9b3, floor:0xe2d3b8 },
+  bekat:{ name:"Bekat", desc:"Eski temiryo'l bekati: perron, depo va yuk ombori", theme:{ wall:0xe8d2b4, floor:0xc9c2b4 },
     holds:{"A":[[[6,9],[13,18]],[[11,9],[5,19]],[[4,13],[13,18]],[[9,17],[5,21]]],"B":[[[34,9],[29,16]],[[39,11],[38,21]],[[32,14],[30,15]],[[37,16],[33,22]]],"M":[[[21,13],[21,27]],[[23,12],[22,28]],[[20,8],[21,20]]]},
     plan:{"A":{"stages":[[5,31],[20,27],[5,21]],"spots":[[6,12],[9,9],[11,14],[4,9]],"looks":[[13,18],[8,5],[5,20]]},"B":{"stages":[[38,31],[24,24],[38,23]],"spots":[[35,11],[38,9],[32,9],[39,15]],"looks":[[29,15],[35,5],[38,19]]}},
-    signs:[[14,37,"N","← A",2.1],[29,37,"N","B →",2.1],[19,30,"E","MAYDON",2.2,1.3],[5,7,"S","A",3,2.6],[32,7,"S","B",3,2.6],[14,20,"E","← A",2,1.3],[29,24,"W","B →",2,1.3],[2,25,"E","A ↑",2.1],[35,24,"E","B ↑",2.1]],
+    signs:[[14,37,"N","← A",2.1],[29,37,"N","B →",2.1],[19,30,"E","PERRON",2.2,1.3],[5,7,"S","A",3,2.6],[32,7,"S","B",3,2.6],[9,7,"S","DEPO",4.6,1.2],[36,7,"S","OMBOR",4.6,1.2],[14,20,"E","← A",2,1.3],[29,24,"W","B →",2,1.3],[2,25,"E","A ↑",2.1],[35,24,"E","B ↑",2.1]],
     cables:[[8,41,12,41],[74,47,80,47],[40,63,46,63],[8,55,12,55]],
-    style:'registon', arches:[[16,14,'S'],[27,14,'S'],[14,23,'E'],[29,19,'W'],[17,28,'N'],[26,28,'N'],[11,7,'S'],[38,7,'S']], minarets:[[14,14],[29,14],[14,28],[29,28]],
-    lineups:[{"site":"A","name":"A — himoya yo'li","x":7,"z":51,"yaw":-0.2709,"pitch":0.498,"land":[16.99,15.05]},{"site":"B","name":"B — himoya yo'li","x":79,"z":51,"yaw":0.2187,"pitch":0.642,"land":[71.01,15.08]},{"site":"M","name":"Shimoliy peshtoq","x":41,"z":61,"yaw":-0.0831,"pitch":0.714,"land":[44.01,24.97]}],
+    style:'bekat', doors:[[16,14,'S','KASSA'],[27,14,'S','BAGAJ'],[14,23,'E','DEPO'],[29,19,'W','OMBOR'],[17,28,'N','1-YO\'L'],[26,28,'N','2-YO\'L'],[11,7,'S','DEPO'],[38,7,'S','OMBOR']], masts:[[14,14],[29,14],[14,28],[29,28]],
+    rails:[[15.2,18,28.8,18],[15.2,24,28.8,24],[4.2,35,39.8,35]], clock:[21.5,1],
+    lineups:[{"site":"A","name":"A — himoya yo'li","x":7,"z":51,"yaw":-0.2709,"pitch":0.498,"land":[16.99,15.05]},{"site":"B","name":"B — himoya yo'li","x":79,"z":51,"yaw":0.2187,"pitch":0.642,"land":[71.01,15.08]},{"site":"M","name":"Vokzal darvozasi","x":41,"z":61,"yaw":-0.0831,"pitch":0.714,"land":[44.01,24.97]}],
     rows:[
     '############################################',
     '############################################',
@@ -1837,52 +1890,72 @@ function buildWorld(){
     const pts = []; for (let k=0;k<=12;k++){ const t = k/12; pts.push(new V3(x0 + (x1-x0)*t, 6.1 - Math.sin(t*Math.PI)*(1.0 + (i%3)*.25), z0 + (z1-z0)*t)); }
     const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, .014, 5), cableMat); m.castShadow = true; WG.add(m); });
   // town skyline beyond the walls, and far hills
-  const r = mulberry(5), skyMat = new THREE.MeshStandardMaterial({ map:WALL_T.map, color:lin(0xcdb894), roughness:1, envMapIntensity:.3 }), domeMat = new THREE.MeshStandardMaterial({ color:lin(0x3f8a9e), roughness:.45, metalness:.1 });
+  const r = mulberry(5), skyMat = new THREE.MeshStandardMaterial({ map:WALL_T.map, color:lin(0xcdb894), roughness:1, envMapIntensity:.3 }), domeMat = new THREE.MeshStandardMaterial({ color:lin(0x7d8a8f), roughness:.5, metalness:.4 }), roofMat = new THREE.MeshStandardMaterial({ color:lin(0x8a4b34), roughness:.85 });
   for (let i=0;i<54;i++){ const a = i/54*Math.PI*2 + r()*.06, d = 82 + r()*60, w = 8 + r()*16, h = 10 + r()*18, dd = 8 + r()*14;
     const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, dd), skyMat); b.position.set(MAPW/2 + Math.cos(a)*d, h/2 - .5, MAPH/2 + Math.sin(a)*d); b.rotation.y = r()*Math.PI; b.receiveShadow = true; WG.add(b);
-    if (r() < .2){ const dm = new THREE.Mesh(new THREE.SphereGeometry(Math.min(w, dd)*.42, 20, 10, 0, Math.PI*2, 0, Math.PI/2), domeMat); dm.position.set(b.position.x, h - .5, b.position.z); WG.add(dm); } }
+    const k = r();
+    if (k < .14){ const tk = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 2.6, 12), domeMat); tk.position.set(b.position.x, h + 1.3, b.position.z); WG.add(tk); }   // suv baki
+    else if (k < .32){ const rf = new THREE.Mesh(new THREE.ConeGeometry(Math.min(w, dd)*.74, 2.2, 4), roofMat); rf.position.set(b.position.x, h + 1.1, b.position.z); rf.rotation.y = b.rotation.y + Math.PI/4; WG.add(rf); } }
   const hillMat = new THREE.MeshBasicMaterial({ color:lin(0xb8a998), fog:false });
   for (let i=0;i<16;i++){ const a = i/16*Math.PI*2 + r()*.2, d = 520 + r()*120, h = 50 + r()*90; const c = new THREE.Mesh(new THREE.ConeGeometry(120 + r()*120, h, 7), hillMat); c.position.set(MAPW/2 + Math.cos(a)*d, h/2 - 6, MAPH/2 + Math.sin(a)*d); WG.add(c); }
   SIGNS.forEach(s => sign(...s));
   if (MAP.style) buildStyle(faces, walls);
 }
 // ---- map styles ----
-// majolica: blue and turquoise girih-like stars on a cream ground (drawn here, no images)
-function tileTex(w, h, rows){ return canvasTex(w, h, (g) => {
-  g.fillStyle = '#1d4f8f'; g.fillRect(0, 0, w, h);
-  const s = h/rows; for (let y=0; y<rows; y++) for (let x=0; x<w/s; x++){ const cx = x*s + s/2, cy = y*s + s/2;
-    g.fillStyle = (x + y) % 2 ? '#2aa7b5' : '#e9dcc0'; g.beginPath(); for (let k=0;k<16;k++){ const a = k*Math.PI/8, r = k % 2 ? s*.2 : s*.45; g.lineTo(cx + Math.cos(a)*r, cy + Math.sin(a)*r); } g.closePath(); g.fill();
-    g.fillStyle = '#123766'; g.beginPath(); g.arc(cx, cy, s*.12, 0, 7); g.fill(); g.fillStyle = '#d7a43b'; g.beginPath(); g.arc(cx, cy, s*.06, 0, 7); g.fill(); }
-  g.fillStyle = '#e9dcc0'; g.fillRect(0, 0, w, 4); g.fillRect(0, h - 4, w, 4); speckle(g, w, h, 900, ['rgba(255,255,255,.12)', 'rgba(0,0,0,.12)']); }); }
 function buildStyle(faces, walls){
   const st = MAP.style, DIR = { N:[0,-1,Math.PI], S:[0,1,0], W:[-1,0,-Math.PI/2], E:[1,0,Math.PI/2] };
   const ov = (tex, o) => new THREE.MeshStandardMaterial(Object.assign({ map:tex, roughness:.5, metalness:.05, envMapIntensity:.6, polygonOffset:true, polygonOffsetFactor:-2 }, o || {}));
   const onFace = (m, cx, cz, side, y, out) => { const [dx, dz, rot] = DIR[side]; m.position.set(cw(cx) + dx*(CELL/2 + (out || .02)), y, cw(cz) + dz*(CELL/2 + (out || .02))); m.rotation.y = rot; WG.add(m); return m; };
-  if (st === 'registon'){
-    // a tile frieze under the cornice of every open wall face
-    const band = tileTex(256, 64, 1), fr = faces.filter(f => f.open && !f.sign);
-    const im = new THREE.InstancedMesh(new THREE.PlaneGeometry(CELL, .62), ov(band), fr.length);
+  if (st === 'bekat'){
+    // red-brick cornice with a white line under it on every open wall face
+    const BAND = canvasTex(256, 64, (g, w, h) => { g.fillStyle = '#8b3f2c'; g.fillRect(0, 0, w, h);
+      for (let y=0; y<h - 14; y += 10){ g.fillStyle = 'rgba(40,18,12,.5)'; g.fillRect(0, y, w, 2); for (let x=(y/10)%2 ? 0 : 14; x<w; x += 28) g.fillRect(x, y, 2, 10); }
+      g.fillStyle = '#efe6d6'; g.fillRect(0, h - 12, w, 7); speckle(g, w, h, 900, ['rgba(0,0,0,.15)', 'rgba(255,220,200,.08)']); });
+    const fr = faces.filter(f => f.open && !f.sign), im = new THREE.InstancedMesh(new THREE.PlaneGeometry(CELL, .62), ov(BAND, { roughness:.9 }), fr.length);
     fr.forEach((f, i) => { tmpO.position.set(f.px + f.dx*.016, 6.05, f.pz + f.dz*.016); tmpO.rotation.set(0, f.rot, 0); tmpO.scale.set(1,1,1); tmpO.updateMatrix(); im.setMatrixAt(i, tmpO.matrix); }); WG.add(im);
-    // portals (pishtaq): a tall tiled frame around a pointed arch
-    const ARCH = canvasTex(256, 448, (g, w, h) => {
-      const fr2 = g.createLinearGradient(0, 0, w, 0); fr2.addColorStop(0, '#1f548f'); fr2.addColorStop(.5, '#2b6aa8'); fr2.addColorStop(1, '#1f548f'); g.fillStyle = fr2; g.fillRect(0, 0, w, h);
-      g.strokeStyle = '#e9dcc0'; g.lineWidth = 6; g.strokeRect(10, 10, w - 20, h - 10);
-      for (let i=0;i<14;i++){ g.fillStyle = i % 2 ? '#2aa7b5' : '#e9dcc0'; g.fillRect(22, 26 + i*28, 18, 14); g.fillRect(w - 40, 26 + i*28, 18, 14); }
-      const ax = 56, aw = w - 112, ay = 120; g.fillStyle = '#efe4cc'; g.beginPath(); g.moveTo(ax - 8, h); g.lineTo(ax - 8, ay + 40); g.quadraticCurveTo(ax - 8, ay - 64, w/2, ay - 90); g.quadraticCurveTo(ax + aw + 8, ay - 64, ax + aw + 8, ay + 40); g.lineTo(ax + aw + 8, h); g.fill();
-      const gi = g.createLinearGradient(0, ay - 80, 0, h); gi.addColorStop(0, '#0e1a2a'); gi.addColorStop(1, '#2a2118'); g.fillStyle = gi;
-      g.beginPath(); g.moveTo(ax, h); g.lineTo(ax, ay + 40); g.quadraticCurveTo(ax, ay - 56, w/2, ay - 80); g.quadraticCurveTo(ax + aw, ay - 56, ax + aw, ay + 40); g.lineTo(ax + aw, h); g.fill();
-      g.strokeStyle = 'rgba(215,164,59,.8)'; g.lineWidth = 3; for (let k=0;k<5;k++){ g.beginPath(); g.arc(w/2, ay + 10, 30 + k*14, Math.PI*1.1, Math.PI*1.9); g.stroke(); }
-      speckle(g, w, h, 1600, ['rgba(255,255,255,.08)', 'rgba(0,0,0,.12)']); });
-    (MAP.arches || []).forEach(([cx, cz, side]) => onFace(new THREE.Mesh(new THREE.PlaneGeometry(3.4, 6.2), ov(ARCH)), cx, cz, side, 3.1, .03));
-    // minarets and a blue dome over the north madrasa
-    const tile = tileTex(256, 256, 4); tile.wrapS = tile.wrapT = THREE.RepeatWrapping; tile.repeat.set(3, 6);
-    const mm = ov(tile, { polygonOffset:false }), cap = new THREE.MeshStandardMaterial({ color:lin(0xe9dcc0), roughness:.8 }), domeM = new THREE.MeshStandardMaterial({ color:lin(0x2a8fa8), roughness:.35, metalness:.15 });
-    (MAP.minarets || []).forEach(([cx, cz]) => { const x = cw(cx), z = cw(cz);
-      const t = new THREE.Mesh(new THREE.CylinderGeometry(.85, 1.05, 17, 16), mm); t.position.set(x, 8.5, z); t.castShadow = true; WG.add(t);
-      const b = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.0, .7, 16), cap); b.position.set(x, 15.2, z); WG.add(b);
-      const d = new THREE.Mesh(new THREE.SphereGeometry(.9, 16, 8, 0, Math.PI*2, 0, Math.PI/2), domeM); d.position.set(x, 17, z); WG.add(d); });
-    const dm = new THREE.Mesh(new THREE.SphereGeometry(4.2, 28, 14, 0, Math.PI*2, 0, Math.PI/2), domeM); dm.scale.y = 1.25; dm.position.set(cw(21.5), CH[WALL] + 1.6, cw(1)); dm.castShadow = true; WG.add(dm);
-    const drum = new THREE.Mesh(new THREE.CylinderGeometry(4.3, 4.3, 1.8, 28), mm); drum.position.set(cw(21.5), CH[WALL] + .7, cw(1)); WG.add(drum);
+    // station doors: green double doors, a fanlight and a sign board
+    const door = label => canvasTex(256, 448, (g, w, h) => {
+      g.fillStyle = '#8b3f2c'; g.fillRect(0, 0, w, h); g.fillStyle = '#efe6d6'; g.fillRect(14, 14, w - 28, h - 14);
+      g.fillStyle = '#2d5a46'; g.fillRect(30, 150, w - 60, h - 150);
+      g.strokeStyle = '#1d3b2e'; g.lineWidth = 5; g.beginPath(); g.moveTo(w/2, 150); g.lineTo(w/2, h); g.stroke();
+      for (const x of [44, w/2 + 14]) for (const y of [170, 300]){ g.strokeRect(x, y, w/2 - 58, y === 170 ? 110 : 120); }
+      g.fillStyle = '#c9a54a'; g.fillRect(w/2 - 16, 300, 8, 26); g.fillRect(w/2 + 8, 300, 8, 26);
+      const gl = g.createLinearGradient(0, 70, 0, 140); gl.addColorStop(0, '#9fb7c2'); gl.addColorStop(1, '#4e6670'); g.fillStyle = gl; g.fillRect(36, 70, w - 72, 70);
+      g.strokeStyle = '#efe6d6'; g.lineWidth = 4; for (let x=36 + (w - 72)/4; x<w - 40; x += (w - 72)/4){ g.beginPath(); g.moveTo(x, 70); g.lineTo(x, 140); g.stroke(); }
+      g.fillStyle = '#1f2b4a'; g.fillRect(28, 22, w - 56, 40); g.fillStyle = '#efe6d6'; g.font = '700 30px "Chakra Petch", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, w/2, 43);
+      speckle(g, w, h, 1500, ['rgba(255,255,255,.06)', 'rgba(0,0,0,.14)']); });
+    const doorTex = {}; (MAP.doors || []).forEach(([cx, cz, side, label]) => { const t = doorTex[label] || (doorTex[label] = door(label)); onFace(new THREE.Mesh(new THREE.PlaneGeometry(3.2, 5.6), ov(t, { roughness:.75 })), cx, cz, side, 2.8, .03); });
+    // catenary masts with a lamp on top
+    const steel = new THREE.MeshStandardMaterial({ color:lin(0x56606a), roughness:.5, metalness:.6 }), lampM = new THREE.MeshStandardMaterial({ color:lin(0xffe2a8), emissive:lin(0xffd38a), emissiveIntensity:1.4 });
+    (MAP.masts || []).forEach(([cx, cz]) => { const x = cw(cx), z = cw(cz);
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(.16, .24, 10, 10), steel); p.position.set(x, 5, z); p.castShadow = true; WG.add(p);
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(3.4, .14, .14), steel); arm.position.set(x, 9.3, z); WG.add(arm);
+      [-1.6, 1.6].forEach(o => { const l = new THREE.Mesh(new THREE.SphereGeometry(.26, 10, 8), lampM); l.position.set(x + o, 9.05, z); WG.add(l); }); });
+    // rails with sleepers on the platform floor and along the south street (decor only — they don't block anything)
+    const railM = new THREE.MeshStandardMaterial({ color:lin(0x6c6a66), roughness:.35, metalness:.8 }), sleeperM = new THREE.MeshStandardMaterial({ color:lin(0x4a3a2c), roughness:.95 });
+    const yellow = new THREE.MeshStandardMaterial({ color:lin(0xd9b02e), roughness:.8, polygonOffset:true, polygonOffsetFactor:-2 });
+    (MAP.rails || []).forEach(([x0, z0, x1, z1]) => { const ax = cw(x0) - CELL/2, bx = cw(x1) - CELL/2, z = cw(z0), len = bx - ax, n = Math.floor(len/.9);
+      const sl = new THREE.InstancedMesh(new THREE.BoxGeometry(.32, .08, 2.3), sleeperM, n);
+      for (let k=0;k<n;k++){ tmpO.position.set(ax + .45 + k*.9, .04, z); tmpO.rotation.set(0,0,0); tmpO.scale.set(1,1,1); tmpO.updateMatrix(); sl.setMatrixAt(k, tmpO.matrix); } sl.receiveShadow = true; WG.add(sl);
+      [-.72, .72].forEach(o => { const rl = new THREE.Mesh(new THREE.BoxGeometry(len, .1, .09), railM); rl.position.set(ax + len/2, .12, z + o); WG.add(rl); });
+      [-1.75, 1.75].forEach(o => { const ln = new THREE.Mesh(new THREE.PlaneGeometry(len, .22), yellow); ln.rotation.x = -Math.PI/2; ln.position.set(ax + len/2, .011, z + o); WG.add(ln); }); });
+    // the station clock tower over the main building
+    const brickT = canvasTex(128, 256, (g, w, h) => { g.fillStyle = '#93462f'; g.fillRect(0, 0, w, h);
+      for (let y=0; y<h; y += 12){ g.fillStyle = 'rgba(40,20,14,.5)'; g.fillRect(0, y, w, 2); for (let x=(y/12)%2 ? 0 : 16; x<w; x += 32) g.fillRect(x, y, 2, 12); }
+      speckle(g, w, h, 1400, ['rgba(0,0,0,.16)', 'rgba(255,210,180,.08)']); });
+    brickT.wrapS = brickT.wrapT = THREE.RepeatWrapping; brickT.repeat.set(2, 4);
+    const CLOCK = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#93462f'; g.fillRect(0, 0, w, h); g.fillStyle = '#efe6d6'; g.beginPath(); g.arc(w/2, h/2, 112, 0, 7); g.fill();
+      g.strokeStyle = '#1b1a18'; g.lineWidth = 6; g.beginPath(); g.arc(w/2, h/2, 108, 0, 7); g.stroke();
+      for (let k=0;k<12;k++){ const a = k*Math.PI/6; g.lineWidth = k % 3 ? 4 : 9; g.beginPath(); g.moveTo(w/2 + Math.cos(a)*86, h/2 + Math.sin(a)*86); g.lineTo(w/2 + Math.cos(a)*100, h/2 + Math.sin(a)*100); g.stroke(); }
+      g.lineCap = 'round'; g.lineWidth = 9; g.beginPath(); g.moveTo(w/2, h/2); g.lineTo(w/2 + 40, h/2 - 34); g.stroke(); g.lineWidth = 6; g.beginPath(); g.moveTo(w/2, h/2); g.lineTo(w/2 - 8, h/2 - 82); g.stroke();
+      g.fillStyle = '#1b1a18'; g.beginPath(); g.arc(w/2, h/2, 9, 0, 7); g.fill(); });
+    if (MAP.clock){ const x = cw(MAP.clock[0]), z = cw(MAP.clock[1]), base = CH[WALL];
+      const tw = new THREE.Mesh(new THREE.BoxGeometry(4.4, 7, 4.4), new THREE.MeshStandardMaterial({ map:brickT, roughness:.9 })); tw.position.set(x, base + 3.5, z); tw.castShadow = true; WG.add(tw);
+      const cm = ov(CLOCK, { polygonOffset:false, roughness:.6 });
+      [[0, 2.21, 0], [0, -2.21, Math.PI], [2.21, 0, Math.PI/2], [-2.21, 0, -Math.PI/2]].forEach(([dx, dz, ry]) => { const c = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.4), cm); c.position.set(x + dx, base + 4.6, z + dz); c.rotation.y = ry; WG.add(c); });
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(5, .5, 5), new THREE.MeshStandardMaterial({ color:lin(0xefe6d6), roughness:.8 })); cap.position.set(x, base + 7.2, z); WG.add(cap);
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(3.6, 4, 4), new THREE.MeshStandardMaterial({ color:lin(0x3b4a52), roughness:.6, metalness:.4 })); roof.position.set(x, base + 9.4, z); roof.rotation.y = Math.PI/4; roof.castShadow = true; WG.add(roof);
+      const sp = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, 1.6, 6), steel); sp.position.set(x, base + 12.2, z); WG.add(sp); }
   }
   if (st === 'saroy'){
     // battlements on every wall that faces the play area
@@ -2891,7 +2964,7 @@ function checkRoundEnd(){
 function startMatch(){
   if (MM.st && MM.st.state === 'searching') mmLeave();
   MODE = 'bots'; player.team = 'T'; H.progBar.style.background = ''; bots.forEach(b => b.m.g.visible = true);
-  DIFF = DIFFS[SET.diff] || DIFFS.normal; setMap(SET.map);
+  DIFF = DIFFS[SET.diff] || DIFFS.normal; setMap(CUSTOM_PLAY && MAPS[CUSTOM_PLAY] ? CUSTOM_PLAY : SET.map);
   Object.assign(S, { round:0, sA:0, sB:0, H:fmtH(), loss:0, paused:false, md:TR.pick || (MODES[SET.mode] ? SET.mode : 'comp') });
   if (fixedFm(S.md)) S.H = fixedFm(S.md);
   Object.assign(player, { money:800, kills:0, deaths:0, hs:0, dmg:0, alive:false }); resetInv();
@@ -3327,7 +3400,7 @@ function resultHTML(title, sub, rows, mvp){
     rows.map((r, i) => { const col = isFFA() ? 'var(--ink)' : r.side === 'CT' ? 'var(--def)' : 'var(--atk)';
       return `<tr class="${r.me ? 'mine' : ''}"><td>${i + 1}</td><td><span class="tag" style="background:${col}"></span>${esc(r.nm)}${r.me ? ' <small>(siz)</small>' : ''}</td><td class="r">${r.k}</td><td class="r">${r.d}</td><td class="r">${r.k ? Math.round(r.hs/r.k*100) : 0}%</td><td class="r">${r.dmg}</td>${!RM(md) ? `<td class="r stars">${r.mvp ? '★' + (r.mvp > 1 ? r.mvp : '') : ''}</td>` : ''}</tr>`; }).join('') + '</table>';
 }
-const voteIds = () => Object.keys(MAPS).filter(id => isAimMap(id) === isAimMap(MAP_ID));
+const voteIds = () => Object.keys(MAPS).filter(id => !MAPS[id].custom && id !== 'draft' && isAimMap(id) === isAimMap(MAP_ID));
 function voteHTML(g){
   if (!(NET.room && NET.room.vote)) return '';
   const vt = g.vt || {}, ids = voteIds();
@@ -4366,7 +4439,7 @@ function renderRooms(){
   if (!list.length){ el.innerHTML = `<p class="note">Bu filtrga mos xona yo'q — filtrni o'zgartiring yoki xarita kartochkasidagi «O'ynash»ni bosing.</p>`; return; }
   el.innerHTML = list.map(r => { const code = String(r.code || ''), [st, cls] = rbStatus(r), sc = rbScore(r);
     return `<button type="button" class="rm${r.official ? ' off' : ''}${rbFull(r) ? ' full' : ''}" data-open="${escH(code)}"><img src="${rbThumb(r.map)}" alt="" loading="lazy" width="64" height="36">`
-      + `<span class="rmMain"><b>${r.official ? '<span class="offTag">RASMIY</span>' : ''}${escH(code)}</b><small>${escH(modeInfo(r.mode).name)} · ${escH((MAPS[r.map] || MAPS.qumtepa).name)}${sc ? ' · ' + escH(sc) : ''}${r.official || !r.owner ? '' : ' · ' + escH(r.owner)}</small></span>`
+      + `<span class="rmMain"><b>${r.official ? '<span class="offTag">RASMIY</span>' : ''}${escH(code)}</b><small>${escH(modeInfo(r.mode).name)} · ${escH(mapTitle(r.map, r.mapName))}${sc ? ' · ' + escH(sc) : ''}${r.official || !r.owner ? '' : ' · ' + escH(r.owner)}</small></span>`
       + `<span class="rmSide"><b title="${r.humans|0} odam${r.bots ? ', ' + (r.bots|0) + ' bot' : ''}">${rbPeople(r)}</b><small class="st ${cls}">${st}</small></span></button>`; }).join('');
 }
 async function loadRooms(){
@@ -4403,9 +4476,9 @@ async function rbLoad(code){
   } catch(e){}
 }
 function rbRender(){
-  const d = RB.detail || { code:RB.open }, gone = !!d.gone, map = MAPS[d.map] ? d.map : null;
+  const d = RB.detail || { code:RB.open }, gone = !!d.gone, map = MAPS[d.map] && !MAPS[d.map].custom ? d.map : null;
   $('roImg').src = rbThumb(map || 'qumtepa');
-  $('roEyebrow').innerHTML = (d.official ? '<span class="offTag">RASMIY</span>' : '') + escH(map ? MAPS[map].name : '') + (d.mode ? ' · ' + escH(modeInfo(d.mode).name) : '');
+  $('roEyebrow').innerHTML = (d.official ? '<span class="offTag">RASMIY</span>' : '') + escH(mapTitle(d.map, d.mapName)) + (d.mode ? ' · ' + escH(modeInfo(d.mode).name) : '');
   $('roTitle').textContent = d.code || '';
   $('roJoin').disabled = gone || rbFull(d); $('roSpec').hidden = gone || !!d.mm; $('roSpec').textContent = 'Kuzatish' + (d.spec ? ' · ' + (d.spec|0) : '');
   if (gone){ $('roMeta').textContent = "Bu xona yopilgan — hamma chiqib ketgan."; $('roPlayers').innerHTML = ''; return; }
@@ -4432,7 +4505,7 @@ $('roSpec').addEventListener('click', () => { const code = RB.open; rbClose(); i
 $('roClose').addEventListener('click', rbClose);
 $('roomOv').addEventListener('click', e => { if (e.target === $('roomOv')) rbClose(); });
 $('roCopy').addEventListener('click', async () => {
-  const d = RB.detail || {}, url = location.origin + '/x/' + (MAPS[d.map] ? d.map : 'qumtepa') + '/' + encodeURIComponent(RB.open || '');
+  const d = RB.detail || {}, url = location.origin + '/x/' + (MAPS[d.map] || CUSTOM_RE.test(d.map || '') ? d.map : 'qumtepa') + '/' + encodeURIComponent(RB.open || '');
   try { await navigator.clipboard.writeText(url); $('roCopy').textContent = 'Nusxalandi ✓'; } catch(e){ $('roCopy').textContent = url; }
 });
 document.addEventListener('keydown', e => { if (e.code === 'Escape' && !$('roomOv').hidden) rbClose(); });
@@ -4472,7 +4545,7 @@ function kickSure(id){ return kickAsk && kickAsk.id === id && performance.now() 
 function confirmKick(btn, r){ if (kickSure(r.peer)){ kickAsk = null; return true; } kickAsk = { id:r.peer, until:performance.now() + 3000 }; btn.textContent = 'Tasdiqlash'; setTimeout(renderAdmin, 3100); return false; }
 $('admMax').addEventListener('change', () => { if (isOwner()) NET.room.admin({ a:'set', max:+$('admMax').value || 0 }); });
 $('nick').value = SET.nick || ''; $('roomCode').value = SET.room || 'umumiy';
-$('startBtn').addEventListener('click', () => { initAudio(); goFullscreen(); TR.pick = null; startMatch(); requestLock(); canvas.focus({ preventScroll:true }); });
+$('startBtn').addEventListener('click', () => { initAudio(); goFullscreen(); TR.pick = null; CUSTOM_PLAY = null; startMatch(); requestLock(); canvas.focus({ preventScroll:true }); });
 $('againBtn').addEventListener('click', () => { initAudio(); goFullscreen(); startMatch(); requestLock(); });
 $('menuBtn').addEventListener('click', toMenu);
 
@@ -5016,7 +5089,7 @@ function netHit(r, w, part, dist, pos, flat, pc){
 
 const PHS = ['warmup','freeze','live','post','over'];
 function sanitizeG(g){ const b = g.b && typeof g.b === 'object' ? { x:num(g.b.x), z:num(g.b.z), s:g.b.s === 'B' ? 'B' : 'A', t:num(g.b.t) } : 0;
-  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', rs:g.rs === 'B' ? 'B' : g.rs === 'A' ? 'A' : '', vt:sanitizeVt(g.vt), m:MAPS[g.m] ? g.m : 'qumtepa', md:MODES[g.md] ? g.md : 'comp', tm:g.tm === true, sc:sanitizeSc(g.sc), wn:String(g.wn || '').slice(0, 40), wnm:cleanName(g.wnm), mv:String(g.mv || '').slice(0, 40), mvn:g.mvn ? cleanName(g.mvn) : '', mvr:String(g.mvr || '').slice(0, 8), st:sanitizeSt(g.st), t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : num(g.fm) === 6 ? 6 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
+  return { r:Math.max(0, Math.min(200, num(g.r)|0)), ph:PHS.includes(g.ph) ? g.ph : 'warmup', rs:g.rs === 'B' ? 'B' : g.rs === 'A' ? 'A' : '', vt:sanitizeVt(g.vt), m:MAPS[g.m] || CUSTOM_RE.test(g.m) ? g.m : 'qumtepa', md:MODES[g.md] ? g.md : 'comp', tm:g.tm === true, sc:sanitizeSc(g.sc), wn:String(g.wn || '').slice(0, 40), wnm:cleanName(g.wnm), mv:String(g.mv || '').slice(0, 40), mvn:g.mvn ? cleanName(g.mvn) : '', mvr:String(g.mvr || '').slice(0, 8), st:sanitizeSt(g.st), t:num(g.t), sA:Math.max(0, num(g.sA)|0), sB:Math.max(0, num(g.sB)|0), fm:num(g.fm) === 8 ? 8 : num(g.fm) === 6 ? 6 : 12, b, w:g.w === 'CT' ? 'CT' : g.w === 'T' ? 'T' : '', y:String(g.y || '').slice(0, 8), bm:num(g.bm, -1), e:String(g.e || '').slice(0, 12), cd:num(g.cd) }; }
 function sanitizeSt(st){ if (!Array.isArray(st)) return null; return st.slice(0, 32).filter(r => r && typeof r === 'object').map(r => ({ id:String(r.id || '').slice(0, 40), nm:cleanName(r.nm), sq:r.sq === 'B' ? 'B' : 'A', k:Math.max(0, num(r.k)|0), d:Math.max(0, num(r.d)|0), hs:Math.max(0, num(r.hs)|0), dmg:Math.max(0, num(r.dmg)|0), mvp:Math.max(0, num(r.mvp)|0) })); }
 function sanitizeVt(vt){ if (!vt || typeof vt !== 'object') return null; const o = {}; for (const k in MAPS) if (vt[k]) o[k] = Math.max(0, num(vt[k])|0); return o; }
 function sanitizeSc(sc){ if (!sc || typeof sc !== 'object') return null; const o = {}; let n = 0; for (const k in sc){ if (++n > 80) break; o[String(k).slice(0, 40)] = Math.max(0, num(sc[k])|0); } return o; }
@@ -5246,7 +5319,7 @@ async function demoPlay(id){
   Object.assign(DEMO, { on:true, head, frames, i:0, t:0, speed:1, playing:true, st:{}, cache:null, cacheI:-1 });
   DEMO.rounds = []; let lastR = -1; frames.forEach((f, k) => { const r = f.g && f.g.r; if (f.g && f.g.ph === 'freeze' && r !== lastR){ DEMO.rounds.push(k); lastR = r; } });
   if (MODE === 'online') toMenu();
-  if (MAPS[head.map]) setMap(head.map);
+  await ensureMap(head.map); if (MAPS[head.map]) setMap(head.map);
   const room = { ref:true, peers:demoPeers, presence:() => Promise.resolve(), connected:() => true, leave:() => { demoStop(); return Promise.resolve(); }, chat:() => {}, admin:() => {}, vote:() => {}, signal:() => {} };
   NET.code = 'yozuv-' + id; NET.name = NET.name || 'Kuzatuvchi';
   ['lb', 'trnOv', 'socOv', 'roomOv'].forEach(x => { const el = $(x); if (el) el.hidden = true; });
@@ -5435,7 +5508,7 @@ function netBoardHTML(){
         : `<tr><td colspan="4" style="color:var(--dim)">Hali hech kim yo'q</td></tr>`); };
   return `<h3>Xona: ${esc(NET.code)} · ${g.r ? g.r + '-raund · ' + fmtLabel(g.fm) + (g.r > 2*g.fm ? " · qo'shimcha vaqt" : '') : 'Isinish'}</h3><table><tr><th>O'yinchi</th><th class="r">O'LD.</th><th class="r">O'LIM</th><th class="r">PUL / HOLAT</th></tr>` + sec('T') + sec('CT') + '</table>';
 }
-async function joinOnline(create, codeOverride, spec){
+async function joinOnline(create, codeOverride, spec, extra){
   if (MM.st && MM.st.state === 'searching'){ mmLeave(); hint("Navbatdan chiqdingiz", 2000); }
   const btn = create ? $('createBtn') : $('onlineBtn'), note = $('onlineNote'); initAudio();
   const raw = codeOverride || (create ? $('newCode').value : $('roomCode').value);
@@ -5445,6 +5518,7 @@ async function joinOnline(create, codeOverride, spec){
   const deep = !create && LINK.want && LINK.want.code === NET.code ? LINK.want : null;   // opened from /x/<map>/<code>: create it on that map if it isn't there
   let opts = create ? { create:true, pub:$('newPub').value === '1', max:+$('newMax').value || 0, map:$('newMap').value, mode:$('newMode').value } : deep ? { map:deep.map, mode:deep.mode } : null;
   if (spec) opts = { spec:true };
+  if (create && extra) Object.assign(opts, extra);
   btn.disabled = true; note.textContent = 'Ulanmoqda…';
   const room = await roomP;
   if (!room){ btn.disabled = false; note.textContent = "Onlayn rejim bu ko'rinishda ishlamaydi. Sahifani claude.ai'da hisobingizga kirib oching; do'stlaringiz ham artifakt ulashilgan hisob bilan kirishi kerak."; return; }
@@ -5493,7 +5567,7 @@ function leaveOnline(){
 const LINK = { want:null, on:!IN_ARTIFACT && /^https?:$/.test(location.protocol) && !!(window.history && history.replaceState) };
 function linkParse(){
   const m = /^\/x\/([a-z0-9]+)\/([a-z0-9][a-z0-9_.-]{0,39})\/?$/.exec(location.pathname);
-  if (!m || !MAPS[m[1]]) return null;
+  if (!m || !(MAPS[m[1]] || /^k[1-9]\d{0,11}$/.test(m[1]))) return null;
   const md = new URLSearchParams(location.search).get('mode');
   return { map:m[1], code:m[2], mode:md && /^[a-z]{2,6}$/.test(md) ? md : '' };
 }
@@ -5516,7 +5590,7 @@ function linkBoot(){
   if ($('nick').value.trim() && nm){ joinOnline(false, l.code); return; }
   // no name yet: point at the name field, the join button finishes it
   const p = $('onlinePanel'); if (p && p.scrollIntoView) p.scrollIntoView({ block:'center' });
-  $('onlineNote').textContent = '«' + l.code + '» xonasiga (' + MAPS[l.map].name + ') kirish uchun ismingizni yozing va «Kirish» tugmasini bosing.';
+  $('onlineNote').textContent = '«' + l.code + '» xonasiga (' + mapTitle(l.map) + ') kirish uchun ismingizni yozing va «Kirish» tugmasini bosing.';
   setTimeout(() => { try { $('nick').focus(); } catch(e){} }, 50);
 }
 
@@ -5904,7 +5978,7 @@ async function socLoadTop(){ const r = await apiCall('/api/clans'); SOC.top = r.
 /* ---------- tournaments: clans, single elimination, one room per match (only the two clans play, anyone watches) ---------- */
 const TRN = { list:[], cur:null, d:null, busy:false };
 function openTrn(){ $('trnOv').hidden = false; $('trnErr').hidden = true; $('trnNew').hidden = !ACC.me;
-  const ms = $('trnMap'); if (!ms.options.length) Object.keys(MAPS).filter(id => !MAPS[id].aim).forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = MAPS[id].name; ms.appendChild(o); });
+  const ms = $('trnMap'); if (!ms.options.length) Object.keys(MAPS).filter(id => !MAPS[id].aim && !MAPS[id].custom && id !== 'draft').forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = MAPS[id].name; ms.appendChild(o); });
   trnLoad(); if (TRN.cur) trnShow(TRN.cur); }
 function closeTrn(){ $('trnOv').hidden = true; }
 $('trnClose').addEventListener('click', closeTrn);
@@ -6148,11 +6222,213 @@ setTimeout(() => { const m = /^#p=([^&]{1,40})$/.exec(location.hash); if (!m) re
   let who = ''; try { who = decodeURIComponent(m[1]); } catch(e){ return; }
   try { history.replaceState(null, '', location.pathname + location.search); } catch(e){}
   if (who) openLB(who); }, 0);
-if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, demoPlay, DEMO, openTrn, TRN, joinOnline, specTargets, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+if (location.hash === '#zn-debug') window.__zn = { get MAP_ID(){ return MAP_ID; }, MM, pauseGame, get ED(){ return ED; }, edValidate, edAutoPlan, ensureMap, get CUSTOM_PLAY(){ return CUSTOM_PLAY; }, toMenu, demoPlay, DEMO, openTrn, TRN, joinOnline, specTargets, keyRebuild, gameCode, keys, netXP, showProfile, give, giveMates, get MAP(){ return MAP; }, botAimNade, botThrow, botPickSmoker, botLaunch, simNade, surfaceY, mmRender, zapFX, buy, sell, refundOf, get pickTarget(){ return pickTarget; }, throwGun, drops, LINK, linkSync, NET_: () => NET, LU, trainLineup, lineupReady, simNade, viewDir, cellT, SK, poseSoldier, setSoldierWeapon, buildSoldier, PAL_T, PAL_CT, scene, showNetResult, teamDM, isFFA, SOC, TR, trScore, playerFire, camera, trainPreview, VO, castVote, VM, ACC, FINISHES, fires, buy, throwGun, canBuy, KC, REC, endRound, playerDie, goOnline, SET, modeRows, curMode, damagePlayer, GG_LADDER, ggLevel, setMap, MAPS, SPAWNS, grid, renderAdmin, killBot: b => botKilled(b, W.pistol, false), drops, pickUp, dropCurrent, bestSlot, VOICE, voiceMode, player, S, TOUCH, bomb, startRound, endRound, sideOfSquad, matchWinner, halfOf, bots, nades, smokes, fires, spawnNade, throwNade, NET, W, seeLos, clearNades };
+
+/* ================= MAP EDITOR & PLAYER MAPS =================
+   Players draw a 44×44 grid (custommaps.go checks and stores it); saved maps are "k<id>" and load on demand. Bots get
+   their hold / plant / look spots from autoPlan — the same calculation the server does for its bots. */
+const CUSTOM_RE = /^k[1-9]\d{0,11}$/;
+const ED_CH = '#.csABtk';
+const ED_COL = { '#':'#3a342b', '.':'#d9c9a6', 'c':'#b07a3f', 's':'#76491f', 'A':'#e0614f', 'B':'#4f8fe0', 't':'#f2b544', 'k':'#5cc6b5' };
+const ED_NAMES = { '#':'Devor', '.':"Yo'l", 'c':'Quti · 1 m', 's':'Baland quti', 'A':'A nuqta', 'B':'B nuqta', 't':'Hujum bazasi', 'k':'Himoya bazasi' };
+const ED_STYLES = { qum:['qumtepa', 'Qum shahar'], bozor:['bozor', 'Bozor'], karvon:['karvon', 'Karvonsaroy'], bekat:['bekat', "Temiryo'l bekati"], saroy:['saroy', "Qal'a"], zavod:['zavod', 'Zavod'] };
+let CUSTOM_PLAY = null;   // the map the next bot match is played on (set by the editor / gallery)
+const edWalk = ch => ch === '.' || ch === 'A' || ch === 'B' || ch === 't' || ch === 'k';
+function edBfs(g, sx, sz){ const d = new Int16Array(GW*GW).fill(-1); if (!edWalk(g[sz*GW + sx])) return d;
+  const q = [sz*GW + sx]; d[q[0]] = 0;
+  for (let h=0; h<q.length; h++){ const i = q[h], x = i % GW, z = (i/GW)|0;
+    for (const [dx, dz] of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx = x + dx, nz = z + dz; if (nx < 0 || nz < 0 || nx >= GW || nz >= GW) continue; const j = nz*GW + nx; if (d[j] < 0 && edWalk(g[j])){ d[j] = d[i] + 1; q.push(j); } } }
+  return d; }
+// the same checks as validateCustomRows on the server; '' = fine
+function edValidate(g){
+  const n = {}; for (const ch of g) n[ch] = (n[ch] || 0) + 1;
+  if ((n.A || 0) < 9) return "A nuqta kamida 9 katak bo'lsin"; if ((n.B || 0) < 9) return "B nuqta kamida 9 katak bo'lsin";
+  if ((n.t || 0) < 12) return "Hujumchilar bazasi kamida 12 katak bo'lsin"; if ((n.k || 0) < 12) return "Himoyachilar bazasi kamida 12 katak bo'lsin";
+  const s = g.indexOf('t'), d = edBfs(g, s % GW, (s/GW)|0), reach = {}; d.forEach((v, i) => { if (v >= 0) reach[g[i]] = true; });
+  if (!reach.A) return "Hujumchilar bazasidan A nuqtaga yo'l yo'q"; if (!reach.B) return "Hujumchilar bazasidan B nuqtaga yo'l yo'q"; if (!reach.k) return "Ikki jamoa bazasi orasida yo'l yo'q";
+  return ''; }
+function edZoneMid(g, ch){ const cells = []; let sx = 0, sz = 0; g.forEach((c, i) => { if (c === ch){ const x = i % GW, z = (i/GW)|0; cells.push([x, z]); sx += x; sz += z; } });
+  if (!cells.length) return [22, 22]; const mx = sx/cells.length, mz = sz/cells.length; let best = cells[0], bd = 1e9;
+  cells.forEach(c => { const dd = Math.hypot(c[0] - mx, c[1] - mz); if (dd < bd - 1e-9){ bd = dd; best = c; } }); return best; }
+function edPath(d, tx, tz){ if (d[tz*GW + tx] < 0) return null; const p = [[tx, tz]]; let x = tx, z = tz;
+  while (d[z*GW + x] > 0){ for (const [dx, dz] of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx = x + dx, nz = z + dz; if (nx >= 0 && nz >= 0 && nx < GW && nz < GW && d[nz*GW + nx] === d[z*GW + x] - 1){ x = nx; z = nz; break; } } p.push([x, z]); }
+  return p.reverse(); }
+const cdist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+// bots' spots, worked out from the grid (mirrors autoPlan in custommaps.go)
+function edAutoPlan(g){
+  const tm = edZoneMid(g, 't'), fromT = edBfs(g, tm[0], tm[1]), holds = { A:[], B:[], M:[] }, plan = {};
+  for (const s of ['A', 'B']){
+    const cells = [], ent = [];
+    g.forEach((c, i) => { if (c !== s) return; const x = i % GW, z = (i/GW)|0; cells.push([x, z]);
+      if ([[1,0],[-1,0],[0,1],[0,-1]].some(([dx, dz]) => { const o = g[(z + dz)*GW + x + dx]; return edWalk(o) && o !== s; })) ent.push([x, z]); });
+    const mid = edZoneMid(g, s); cells.sort((a, b) => cdist(a, mid) - cdist(b, mid));
+    const n = cells.length, spots = []; [0, n >> 2, n >> 1, (3*n) >> 2].forEach(k => { if (!spots.some(c => c[0] === cells[k][0] && c[1] === cells[k][1])) spots.push(cells[k]); });
+    ent.sort((a, b) => fromT[a[1]*GW + a[0]] - fromT[b[1]*GW + b[0]]);
+    const looks = []; for (const e of ent){ if (fromT[e[1]*GW + e[0]] < 0) continue; if (looks.every(l => cdist(l, e) >= 4)) looks.push(e); if (looks.length === 3) break; }
+    if (!looks.length) looks.push(mid);
+    for (const l of looks){ let best = cells[0]; for (const c of cells) if (cdist(c, l) > cdist(best, l) && !holds[s].some(h => h[0][0] === c[0] && h[0][1] === c[1])) best = c; holds[s].push([best, l]); }
+    if (holds[s].length < 2) holds[s].push([mid, looks[0]]);
+    const p = edPath(fromT, mid[0], mid[1]); let stages = [tm];
+    if (p && p.length > 4){ let k = Math.floor(p.length*7/10), st = p[k]; while (k > 0 && g[st[1]*GW + st[0]] === s){ k--; st = p[k]; } stages = [st, p[p.length >> 1]]; }
+    plan[s] = { stages, spots, looks };
+  }
+  const cm = edZoneMid(g, 'k'), p = edPath(fromT, cm[0], cm[1]);
+  holds.M = p && p.length > 6 ? [[p[Math.floor(p.length*.65)], p[Math.floor(p.length*.4)]], [p[Math.floor(p.length*.55)], p[Math.floor(p.length*.3)]]] : [[cm, tm]];
+  return { holds, plan }; }
+// a player map as a MAPS entry
+function customDef(m){ const raw = String(m.rows || ''), g = raw.split(''), st = ED_STYLES[m.style] ? m.style : 'qum', base = MAPS[ED_STYLES[st][0]];
+  const rows = []; for (let z=0; z<GW; z++) rows.push(raw.slice(z*GW, (z + 1)*GW)); const p = edAutoPlan(g);
+  return { name:String(m.name || 'Mening xaritam').slice(0, 32), desc:'Foydalanuvchi xaritasi' + (m.author ? ' · muallif: ' + m.author : ''), theme:base.theme, style:base.style, rows, holds:p.holds, plan:p.plan,
+    signs:[], cables:[], custom:true, author:m.author || '', cid:m.id || 0, mstyle:st }; }
+const MAPLOAD = {};
+// a saved player map ("k12"): fetched once, then it's in MAPS like any other
+function ensureMap(id){
+  if (MAPS[id]) return Promise.resolve(true); if (!CUSTOM_RE.test(id)) return Promise.resolve(false);
+  if (!MAPLOAD[id]) MAPLOAD[id] = (async () => { try { const r = await fetch('/api/maps/' + id.slice(1)); if (!r.ok) return false; const d = await r.json(); if (edValidate(String(d.map.rows || '').split(''))) return false; MAPS[id] = customDef(d.map); return true; }
+    catch(e){ return false; } finally { setTimeout(() => { delete MAPLOAD[id]; }, 8000); } })();
+  return MAPLOAD[id]; }
+const mapTitle = (id, name) => MAPS[id] ? MAPS[id].name : (name || id || '');
+
+const ED = { g:null, ch:'#', brush:1, sym:'', undo:[], redo:[], id:0, drag:false, rect:null, hover:null, sort:'new', list:[], focus:0, delArm:0 };
+function edBlank(){ const g = Array(GW*GW).fill('#'); for (let z=1; z<GW - 1; z++) for (let x=1; x<GW - 1; x++) g[z*GW + x] = '.'; return g; }
+function edLoadDraft(){ try { const d = JSON.parse(localStorage.getItem('zn-ed') || 'null'); if (d && typeof d.g === 'string' && d.g.length === GW*GW){ ED.g = d.g.split('').map(c => ED_CH.includes(c) ? c : '#'); ED.id = d.id|0; $('edName').value = d.name || ''; $('edStyle').value = ED_STYLES[d.style] ? d.style : 'qum'; return; } } catch(e){}
+  ED.g = edRandom() || edBlank(); }
+function edSaveDraft(){ try { localStorage.setItem('zn-ed', JSON.stringify({ g:ED.g.join(''), id:ED.id, name:$('edName').value, style:$('edStyle').value })); } catch(e){} }
+function edRandom(){
+  const R = (a, b) => a + ((Math.random()*(b - a + 1))|0);
+  for (let tries=0; tries<40; tries++){
+    const g = Array(GW*GW).fill('#'), put = (x, z, ch) => { if (x > 0 && z > 0 && x < GW - 1 && z < GW - 1) g[z*GW + x] = ch; };
+    const rect = (x0, z0, x1, z1, ch) => { for (let z=Math.min(z0, z1); z<=Math.max(z0, z1); z++) for (let x=Math.min(x0, x1); x<=Math.max(x0, x1); x++) put(x, z, ch); };
+    const lane = (a, b, w) => { if (Math.random() < .5){ rect(a[0], a[1], b[0], a[1] + w - 1, '.'); rect(b[0], a[1], b[0] + w - 1, b[1], '.'); } else { rect(a[0], a[1], a[0] + w - 1, b[1], '.'); rect(a[0], b[1], b[0], b[1] + w - 1, '.'); } };
+    const tx = R(12, 24), kx = R(12, 24), ax = R(3, 9), az = R(6, 12), bx = R(28, 33), bz = R(6, 12), aw = R(6, 9), ah = R(6, 8), bw = R(6, 9), bh = R(6, 8);
+    const tc = [tx + 4, 35], kc = [kx + 4, 7], a = [ax + (aw >> 1), az + (ah >> 1)], b = [bx + (bw >> 1), bz + (bh >> 1)], mid = [R(16, 26), R(17, 26)];
+    [[tc, a], [tc, b], [tc, mid], [mid, kc], [kc, a], [kc, b]].forEach(([p, q]) => lane(p, q, R(2, 3)));
+    for (let i=0, n=R(2, 5); i<n; i++){ const x = R(3, 34), z = R(9, 30), w = R(3, 7), h = R(3, 5); rect(x, z, x + w, z + h, '.'); lane([x + 1, z + 1], mid, 2); }
+    rect(tx - 1, 33, tx + 10, 35, '.'); rect(kx - 1, 6, kx + 10, 8, '.');   // yards in front of both spawns
+    rect(ax, az, ax + aw, az + ah, 'A'); rect(bx, bz, bx + bw, bz + bh, 'B'); rect(tx, 36, tx + 9, 39, 't'); rect(kx, 3, kx + 9, 5, 'k');
+    for (let i=0, n=R(16, 28); i<n; i++){ const k = R(GW + 1, GW*GW - GW - 2); if (g[k] === '.' || g[k] === 'A' || g[k] === 'B') g[k] = Math.random() < .75 ? 'c' : 's'; }
+    if (!edValidate(g)) return g;
+  }
+  return null; }
+function edOpen(tab){
+  if (!ED.g){ const sel = $('edStyle'); Object.entries(ED_STYLES).forEach(([k, v]) => { const o = document.createElement('option'); o.value = k; o.textContent = v[1]; sel.appendChild(o); });
+    $('edTools').innerHTML = ED_CH.split('').map((c, i) => `<button type="button" data-ch="${c}" aria-pressed="${c === ED.ch}"><i style="background:${ED_COL[c]}"></i>${ED_NAMES[c]}<small>${i + 1}</small></button>`).join('');
+    const tpl = $('edTpl'); Object.keys(MAPS).filter(id => !MAPS[id].aim && !MAPS[id].custom && id !== 'draft').forEach(id => { const o = document.createElement('option'); o.value = 'm:' + id; o.textContent = MAPS[id].name + ' nusxasi'; tpl.appendChild(o); });
+    edLoadDraft(); }
+  $('edOv').hidden = false; edTab(tab || 'edit'); edSeg(); edDraw(); edCheck();
+  if (document.pointerLockElement) document.exitPointerLock(); }
+function edClose(){ $('edOv').hidden = true; edSaveDraft(); }
+function edTab(t){ ED.tab = t; $('edEdit').hidden = t !== 'edit'; $('edGal').hidden = t !== 'gal'; $('edTabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.et === t))); if (t === 'gal') edGallery(); }
+function edSeg(){ $('edTools').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ch === ED.ch)));
+  $('edBrush').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.b === String(ED.brush))));
+  $('edSym').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === ED.sym)));
+  $('edOnline').disabled = $('edShare').disabled = !ED.id; }
+function edDraw(){
+  const cv = $('edCv'), g2 = cv.getContext('2d'), S2 = cv.width/GW;
+  for (let i=0; i<GW*GW; i++){ g2.fillStyle = ED_COL[ED.g[i]] || '#000'; g2.fillRect((i % GW)*S2, ((i/GW)|0)*S2, S2, S2); }
+  g2.strokeStyle = 'rgba(0,0,0,.18)'; g2.lineWidth = 1; g2.beginPath(); for (let k=0; k<=GW; k++){ g2.moveTo(k*S2 + .5, 0); g2.lineTo(k*S2 + .5, cv.height); g2.moveTo(0, k*S2 + .5); g2.lineTo(cv.width, k*S2 + .5); } g2.stroke();
+  g2.fillStyle = 'rgba(20,18,14,.85)'; g2.font = `700 ${S2*1.6}px "Chakra Petch", sans-serif`; g2.textAlign = 'center'; g2.textBaseline = 'middle';
+  ['A', 'B'].forEach(s => { if (ED.g.includes(s)){ const m = edZoneMid(ED.g, s); g2.fillText(s, (m[0] + .5)*S2, (m[1] + .5)*S2); } });
+  if (ED.sym){ g2.strokeStyle = 'rgba(242,181,68,.7)'; g2.setLineDash([6, 6]); g2.beginPath(); if (ED.sym === 'x'){ g2.moveTo(cv.width/2, 0); g2.lineTo(cv.width/2, cv.height); } else { g2.moveTo(0, cv.height/2); g2.lineTo(cv.width, cv.height/2); } g2.stroke(); g2.setLineDash([]); }
+  const r = ED.rect || (ED.hover && ED.brush !== 'r' ? { x0:ED.hover[0], z0:ED.hover[1], x1:ED.hover[0] + ED.brush - 1, z1:ED.hover[1] + ED.brush - 1 } : null);
+  if (r){ g2.strokeStyle = '#fff'; g2.lineWidth = 2; const x0 = Math.min(r.x0, r.x1), z0 = Math.min(r.z0, r.z1); g2.strokeRect(x0*S2 + 1, z0*S2 + 1, (Math.abs(r.x1 - r.x0) + 1)*S2 - 2, (Math.abs(r.z1 - r.z0) + 1)*S2 - 2); } }
+function edCheck(){ const e = edValidate(ED.g), el = $('edCheck'); el.className = 'edCheck ' + (e ? 'bad' : 'ok'); el.textContent = e ? '✗ ' + e : "✓ Xarita tayyor — o'ynasa bo'ladi"; $('edPlay').disabled = !!e; return !e; }
+const edMirror = (ch, axis) => axis === 'x' ? ({ A:'B', B:'A' }[ch] || ch) : ({ t:'k', k:'t' }[ch] || ch);
+function edSet(x, z, ch){ if (x < 1 || z < 1 || x > GW - 2 || z > GW - 2) return; ED.g[z*GW + x] = ch;
+  if (ED.sym === 'x') ED.g[z*GW + (GW - 1 - x)] = edMirror(ch, 'x'); else if (ED.sym === 'z') ED.g[(GW - 1 - z)*GW + x] = edMirror(ch, 'z'); }
+function edCellAt(e){ const cv = $('edCv'), r = cv.getBoundingClientRect(); return [Math.floor((e.clientX - r.left)/r.width*GW), Math.floor((e.clientY - r.top)/r.height*GW)]; }
+function edPush(){ ED.undo.push(ED.g.join('')); if (ED.undo.length > 80) ED.undo.shift(); ED.redo = []; }
+function edPaint(c){ const n = ED.brush, o = n === 3 ? -1 : 0; for (let dz=0; dz<n; dz++) for (let dx=0; dx<n; dx++) edSet(c[0] + dx + o, c[1] + dz + o, ED.ch); }
+$('edCv').addEventListener('pointerdown', e => { e.preventDefault(); const c = edCellAt(e); try { $('edCv').setPointerCapture(e.pointerId); } catch(er){}
+  edPush(); ED.drag = true; if (ED.brush === 'r') ED.rect = { x0:c[0], z0:c[1], x1:c[0], z1:c[1] }; else edPaint(c); edDraw(); });
+$('edCv').addEventListener('pointermove', e => { const c = edCellAt(e); ED.hover = c; const ch = ED.g[c[1]*GW + c[0]];
+  $('edCell').textContent = c[0] >= 0 && c[1] >= 0 && c[0] < GW && c[1] < GW ? `${c[0]}, ${c[1]} — ${ED_NAMES[ch] || ''}` : '';
+  if (ED.drag){ if (ED.rect){ ED.rect.x1 = c[0]; ED.rect.z1 = c[1]; } else edPaint(c); } edDraw(); });
+const edUp = () => { if (!ED.drag) return; ED.drag = false;
+  if (ED.rect){ const r = ED.rect; for (let z=Math.min(r.z0, r.z1); z<=Math.max(r.z0, r.z1); z++) for (let x=Math.min(r.x0, r.x1); x<=Math.max(r.x0, r.x1); x++) edSet(x, z, ED.ch); ED.rect = null; }
+  edDraw(); edCheck(); edSaveDraft(); };
+$('edCv').addEventListener('pointerup', edUp); $('edCv').addEventListener('pointercancel', edUp);
+$('edCv').addEventListener('pointerleave', () => { ED.hover = null; if (!ED.drag) edDraw(); });
+function edUndo(back){ const from = back ? ED.undo : ED.redo, to = back ? ED.redo : ED.undo; if (!from.length) return; to.push(ED.g.join('')); ED.g = from.pop().split(''); edDraw(); edCheck(); edSaveDraft(); }
+$('edUndo').addEventListener('click', () => edUndo(true)); $('edRedo').addEventListener('click', () => edUndo(false));
+$('edTools').addEventListener('click', e => { const b = e.target.closest('[data-ch]'); if (b){ ED.ch = b.dataset.ch; edSeg(); } });
+$('edBrush').addEventListener('click', e => { const b = e.target.closest('[data-b]'); if (b){ ED.brush = b.dataset.b === 'r' ? 'r' : +b.dataset.b; edSeg(); } });
+$('edSym').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (b){ ED.sym = b.dataset.s; edSeg(); edDraw(); } });
+$('edTabs').addEventListener('click', e => { const b = e.target.closest('[data-et]'); if (b) edTab(b.dataset.et); });
+$('edClose').addEventListener('click', edClose);
+$('edTpl').addEventListener('change', () => { const v = $('edTpl').value; $('edTpl').value = ''; if (!v) return; edPush();
+  if (v === 'blank') ED.g = edBlank(); else if (v === 'rand'){ const g = edRandom(); if (g) ED.g = g; }
+  else if (v.startsWith('m:') && MAPS[v.slice(2)]){ ED.g = MAPS[v.slice(2)].rows.join('').split(''); if (!$('edName').value.trim()) $('edName').value = MAPS[v.slice(2)].name + ' (mening)'; }
+  edDraw(); edCheck(); edSaveDraft(); });
+$('edNew').addEventListener('click', () => { edPush(); ED.g = edRandom() || edBlank(); ED.id = 0; $('edName').value = ''; $('edNote').textContent = ''; edSeg(); edDraw(); edCheck(); edSaveDraft(); });
+['edName', 'edStyle'].forEach(id => $(id).addEventListener('change', edSaveDraft));
+document.addEventListener('keydown', e => { if ($('edOv').hidden || e.target.closest('input,textarea,select')) return;
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ'){ e.preventDefault(); edUndo(!e.shiftKey); }
+  else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyY'){ e.preventDefault(); edUndo(false); }
+  else if (/^Digit[1-8]$/.test(e.code)){ ED.ch = ED_CH[+e.code.slice(5) - 1]; edSeg(); }
+  else if (e.code === 'Escape') edClose(); });
+// play a map with bots (the draft, or a saved one from the gallery)
+function edPlayBots(id, def){
+  MAPS[id] = def; CUSTOM_PLAY = id; if (SET.mode === 'arena'){ SET.mode = 'comp'; saveSet(); syncSegs(); }
+  edClose(); initAudio(); goFullscreen(); TR.pick = null; startMatch(); requestLock(); canvas.focus({ preventScroll:true });
+  hint(def.name + ' — botlar bilan sinov', 3000); }
+$('edPlay').addEventListener('click', () => { if (!edCheck()) return; edPlayBots('draft', customDef({ name:$('edName').value.trim() || 'Mening xaritam', style:$('edStyle').value, rows:ED.g.join('') })); });
+async function edSave(){
+  const note = $('edNote'); if (!edCheck()){ note.textContent = 'Avval xatoni tuzating.'; return; }
+  if (IN_ARTIFACT || !/^https?:$/.test(location.protocol)){ note.textContent = "Saqlash faqat o'yin saytida ishlaydi (game.telegap.uz)."; return; }
+  if (!ACC.me){ note.textContent = 'Saqlash uchun hisobga kiring (menyudagi «Hisob» bo\'limi). Hozircha xarita shu brauzerda saqlanib turadi.'; return; }
+  $('edSave').disabled = true; note.textContent = 'Saqlanmoqda…';
+  const r = await apiCall('/api/maps', { id:ED.id || 0, name:$('edName').value, style:$('edStyle').value, rows:ED.g.join('') });
+  $('edSave').disabled = false;
+  if (!r.ok){ note.textContent = (r.data && r.data.error) || 'Saqlanmadi'; return; }
+  ED.id = r.data.id|0; delete MAPS['k' + ED.id]; edSaveDraft(); edSeg();
+  note.textContent = "Saqlandi ✓ Endi u galereyada — onlayn xona ochishingiz yoki havolani do'stlaringizga yuborishingiz mumkin."; }
+$('edSave').addEventListener('click', edSave);
+const edLink = id => location.origin + '/#xarita=' + id;
+async function edCopy(id){ const url = edLink(id); try { await navigator.clipboard.writeText(url); hint('Nusxalandi: ' + url, 3000); } catch(e){ hint('Havola: ' + url, 6000); } }
+$('edShare').addEventListener('click', () => { if (ED.id) edCopy(ED.id); });
+// an online room on a saved map: a fresh code, the map goes along in the join options
+async function edOnline(id){
+  const mid = 'k' + id; if (!(await ensureMap(mid))){ hint("Xarita yuklanmadi", 2500); return; }
+  edClose(); const mode = MODES[SET.mode] && SET.mode !== 'arena' && SET.mode !== 'train' ? SET.mode : 'comp';
+  const code = cleanCode(mid + '-' + Math.random().toString(36).slice(2, 6)); $('newCode').value = code;
+  joinOnline(true, code, false, { map:mid, mode, pub:true, max:10 }); }
+$('edOnline').addEventListener('click', () => { if (ED.id) edOnline(ED.id); });
+function edThumb(cv, rows){ const g2 = cv.getContext('2d'), k = cv.width/GW; for (let i=0; i<GW*GW; i++){ g2.fillStyle = ED_COL[rows[i]] || '#000'; g2.fillRect((i % GW)*k, ((i/GW)|0)*k, k, k); } }
+async function edGallery(){
+  const box = $('edList'); $('edSort').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === ED.sort)));
+  if (IN_ARTIFACT || !/^https?:$/.test(location.protocol)){ box.innerHTML = `<p class="note">Galereya o'yin saytida ishlaydi (game.telegap.uz).</p>`; return; }
+  if (ED.sort === 'mine' && !ACC.me){ box.innerHTML = `<p class="note">O'z xaritalaringizni ko'rish uchun hisobga kiring.</p>`; return; }
+  box.innerHTML = `<p class="note">Yuklanmoqda…</p>`;
+  const q = ED.sort === 'mine' ? '?user=' + encodeURIComponent(ACC.me.username) : '?sort=' + ED.sort;
+  const r = await apiCall('/api/maps' + q); if (!r.ok){ box.innerHTML = `<p class="note">${escH((r.data && r.data.error) || 'Yuklanmadi')}</p>`; return; }
+  let list = r.data.maps || [];
+  if (ED.focus && !list.some(m => m.id === ED.focus)){ const one = await apiCall('/api/maps/' + ED.focus); if (one.ok && one.data.map) list = [one.data.map].concat(list); }
+  ED.list = list; const me = ACC.me ? ACC.me.username.toLowerCase() : '';
+  box.innerHTML = list.length ? list.map(m => { const own = me && String(m.author).toLowerCase() === me;
+    return `<div class="edCard${m.id === ED.focus ? ' hl' : ''}" data-mid="${m.id|0}"><canvas width="88" height="88"></canvas><div><b>${escH(m.name)}</b><small>${escH(m.author)} · ${escH((ED_STYLES[m.style] || ED_STYLES.qum)[1])} · ${m.plays|0} marta o'ynalgan</small>`
+      + `<div class="edRow"><button class="cta" type="button" data-ga="bots">Botlar bilan</button><button class="ghost" type="button" data-ga="online">Onlayn</button><button class="ghost" type="button" data-ga="link">Havola</button>`
+      + `<button class="ghost" type="button" data-ga="edit">${own ? 'Tahrirlash' : 'Nusxa olish'}</button>${own ? `<button class="ghost" type="button" data-ga="del">O'chirish</button>` : ''}</div></div></div>`; }).join('')
+    : `<p class="note">${ED.sort === 'mine' ? "Hali xarita saqlamagansiz — «Muharrir»da chizing va «Saqlash»ni bosing." : "Galereya hozircha bo'sh — birinchi xaritani siz chizing!"}</p>`;
+  box.querySelectorAll('.edCard').forEach(c => { const m = list.find(x => x.id === +c.dataset.mid); if (m && m.rows) edThumb(c.querySelector('canvas'), m.rows); }); }
+$('edSort').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (b){ ED.sort = b.dataset.s; edGallery(); } });
+$('edList').addEventListener('click', async e => { const b = e.target.closest('[data-ga]'); if (!b) return; const card = b.closest('[data-mid]'), id = +card.dataset.mid, m = ED.list.find(x => x.id === id); if (!m) return;
+  const a = b.dataset.ga;
+  if (a === 'bots'){ fetch('/api/maps/' + id + '/play', { method:'POST' }).catch(() => {}); edPlayBots('k' + id, customDef(m)); }
+  else if (a === 'online') edOnline(id);
+  else if (a === 'link') edCopy(id);
+  else if (a === 'edit'){ edPush(); ED.g = String(m.rows).split(''); const own = ACC.me && String(m.author).toLowerCase() === ACC.me.username.toLowerCase();
+    ED.id = own ? id : 0; $('edName').value = own ? m.name : (m.name + ' (nusxa)').slice(0, 32); $('edStyle').value = ED_STYLES[m.style] ? m.style : 'qum';
+    $('edNote').textContent = own ? '' : "Bu boshqa o'yinchining xaritasi — o'zgartirib, o'zingizniki qilib saqlashingiz mumkin."; edSaveDraft(); edTab('edit'); edSeg(); edDraw(); edCheck(); }
+  else if (a === 'del'){ if (ED.delArm !== id){ ED.delArm = id; b.textContent = 'Rostdan?'; return; } ED.delArm = 0;
+    const r = await fetch('/api/maps/' + id, { method:'DELETE' }); if (r.ok){ if (ED.id === id){ ED.id = 0; edSaveDraft(); edSeg(); } edGallery(); } else hint("O'chirilmadi", 2000); } });
+document.addEventListener('click', e => { const b = e.target.closest('[data-ed]'); if (b) edOpen(b.dataset.ed); });
+// https://<sayt>/#xarita=<id> — the gallery with that map on top
+setTimeout(() => { const m = /^#xarita=(\d{1,12})$/.exec(location.hash); if (!m) return; try { history.replaceState(null, '', location.pathname + location.search); } catch(e){} ED.focus = +m[1]; edOpen('gal'); }, 0);
 
 /* ================= MAP SWITCHING ================= */
 function setMap(id){
-  if (!MAPS[id]) id = 'qumtepa';
+  if (!MAPS[id]){ if (CUSTOM_RE.test(id)){ ensureMap(id); return false; } id = 'qumtepa'; }
   if (id === MAP_ID && WG.children.length) return false;
   loadGrid(id); clearWorld(); buildWorld(); drawMapImg(); recomputeSpawns();
   clearNades(); clearDrops(); bomb.planted = false; bomb.mesh.visible = false; bomb.dropped = false;

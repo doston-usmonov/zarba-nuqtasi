@@ -38,7 +38,7 @@ func TestAimPairing(t *testing.T) {
 	if r.gs.M != defaultAimMap || r.gs.Md != modeAim {
 		t.Fatalf("aim rejimiga o'tish: %s/%s", r.gs.M, r.gs.Md)
 	}
-	r.changeMapLocked("registon", now) // oddiy xarita → Raqobat
+	r.changeMapLocked("bekat", now) // oddiy xarita → Raqobat
 	if r.gs.Md != modeComp {
 		t.Fatalf("oddiy xaritada aim qoldi: %s", r.gs.Md)
 	}

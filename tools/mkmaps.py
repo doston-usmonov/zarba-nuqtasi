@@ -1,4 +1,4 @@
-"""Draws the newer maps (Registon, Saroy, Zavod) as 44x44 grids, checks them and prints the JS for MAPS.
+"""Draws the newer maps (Bekat, Saroy, Zavod) as 44x44 grids, checks them and prints the JS for MAPS.
 '#' wall, '.' floor, 'c' crate (1 m), 's' stack (2.3 m), 'A'/'B' bomb sites, 't' attacker spawn, 'k' defender spawn."""
 import json, sys
 from collections import deque
@@ -12,39 +12,39 @@ def rect(g, x0, z0, x1, z1, ch='.'):
 def put(g, pts, ch):
     for x, z in pts: g[z][x] = ch
 
-# ------------------------------------------------------------------ Registon
-# A square in the middle (mid) framed by three madrasas: the west one has courtyard A, the east one a covered bazaar (B).
-def registon():
+# ------------------------------------------------------------------ Bekat
+# An old railway station: the platform square in the middle (mid), the locomotive depot (A) to the west, the goods warehouse (B) to the east.
+def bekat():
     g = new()
-    rect(g, 17, 3, 26, 6, 'k')                          # defenders: behind the north madrasa
+    rect(g, 17, 3, 26, 6, 'k')                          # defenders: behind the station building
     rect(g, 16, 37, 27, 40, 't')                        # attackers: south gate
     rect(g, 4, 33, 39, 36)                              # south street (attackers spread from here)
     # central square + its approaches
-    rect(g, 15, 15, 28, 27)                             # Registon square
-    rect(g, 19, 7, 24, 14)                              # north portal passage to the square
+    rect(g, 15, 15, 28, 27)                             # platform square
+    rect(g, 19, 7, 24, 14)                              # passage from the station building
     rect(g, 18, 11, 18, 12, '#'); rect(g, 25, 11, 25, 12, '#')
     rect(g, 20, 28, 23, 32)                             # south gate passage
     rect(g, 21, 31, 22, 31, '#')                        # a pillar in the gate: two narrow doors
-    # A: courtyard of the west madrasa
+    # A: the locomotive depot
     rect(g, 3, 8, 12, 18, 'A')
     rect(g, 7, 4, 16, 6)                                # defenders' corridor to A
     rect(g, 7, 7, 9, 7)
-    rect(g, 13, 17, 14, 19)                             # A portal from the square
+    rect(g, 13, 17, 14, 19)                             # A door from the platform
     rect(g, 3, 19, 6, 32)                               # long west alley from the south street
     rect(g, 7, 24, 10, 26)                              # a side niche in the alley
-    # B: covered bazaar (Chorsu) in the east madrasa
+    # B: the goods warehouse
     rect(g, 31, 8, 40, 17, 'B')
     rect(g, 27, 4, 36, 6); rect(g, 34, 7, 36, 7)        # defenders' corridor to B
-    rect(g, 29, 15, 30, 16)                             # bazaar door from the square
-    rect(g, 29, 22, 33, 23); rect(g, 33, 18, 34, 22)    # second square exit up into the bazaar
-    rect(g, 37, 18, 40, 22); rect(g, 36, 23, 40, 32)    # bazaar lanes down to the south street
+    rect(g, 29, 15, 30, 16)                             # warehouse door from the platform
+    rect(g, 29, 22, 33, 23); rect(g, 33, 18, 34, 22)    # second platform exit up into the warehouse
+    rect(g, 37, 18, 40, 22); rect(g, 36, 23, 40, 32)    # warehouse lanes down to the south street
     rect(g, 33, 26, 35, 27)
-    # cover: fountain, stalls, columns
-    put(g, [(21, 20), (22, 20), (21, 21), (22, 21)], 's')                                  # fountain
-    put(g, [(16, 17), (27, 17), (17, 25), (26, 25), (19, 23), (24, 18)], 'c')              # stalls in the square
-    put(g, [(5, 10), (10, 10), (5, 15), (10, 15)], 's')                                    # courtyard columns
+    # cover: water tower, cargo, columns
+    put(g, [(21, 20), (22, 20), (21, 21), (22, 21)], 's')                                  # water tower
+    put(g, [(16, 17), (27, 17), (17, 25), (26, 25), (19, 23), (24, 18)], 'c')              # cargo on the platform
+    put(g, [(5, 10), (10, 10), (5, 15), (10, 15)], 's')                                    # depot columns
     put(g, [(7, 12), (8, 13), (4, 17)], 'c')
-    put(g, [(33, 10), (36, 10), (39, 12), (33, 15), (37, 14), (35, 13)], 'c')              # bazaar stalls
+    put(g, [(33, 10), (36, 10), (39, 12), (33, 15), (37, 14), (35, 13)], 'c')              # warehouse crates
     put(g, [(31, 12), (40, 9)], 's')
     put(g, [(4, 27), (5, 22), (38, 28), (37, 20), (10, 34), (30, 35), (21, 9)], 'c')
     put(g, [(13, 33), (28, 34)], 's')
@@ -53,7 +53,7 @@ def registon():
              "M": [[[21, 13], [21, 27]], [[23, 12], [22, 28]], [[20, 8], [21, 20]]]}
     plan = {"A": {"stages": [[5, 31], [20, 27], [5, 21]], "spots": [[6, 12], [9, 9], [11, 14], [4, 9]], "looks": [[13, 18], [8, 5], [5, 20]]},
             "B": {"stages": [[38, 31], [24, 24], [38, 23]], "spots": [[35, 11], [38, 9], [32, 9], [39, 15]], "looks": [[29, 15], [35, 5], [38, 19]]}}
-    signs = [[14, 37, "N", "← A", 2.1], [29, 37, "N", "B →", 2.1], [19, 30, "E", "MAYDON", 2.2, 1.3], [5, 7, "S", "A", 3, 2.6], [32, 7, "S", "B", 3, 2.6],
+    signs = [[14, 37, "N", "← A", 2.1], [29, 37, "N", "B →", 2.1], [19, 30, "E", "PERRON", 2.2, 1.3], [5, 7, "S", "A", 3, 2.6], [32, 7, "S", "B", 3, 2.6],
              [14, 20, "E", "← A", 2, 1.3], [29, 24, "W", "B →", 2, 1.3], [2, 25, "E", "A ↑", 2.1], [35, 24, "E", "B ↑", 2.1]]
     cables = [[8, 41, 12, 41], [74, 47, 80, 47], [40, 63, 46, 63], [8, 55, 12, 55]]
     return g, holds, plan, signs, cables
@@ -205,7 +205,7 @@ def draw(name, rows, holds, plan, out):
 
 if __name__ == '__main__':
     out = {}
-    for name, fn in (('registon', registon), ('saroy', saroy), ('zavod', zavod)):
+    for name, fn in (('bekat', bekat), ('saroy', saroy), ('zavod', zavod)):
         g, holds, plan, signs, cables = fn()
         rows = check(name, g, holds, plan)
         draw(name, rows, holds, plan, f'{sys.argv[1]}/{name}.png')

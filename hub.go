@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"log"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -50,6 +51,7 @@ type client struct {
 }
 
 type room struct {
+	cmap    *gameMap // foydalanuvchi xaritasi (gs.M = k<id>) — keshdan chiqib ketsa ham shu nusxa
 	name    string
 	mu      sync.Mutex
 	clients map[string]*client
@@ -202,6 +204,12 @@ func (h *hub) serve(ws *wsConn, roomName, ip, host string, acct *account, opts r
 		}
 		if opts.gmap != "" {
 			r.gs.M = opts.gmap
+			if isCustomMapID(opts.gmap) {
+				r.cmap = customMaps.get(opts.gmap)
+				if n, _ := strconv.ParseInt(opts.gmap[1:], 10, 64); n > 0 {
+					notePlay(h.store, ip, n)
+				}
+			}
 		}
 		if opts.mode != "" {
 			r.gs.setMode(opts.mode)

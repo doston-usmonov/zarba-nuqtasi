@@ -182,6 +182,10 @@ func (r *room) gainsLocked(now time.Time) []matchGain {
 		if won {
 			st["wins"], st["mw:"+r.gm().id], st["mdw:"+g.modeID()] = 1, 1, 1
 		}
+		if isCustomMapID(r.gm().id) { // foydalanuvchi xaritalari xaritalar statistikasiga kirmaydi
+			delete(st, "mp:"+r.gm().id)
+			delete(st, "mw:"+r.gm().id)
+		}
 		for w, n := range s.wk {
 			st["wk:"+w] = n
 		}

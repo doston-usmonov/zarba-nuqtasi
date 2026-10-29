@@ -234,7 +234,7 @@ func (s *Store) TrnCreate(ctx context.Context, owner int64, name string, size in
 	if size != 4 && size != 8 {
 		return 0, errTrnSize
 	}
-	if !validMap(gmap) || isAimMap(gmap) {
+	if !validMap(gmap) || isAimMap(gmap) || isCustomMapID(gmap) {
 		return 0, errTrnMap
 	}
 	var busy int

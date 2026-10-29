@@ -48,8 +48,9 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 
 ## 5. Xaritalar
 - ✅ Ikki yangi ixcham xarita: Bozor va Karvonsaroy (Qumtepa bilan birga 3 ta); xona yaratishda va xona egasi o'yin davomida tanlaydi
-- ✅ Registon (maydon, madrasa hovlisi — A, yopiq bozor — B; koshinli peshtoqlar, minoralar, gumbazlar) va Saroy (tepalikdagi qal'a: ichki zallar, devor bo'yi uzun yo'lak, zinapoyali yo'l; qal'a tishlari, minoralar, bayroqlar) — jami 5 ta xarita, ovoz berish 1–5 tugmalari
+- ✅ Bekat (eski temiryo'l bekati: perron, depo — A, yuk ombori — B; soat minorasi, relslar; avvalgi Registon o'rniga) va Saroy (tepalikdagi qal'a: ichki zallar, devor bo'yi uzun yo'lak, zinapoyali yo'l; qal'a tishlari, minoralar, bayroqlar) — jami 5 ta xarita, ovoz berish 1–5 tugmalari
 - ✅ Zavod xaritasi: dastgohlar zali (A), konteynerli ombor (B), konveyer zali, qozonxona va ustaxona; mo'rilar, quvurlar; tayyor tutun joylari; rasmiy `zavod-comp` xonasi
+- ✅ Xarita muharriri: o'z xaritangizni chizish (simmetriya, tasodifiy xarita, shablonlar), botlar bilan sinash, galereya (yangi/mashhur/meniki), onlayn xona va havola
 - ✅ Aim xaritalari (Maydon, Chorraha, Hovli) va «Aim» rejimi: raundlar, bomba yo'q, faqat snayper va pichoq (server ham tekshiradi), botlar ov qiladi; rasmiy `maydon-arena` xonasi
 - ✅ O'yin oxirida keyingi xarita uchun ovoz berish (1/2/3 tugmalari)
 

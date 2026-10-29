@@ -63,6 +63,7 @@ func (a *api) routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/queue", h(a.queuePost))
 	a.telegramRoutes(mux, h)
 	a.trnRoutes(mux, h)
+	a.mapRoutes(mux, h)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeErr(w, http.StatusNotFound, "Topilmadi") })
 }
 
@@ -110,6 +111,10 @@ func serverErr(w http.ResponseWriter, what string, err error) {
 
 // readJSON: faqat o'z saytimizdan kelgan, kichik JSON so'rovlar (CSRF va katta so'rovlarga qarshi).
 func (a *api) readJSON(w http.ResponseWriter, r *http.Request, v any) bool {
+	return a.readJSONMax(w, r, v, 4<<10)
+}
+
+func (a *api) readJSONMax(w http.ResponseWriter, r *http.Request, v any, limit int64) bool {
 	if !originOK(r, a.allowed) {
 		writeErr(w, http.StatusForbidden, "So'rov boshqa saytdan keldi")
 		return false
@@ -118,7 +123,7 @@ func (a *api) readJSON(w http.ResponseWriter, r *http.Request, v any) bool {
 		writeErr(w, http.StatusUnsupportedMediaType, "JSON kutilgan")
 		return false
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
 		writeErr(w, http.StatusBadRequest, "So'rov noto'g'ri")
 		return false

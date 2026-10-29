@@ -948,7 +948,12 @@ func (m *gameMap) spawnCenter(side string) vec3 {
 }
 
 // gm: xonaning hozirgi xaritasi.
-func (r *room) gm() *gameMap { return mapByID(r.gs.M) }
+func (r *room) gm() *gameMap {
+	if r.cmap != nil && r.cmap.id == r.gs.M {
+		return r.cmap
+	}
+	return mapByID(r.gs.M)
+}
 
 // reset: yangi o'yin (xarita saqlanadi).
 func (g *gameState) reset() {

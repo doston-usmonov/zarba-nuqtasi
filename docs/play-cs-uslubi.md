@@ -17,26 +17,26 @@ https://game.telegap.uz/x/<xarita>/<kod>          → shu xonaga kirish (bo'lmas
 https://game.telegap.uz/x/<xarita>/<kod>?mode=dm  → yaratilsa, shu rejimda
 ```
 
-Masalan: `/x/registon/umumiy`, `/x/qumtepa/dostlar-42`.
+Masalan: `/x/bekat/umumiy`, `/x/qumtepa/dostlar-42`.
 
 Server (`main.go`):
 - `/x/` bilan boshlanadigan yo'lga `index.html` ni qaytaring (SPA fallback). Xarita `validMap` dan o'tmasa yoki kod `roomName` regexiga (`zn-` prefiksi bilan) mos kelmasa — 404 emas, oddiy bosh sahifa.
-- Telegram va boshqa messenjerlarda havola chiroyli chiqishi uchun `index.html` dagi `<title>` va `og:title` / `og:description` / `og:image` ni server shu so'rov uchun to'ldirib bersin: «Registon — umumiy · 6/16 o'yinchi · Zarba Nuqtasi». Shablonni har so'rovda `strings.Replace` bilan to'ldirish yetarli (html/template shart emas, lekin qiymatlarni `html.EscapeString` qiling). `og:image` uchun har xaritaga bitta statik rasm `web/og/<xarita>.png` (1200×630).
+- Telegram va boshqa messenjerlarda havola chiroyli chiqishi uchun `index.html` dagi `<title>` va `og:title` / `og:description` / `og:image` ni server shu so'rov uchun to'ldirib bersin: «Bekat — umumiy · 6/16 o'yinchi · Zarba Nuqtasi». Shablonni har so'rovda `strings.Replace` bilan to'ldirish yetarli (html/template shart emas, lekin qiymatlarni `html.EscapeString` qiling). `og:image` uchun har xaritaga bitta statik rasm `web/og/<xarita>.png` (1200×630).
 
 Klient (`web/index.html`):
 - Yuklanganda `location.pathname` `/x/<xarita>/<kod>` bo'lsa: ism kiritilgan bo'lsa darhol `joinOnline(false, kod)` (xarita va rejimni `map=`/`mode=` bilan uzatib), bo'lmasa ism maydoniga fokus va «Kirish» tugmasi.
 - Xonaga kirgach manzil satri `history.replaceState` bilan `/x/<joriy-xarita>/<kod>` ga o'zgarsin; xona egasi xaritani almashtirsa ham yangilansin. Xonadan chiqqanda `/` ga qaytsin.
 - Pauza menyusiga «Havolani ulashish» tugmasi: `navigator.share` bo'lsa u, bo'lmasa `navigator.clipboard.writeText` va «Nusxalandi» xabari. Yopiq xona havolasi ham ishlaydi — kodni bilgan kiradi, bu hozirgi mantiq bilan bir xil.
 
-Test: `/x/registon/umumiy` → 200 va javobda `og:title` ichida «Registon»; noto'g'ri xarita → 200 va oddiy sarlavha; `/x/../../etc` kabi yo'llar statik fayl bermaydi.
+Test: `/x/bekat/umumiy` → 200 va javobda `og:title` ichida «Bekat»; noto'g'ri xarita → 200 va oddiy sarlavha; `/x/../../etc` kabi yo'llar statik fayl bermaydi.
 
 ## 2-bosqich. Doimiy («rasmiy») serverlar
 
 Play-CS'da har xarita uchun 24/7 ishlaydigan serverlar bor, kirgan odam hech qachon bo'sh xonaga tushmaydi. Bizda xonalar faqat odam kirganda yaratiladi va ro'yxatda faqat `humans > 0` bo'lsa ko'rinadi.
 
 - Yangi muhit o'zgaruvchisi `OFFICIAL_ROOMS`, masalan:
-  `registon:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4`
-  (format: `xarita:rejim:chegara`). Kod avtomatik: `<xarita>-<rejim>` (`registon-comp`). Standart qiymat — yuqoridagi; `-` bo'lsa o'chiq.
+  `bekat:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4`
+  (format: `xarita:rejim:chegara`). Kod avtomatik: `<xarita>-<rejim>` (`bekat-comp`). Standart qiymat — yuqoridagi; `-` bo'lsa o'chiq.
 - Server ishga tushganda bu xonalar yaratiladi va odamlar chiqib ketsa ham o'chirilmaydi (hub'dagi bo'sh xonani tozalash mantig'iga istisno).
 - Egasi yo'q: ularda xona egasi buyruqlari (`adminLocked`) ishlamaydi, ommaviylik va chegarani o'zgartirib bo'lmaydi. Xaritani faqat o'yin oxiridagi ovoz berish almashtiradi; almashtirilsa ham kod o'zgarmaydi.
 - Botlar bilan to'ldirish: xonada kamida 1 odam bo'lsa, odam + bot soni `min(chegara, 10)` ga yetguncha o'rta darajadagi botlar qo'shiladi; har yangi odam kirganda bitta bot chiqadi (jamoalar muvozanatini saqlab). Odam qolmasa botlar ham o'chiriladi — bo'sh xonada CPU sarflanmasin.
@@ -51,7 +51,7 @@ Bosh sahifadagi ro'yxatni server brauzeriga aylantiring:
 
 - Ustunlar: xarita (kichik rasm bilan), rejim, o'yinchilar `odam(+bot)/chegara`, raund va hisob, holat (isinish / o'yin / tanaffus). Rasmiy xonalar tepada, belgisi bilan.
 - Filtrlar: xarita, rejim, «bo'sh joyi bor», «bo'sh xonalarni yashirish». Tanlov `SET` ga saqlansin.
-- Xarita kartochkalari: har xarita uchun «hozir N kishi o'ynayapti» va «O'ynash» tugmasi (shu xaritaning eng ko'p odamli, lekin to'lmagan xonasiga kiradi). Buning uchun `/api/rooms` javobiga `byMap: {registon: 12, ...}` qo'shing.
+- Xarita kartochkalari: har xarita uchun «hozir N kishi o'ynayapti» va «O'ynash» tugmasi (shu xaritaning eng ko'p odamli, lekin to'lmagan xonasiga kiradi). Buning uchun `/api/rooms` javobiga `byMap: {bekat: 12, ...}` qo'shing.
 - Xona qatorini bosganda darhol kirish emas, kichik oyna: o'yinchilar ro'yxati (ism, klan tegi, hisob), joriy hisob va «Kirish» / «Havolani nusxalash». Yangi endpoint: `GET /api/rooms/{kod}` — ro'yxatdagi maydonlar + `players: [{name, tag, team, k, d, bot}]`. Yopiq xona uchun ham kod ma'lum bo'lsa ishlaydi.
 - Ro'yxat hozirgidek 5 soniyada yangilanadi; telefonda ham (sensorli ekran) qulay bo'lsin — o'yinning telefonda ishlashi Play-CS'dan ustun tomonimiz.
 

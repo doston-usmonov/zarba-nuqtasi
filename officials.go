@@ -2,8 +2,8 @@ package main
 
 // Doimiy («rasmiy») xonalar — Play-CS'dagi 24/7 serverlar kabi.
 //
-// OFFICIAL_ROOMS="registon:comp:16,qumtepa:dm:20,..." (xarita:rejim:chegara; "-" — o'chiq).
-// Kodi avtomatik: <xarita>-<rejim> (registon-comp). Server ishga tushganda yaratiladi va hamma
+// OFFICIAL_ROOMS="bekat:comp:16,qumtepa:dm:20,..." (xarita:rejim:chegara; "-" — o'chiq).
+// Kodi avtomatik: <xarita>-<rejim> (bekat-comp). Server ishga tushganda yaratiladi va hamma
 // chiqib ketsa ham yo'qolmaydi. Egasi yo'q: xona egasi buyruqlari ishlamaydi, ommaviylik va
 // chegara o'zgarmaydi, xaritani faqat o'yin oxiridagi ovoz berish almashtiradi.
 //
@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const defaultOfficialRooms = "registon:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4,maydon:arena:10,zavod:comp:10"
+const defaultOfficialRooms = "bekat:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4,maydon:arena:10,zavod:comp:10"
 
 type officialRoom struct {
 	gmap, mode string
@@ -48,8 +48,11 @@ func parseOfficialRooms(s string) []officialRoom {
 			continue
 		}
 		o := officialRoom{gmap: strings.ToLower(f[0]), mode: strings.ToLower(f[1])}
+		if o.gmap == "registon" { // eski sozlamalar: Registon o'rniga Bekat
+			o.gmap = "bekat"
+		}
 		o.max, _ = strconv.Atoi(f[2])
-		if !validMap(o.gmap) || !validMode(o.mode) || o.max < 2 || o.max > 64 || seen[o.code()] || isAimMap(o.gmap) != (o.mode == modeAim) {
+		if !validMap(o.gmap) || isCustomMapID(o.gmap) || !validMode(o.mode) || o.max < 2 || o.max > 64 || seen[o.code()] || isAimMap(o.gmap) != (o.mode == modeAim) {
 			log.Printf("OFFICIAL_ROOMS: %q o'tkazib yuborildi (xarita, rejim yoki chegara noto'g'ri, yoki takror)", part)
 			continue
 		}

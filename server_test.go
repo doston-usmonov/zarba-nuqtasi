@@ -189,7 +189,7 @@ func newTestServer(t *testing.T) (*httptest.Server, *Store, *hub) {
 		if err != nil {
 			return
 		}
-		h.serve(ws, r.URL.Query().Get("room"), r.RemoteAddr+newID(), r.Host, acct, parseRoomOpts(r.URL.Query()))
+		h.serve(ws, r.URL.Query().Get("room"), r.RemoteAddr+newID(), r.Host, acct, roomOptsFor(r, st))
 	})
 	return httptest.NewServer(mux), st, h
 }
@@ -872,45 +872,52 @@ func TestDeepLink(t *testing.T) {
 	}
 
 	// xona hali yo'q: xarita nomi bor, o'yinchi soni yo'q
-	code, body := get("/x/registon/umumiy")
-	if code != 200 || !strings.Contains(title(body), "Registon — umumiy") || !strings.Contains(body, "<title>Registon — umumiy · Zarba Nuqtasi</title>") {
+	{ // eski Registon havolasi Bekat'ga o'tadi
+		res, err := (&http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}).Get(srv.URL + "/x/registon/umumiy?mode=dm")
+		if err != nil || res.StatusCode != http.StatusMovedPermanently || res.Header.Get("Location") != "/x/bekat/umumiy?mode=dm" {
+			t.Fatalf("registon havolasi: %v %v", err, res)
+		}
+		res.Body.Close()
+	}
+	code, body := get("/x/bekat/umumiy")
+	if code != 200 || !strings.Contains(title(body), "Bekat — umumiy") || !strings.Contains(body, "<title>Bekat — umumiy · Zarba Nuqtasi</title>") {
 		t.Fatalf("bo'sh xona havolasi: %d %q", code, title(body))
 	}
-	if !strings.Contains(body, `content="http://`+strings.TrimPrefix(srv.URL, "http://")+`/og/registon.png"`) {
-		t.Fatal("og:image registon rasmiga to'liq manzil bilan ishora qilishi kerak")
+	if !strings.Contains(body, `content="http://`+strings.TrimPrefix(srv.URL, "http://")+`/og/bekat.png"`) {
+		t.Fatal("og:image bekat rasmiga to'liq manzil bilan ishora qilishi kerak")
 	}
-	if _, err := fs.Stat(sub, "og/registon.png"); err != nil {
-		t.Fatal("web/og/registon.png yo'q")
+	if _, err := fs.Stat(sub, "og/bekat.png"); err != nil {
+		t.Fatal("web/og/bekat.png yo'q")
 	}
 
 	// bitta odam kirdi (16 kishilik xona): «1/16 o'yinchi»
 	tc := newTestClient(srv.URL)
-	w := dialWS(t, tc, "zn-umumiy&map=registon&max=16")
+	w := dialWS(t, tc, "zn-umumiy&map=bekat&max=16")
 	defer w.c.Close()
-	if _, body = get("/x/registon/umumiy"); !strings.Contains(title(body), "Registon — umumiy · 1/16 o'yinchi · Zarba Nuqtasi") {
+	if _, body = get("/x/bekat/umumiy"); !strings.Contains(title(body), "Bekat — umumiy · 1/16 o'yinchi · Zarba Nuqtasi") {
 		t.Fatalf("o'yinchi soni: %q", title(body))
 	}
 	// havoladagi xarita eski bo'lsa ham — xonaning haqiqiy xaritasi
-	if _, body = get("/x/bozor/umumiy"); !strings.HasPrefix(title(body), "Registon") || !strings.Contains(body, "/og/registon.png") {
+	if _, body = get("/x/bozor/umumiy"); !strings.HasPrefix(title(body), "Bekat") || !strings.Contains(body, "/og/bekat.png") {
 		t.Fatalf("xonaning haqiqiy xaritasi: %q", title(body))
 	}
 
 	// noto'g'ri havolalar — 200 va oddiy bosh sahifa
-	for _, p := range []string{"/x/dust/umumiy", "/x/registon/", "/x/registon/A-B", "/x/registon/a/b", "/x/registon/%3Cscript%3E", "/x/"} {
+	for _, p := range []string{"/x/dust/umumiy", "/x/bekat/", "/x/bekat/A-B", "/x/bekat/a/b", "/x/bekat/%3Cscript%3E", "/x/"} {
 		code, body := get(p)
 		if code != 200 || title(body) != "Zarba Nuqtasi" || !strings.Contains(body, "<title>Zarba Nuqtasi</title>") {
 			t.Errorf("%s: %d %q", p, code, title(body))
 		}
 	}
 	// qiymatlar sahifaga ekranlangan holda tushadi
-	if _, body = get("/x/registon/a.b_c-d?mode=dm"); !strings.Contains(title(body), "Registon — a.b_c-d") {
+	if _, body = get("/x/bekat/a.b_c-d?mode=dm"); !strings.Contains(title(body), "Bekat — a.b_c-d") {
 		t.Fatalf("kod: %q", title(body))
 	}
 	if pg := string(fillMeta([]byte(siteTitle+`<meta property="og:title" content="Zarba Nuqtasi">`), `a"<b>`, "d", "i", "u")); strings.Contains(pg, `a"<b>`) || !strings.Contains(pg, "a&#34;&lt;b&gt;") {
 		t.Fatalf("ekranlanmagan: %s", pg)
 	}
 	// /x/ ostidan statik fayl berilmaydi, yo'l chiqishlari ham ishlamaydi
-	for _, p := range []string{"/x/../../etc/passwd", "/x/registon/..%2f..%2fetc%2fpasswd", "/x/vendor/three.min.js"} {
+	for _, p := range []string{"/x/../../etc/passwd", "/x/bekat/..%2f..%2fetc%2fpasswd", "/x/vendor/three.min.js"} {
 		code, body := get(p)
 		if strings.Contains(body, "root:") || strings.Contains(body, "THREE") && !strings.Contains(body, "<!doctype html>") {
 			t.Errorf("%s: statik fayl qaytdi (%d)", p, code)
@@ -956,18 +963,18 @@ func TestOfficialRooms(t *testing.T) {
 	for _, o := range def {
 		codes = append(codes, fmt.Sprintf("%s:%d", o.code(), o.max))
 	}
-	if strings.Join(codes, ",") != "registon-comp:16,qumtepa-dm:20,bozor-comp:10,saroy-gg:12,karvon-wm:4,maydon-arena:10,zavod-comp:10" {
+	if strings.Join(codes, ",") != "bekat-comp:16,qumtepa-dm:20,bozor-comp:10,saroy-gg:12,karvon-wm:4,maydon-arena:10,zavod-comp:10" {
 		t.Fatalf("standart ro'yxat: %v", codes)
 	}
 	if parseOfficialRooms("-") != nil {
 		t.Fatal(`"-" o'chirishi kerak`)
 	}
-	if l := parseOfficialRooms("dust:comp:10, registon:xx:10, registon:dm:1, karvon:wm:10, karvon:wm:8, bozor:tdm:12"); len(l) != 2 || l[0].code() != "karvon-wm" || l[0].max != 4 || l[1].code() != "bozor-tdm" {
+	if l := parseOfficialRooms("dust:comp:10, bekat:xx:10, bekat:dm:1, karvon:wm:10, karvon:wm:8, bozor:tdm:12"); len(l) != 2 || l[0].code() != "karvon-wm" || l[0].max != 4 || l[1].code() != "bozor-tdm" {
 		t.Fatalf("noto'g'ri bandlar tashlanishi kerak: %+v", l)
 	}
 
 	h := newHub(64, nil)
-	h.startOfficial(parseOfficialRooms("registon:comp:16,karvon:wm:4"))
+	h.startOfficial(parseOfficialRooms("bekat:comp:16,karvon:wm:4"))
 	srv, _ := newPlainServer(t, h)
 	find := func(code string) roomListing {
 		t.Helper()
@@ -996,8 +1003,8 @@ func TestOfficialRooms(t *testing.T) {
 	if len(rl) != 2 || rl[0].(map[string]any)["official"] != true {
 		t.Fatalf("/api/rooms: %v", body)
 	}
-	if r := find("registon-comp"); r.Humans != 0 || r.Bots != 0 || r.Max != 16 || r.Map != "registon" || r.Mode != "comp" || r.Owner != "" {
-		t.Fatalf("registon-comp: %+v", r)
+	if r := find("bekat-comp"); r.Humans != 0 || r.Bots != 0 || r.Max != 16 || r.Map != "bekat" || r.Mode != "comp" || r.Owner != "" {
+		t.Fatalf("bekat-comp: %+v", r)
 	}
 	// oddiy xona tepada emas
 	other := dialWS(t, tc, "zn-boshqa")
@@ -1007,11 +1014,11 @@ func TestOfficialRooms(t *testing.T) {
 	other.c.Close()
 
 	// bitta odam: 16 kishilik xonada 10 tagacha to'ladi — 9 bot, jamoalarga teng
-	a := dialWS(t, tc, "zn-registon-comp")
-	if r := find("registon-comp"); r.Humans != 1 || r.Bots != 9 {
+	a := dialWS(t, tc, "zn-bekat-comp")
+	if r := find("bekat-comp"); r.Humans != 1 || r.Bots != 9 {
 		t.Fatalf("1 odam: %+v", r)
 	}
-	rm := h.rooms["zn-registon-comp"]
+	rm := h.rooms["zn-bekat-comp"]
 	rm.mu.Lock()
 	sq := map[string]int{}
 	for _, c := range rm.clients {
@@ -1046,8 +1053,8 @@ func TestOfficialRooms(t *testing.T) {
 		t.Fatalf("jamoalar muvozanati: %v", sq)
 	}
 	// ikkinchi odam — bitta bot chiqadi
-	b := dialWS(t, tc, "zn-registon-comp")
-	if r := find("registon-comp"); r.Humans != 2 || r.Bots != 8 {
+	b := dialWS(t, tc, "zn-bekat-comp")
+	if r := find("bekat-comp"); r.Humans != 2 || r.Bots != 8 {
 		t.Fatalf("2 odam: %+v", r)
 	}
 	// egasi buyruqlari ishlamaydi: botni chiqarish, xonani yopish, chegara, rejim, xarita
@@ -1065,14 +1072,14 @@ func TestOfficialRooms(t *testing.T) {
 		b.send(map[string]any{"t": "adm", "d": d})
 	}
 	time.Sleep(200 * time.Millisecond)
-	if r := find("registon-comp"); r.Humans != 2 || r.Bots != 8 || r.Max != 16 || r.Map != "registon" || r.Mode != "comp" {
+	if r := find("bekat-comp"); r.Humans != 2 || r.Bots != 8 || r.Max != 16 || r.Map != "bekat" || r.Mode != "comp" {
 		t.Fatalf("egasi buyruqlari ishlamasligi kerak: %+v", r)
 	}
 	// hamma chiqdi: xona qoladi, botlar ketadi
 	a.c.Close()
-	waitFor("bitta odam qolganda 9 bot", func() bool { r := find("registon-comp"); return r.Humans == 1 && r.Bots == 9 })
+	waitFor("bitta odam qolganda 9 bot", func() bool { r := find("bekat-comp"); return r.Humans == 1 && r.Bots == 9 })
 	b.c.Close()
-	waitFor("bo'sh xonada bot qolmasligi kerak", func() bool { r := find("registon-comp"); return r.Humans == 0 && r.Bots == 0 })
+	waitFor("bo'sh xonada bot qolmasligi kerak", func() bool { r := find("bekat-comp"); return r.Humans == 0 && r.Bots == 0 })
 	if _, ok := h.rooms["zn-boshqa"]; ok {
 		t.Fatal("oddiy xona bo'shaganda o'chishi kerak")
 	}
@@ -1105,10 +1112,10 @@ func TestOfficialRooms(t *testing.T) {
 // TestRoomBrowserAPI: /api/rooms dagi byMap va GET /api/rooms/{kod} (yopiq xona ham).
 func TestRoomBrowserAPI(t *testing.T) {
 	h := newHub(64, nil)
-	h.startOfficial(parseOfficialRooms("registon:comp:16"))
+	h.startOfficial(parseOfficialRooms("bekat:comp:16"))
 	srv, _ := newPlainServer(t, h)
 	tc := newTestClient(srv.URL)
-	a := dialWS(t, tc, "zn-registon-comp")
+	a := dialWS(t, tc, "zn-bekat-comp")
 	defer a.c.Close()
 	a.send(map[string]any{"t": "p", "d": map[string]any{"nm": "Lochin", "tm": "T", "sq": "A", "hc": 1}})
 	p := dialWS(t, tc, "zn-yashirin&create=1&pub=0&map=saroy&mode=dm")
@@ -1117,7 +1124,7 @@ func TestRoomBrowserAPI(t *testing.T) {
 
 	_, body := tc.get(t, "/api/rooms")
 	bm, _ := body["byMap"].(map[string]any)
-	if len(bm) != len(mapOrder()) || bm["registon"] != float64(1) || bm["saroy"] != float64(1) || bm["qumtepa"] != float64(0) {
+	if len(bm) != len(mapOrder()) || bm["bekat"] != float64(1) || bm["saroy"] != float64(1) || bm["qumtepa"] != float64(0) {
 		t.Fatalf("byMap: %v", bm)
 	}
 	for _, x := range body["rooms"].([]any) {
@@ -1129,10 +1136,10 @@ func TestRoomBrowserAPI(t *testing.T) {
 		}
 	}
 
-	code, d := tc.get(t, "/api/rooms/registon-comp")
+	code, d := tc.get(t, "/api/rooms/bekat-comp")
 	pl, _ := d["players"].([]any)
-	if code != 200 || d["official"] != true || d["map"] != "registon" || d["humans"] != float64(1) || len(pl) != 10 {
-		t.Fatalf("registon-comp: %d %v", code, d)
+	if code != 200 || d["official"] != true || d["map"] != "bekat" || d["humans"] != float64(1) || len(pl) != 10 {
+		t.Fatalf("bekat-comp: %d %v", code, d)
 	}
 	var me map[string]any
 	bots := 0

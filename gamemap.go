@@ -58,34 +58,38 @@ var cellOfChar = map[byte]uint8{'#': cWall, '.': cFloor, 'c': cCrate, 's': cStac
 var gameMaps = func() map[string]*gameMap {
 	out := map[string]*gameMap{}
 	for _, d := range mapDefs {
-		m := &gameMap{mapDef: d}
-		for z, row := range d.rows {
-			for x := 0; x < gridW; x++ {
-				t, ok := cellOfChar[row[x]]
-				if !ok {
-					t = cWall
-				}
-				m.grid[z*gridW+x] = t
-			}
-		}
-		m.tCenter, m.ctCenter = m.zoneCenter(cTSpawn), m.zoneCenter(cCTSpawn)
-		for z := 0; z < gridH; z++ {
-			for x := 0; x < gridW; x++ {
-				ok := !m.botSolid(x, z)
-				for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
-					if t := m.cellType(x+d[0], z+d[1]); t == cCrate || t == cStack {
-						ok = false
-					}
-				}
-				if ok {
-					m.open = append(m.open, [2]int{x, z})
-				}
-			}
-		}
-		out[d.id] = m
+		out[d.id] = newGameMap(d)
 	}
 	return out
 }()
+
+func newGameMap(d mapDef) *gameMap {
+	m := &gameMap{mapDef: d}
+	for z, row := range d.rows {
+		for x := 0; x < gridW; x++ {
+			t, ok := cellOfChar[row[x]]
+			if !ok {
+				t = cWall
+			}
+			m.grid[z*gridW+x] = t
+		}
+	}
+	m.tCenter, m.ctCenter = m.zoneCenter(cTSpawn), m.zoneCenter(cCTSpawn)
+	for z := 0; z < gridH; z++ {
+		for x := 0; x < gridW; x++ {
+			ok := !m.botSolid(x, z)
+			for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+				if t := m.cellType(x+d[0], z+d[1]); t == cCrate || t == cStack {
+					ok = false
+				}
+			}
+			if ok {
+				m.open = append(m.open, [2]int{x, z})
+			}
+		}
+	}
+	return m
+}
 
 const defaultMap = "qumtepa"
 
@@ -94,10 +98,14 @@ func mapByID(id string) *gameMap {
 	if m := gameMaps[id]; m != nil {
 		return m
 	}
+	if m := customMaps.get(id); m != nil {
+		return m
+	}
 	return gameMaps[defaultMap]
 }
 
-func validMap(id string) bool { return gameMaps[id] != nil }
+// validMap: o'yindagi xarita yoki keshdagi foydalanuvchi xaritasi (custommaps.go).
+func validMap(id string) bool { return gameMaps[id] != nil || customMaps.get(id) != nil }
 
 // isAimMap: aim xaritasi (kichik maydon, faqat Aim rejimi uchun).
 func isAimMap(id string) bool { return gameMaps[id] != nil && gameMaps[id].aim }

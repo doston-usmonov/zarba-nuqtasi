@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const defaultOfficialRooms = "bekat:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4,maydon:arena:10,zavod:comp:10"
+const defaultOfficialRooms = "bekat:comp:16,qumtepa:dm:20,bozor:comp:10,saroy:gg:12,karvon:wm:4,maydon:arena:10,zavod:comp:10,koshk:comp:10"
 
 type officialRoom struct {
 	gmap, mode string

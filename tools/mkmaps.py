@@ -1,4 +1,4 @@
-"""Draws the newer maps (Bekat, Saroy, Zavod) as 44x44 grids, checks them and prints the JS for MAPS.
+"""Draws the newer maps (Bekat, Saroy, Zavod, Ko'shk) as 44x44 grids, checks them and prints the JS for MAPS.
 '#' wall, '.' floor, 'c' crate (1 m), 's' stack (2.3 m), 'A'/'B' bomb sites, 't' attacker spawn, 'k' defender spawn."""
 import json, sys
 from collections import deque
@@ -161,6 +161,68 @@ def zavod():
     cables = [[8, 41, 14, 41], [78, 45, 84, 45], [40, 59, 46, 59]]
     return g, holds, plan, signs, cables
 
+# ------------------------------------------------------------------ Ko'shk
+# A country mansion. The attackers start INSIDE the house (the grand hall, south) and break out; the defenders come in
+# through the front gate (north) and hold the grounds: A — the garage and driveway (west), B — the pool terrace (east).
+# Mid: the front garden with hedges between the porch and the gate. The house has four ways out: the front door
+# (foyer -> porch), the library door (west wing -> west path), the kitchen door (east wing -> east path) and the
+# back corridors from the hall into both wings.
+def koshk():
+    g = new()
+    rect(g, 16, 3, 27, 5, 'k')                          # defenders: the front gate and the guard post
+    rect(g, 4, 6, 39, 7)                                # path along the fence
+    rect(g, 20, 8, 23, 8)                               # gate into the garden
+    # A: garage and driveway (west)
+    rect(g, 3, 8, 13, 17, 'A')
+    # B: pool terrace (east)
+    rect(g, 30, 8, 40, 17, 'B')
+    # mid: front garden
+    rect(g, 15, 9, 28, 20)
+    rect(g, 14, 12, 14, 14); rect(g, 29, 12, 29, 14)    # garden <-> sites
+    rect(g, 19, 21, 24, 24)                             # porch and front steps
+    # side paths round the house
+    rect(g, 3, 18, 6, 30)                               # west path: A <-> library door
+    rect(g, 37, 18, 40, 30)                             # east path: B <-> kitchen door
+    rect(g, 7, 20, 9, 21); rect(g, 34, 20, 36, 21)      # little lawns by the paths
+    # the house (south)
+    rect(g, 18, 25, 25, 30)                             # foyer
+    rect(g, 16, 31, 27, 34)                             # stair hall
+    rect(g, 14, 35, 29, 39, 't')                        # attackers: the grand hall
+    rect(g, 8, 27, 14, 33)                              # west wing: library
+    rect(g, 15, 28, 17, 29)                             # foyer <-> library
+    rect(g, 7, 29, 7, 30)                               # library door to the west path
+    rect(g, 10, 34, 13, 36)                             # grand hall <-> library (back corridor)
+    rect(g, 29, 27, 35, 33)                             # east wing: kitchen and dining room
+    rect(g, 26, 28, 28, 29)                             # foyer <-> dining room
+    rect(g, 36, 29, 36, 30)                             # kitchen door to the east path
+    rect(g, 30, 34, 33, 36)                             # grand hall <-> kitchen (back corridor)
+    # cover: cars and boxes in the garage, sun loungers and the pool house on B, hedges and planters in the garden,
+    # furniture inside
+    put(g, [(5, 10), (5, 11), (5, 12), (9, 10), (9, 11), (9, 12)], 's')                     # two cars
+    put(g, [(12, 9), (4, 16), (11, 15), (7, 15)], 'c')
+    put(g, [(38, 9), (39, 9), (38, 10), (39, 10)], 's')                                     # pool house
+    put(g, [(32, 15), (34, 15), (36, 15), (31, 9)], 'c')                                    # loungers
+    put(g, [(17, 11), (18, 11), (25, 11), (26, 11), (17, 17), (18, 17), (25, 17), (26, 17)], 's')   # hedges
+    put(g, [(21, 14), (22, 14), (16, 14), (27, 14), (21, 19)], 'c')                         # planters, bench
+    put(g, [(8, 29), (11, 29), (8, 32), (12, 31)], 's')                                     # library shelves
+    put(g, [(10, 31)], 'c')
+    put(g, [(31, 29), (32, 29), (31, 30), (32, 30)], 's')                                   # dining table
+    put(g, [(34, 28), (34, 32), (30, 33)], 'c')                                             # kitchen counter
+    put(g, [(19, 27), (24, 27)], 'c')                                                       # foyer: statues on plinths
+    put(g, [(17, 33), (26, 33)], 's')                                                       # stair hall pillars
+    put(g, [(4, 22), (39, 23), (5, 27), (38, 26)], 'c')
+    put(g, [(17, 37), (26, 37), (21, 38)], 'c')                                             # sofas in the grand hall
+    holds = {"A": [[[11, 9], [4, 18]], [[4, 9], [14, 13]], [[12, 16], [5, 18]], [[7, 13], [14, 12]]],
+             "B": [[[32, 9], [39, 18]], [[40, 12], [29, 13]], [[31, 16], [38, 18]], [[35, 9], [29, 12]]],
+             "M": [[[21, 9], [21, 22]], [[16, 15], [21, 21]], [[27, 16], [22, 21]]]}
+    plan = {"A": {"stages": [[5, 28], [20, 22], [5, 20]], "spots": [[7, 10], [8, 14], [11, 11], [4, 13]], "looks": [[14, 13], [8, 7], [4, 18]]},
+            "B": {"stages": [[38, 28], [23, 22], [38, 20]], "spots": [[31, 12], [33, 16], [37, 16], [40, 13]], "looks": [[29, 13], [35, 7], [39, 18]]}}
+    signs = [[2, 12, "E", "A", 3, 2.6], [41, 12, "W", "B", 3, 2.6], [14, 10, "W", "GARAJ", 3.4, 1.3], [29, 10, "E", "HOVUZ", 3.4, 1.3],
+             [16, 21, "N", "← A", 2.1], [27, 21, "N", "B →", 2.1], [11, 26, "S", "KUTUBXONA", 2.4, 1.5], [32, 26, "S", "OSHXONA", 2.4, 1.5],
+             [2, 24, "E", "A ↑", 2.1], [41, 24, "W", "B ↑", 2.1], [21, 40, "N", "MEHMONXONA", 2.4, 1.4]]
+    cables = [[30, 30, 58, 30], [30, 36, 58, 36]]
+    return g, holds, plan, signs, cables
+
 WALK = set('.ckAtB')   # bots walk over crates? no: crates block bots, players can jump; treat c as blocked for bot paths
 BOTOK = set('.AtBk')
 
@@ -205,7 +267,7 @@ def draw(name, rows, holds, plan, out):
 
 if __name__ == '__main__':
     out = {}
-    for name, fn in (('bekat', bekat), ('saroy', saroy), ('zavod', zavod)):
+    for name, fn in (('bekat', bekat), ('saroy', saroy), ('zavod', zavod), ('koshk', koshk)):
         g, holds, plan, signs, cables = fn()
         rows = check(name, g, holds, plan)
         draw(name, rows, holds, plan, f'{sys.argv[1]}/{name}.png')

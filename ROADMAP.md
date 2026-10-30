@@ -50,6 +50,7 @@ Haqiqiy CS'dagi imkoniyatlar bosqichma-bosqich qo'shiladi. Bosqichlar ustuvorlik
 - ✅ Ikki yangi ixcham xarita: Bozor va Karvonsaroy (Qumtepa bilan birga 3 ta); xona yaratishda va xona egasi o'yin davomida tanlaydi
 - ✅ Bekat (eski temiryo'l bekati: perron, depo — A, yuk ombori — B; soat minorasi, relslar; avvalgi Registon o'rniga) va Saroy (tepalikdagi qal'a: ichki zallar, devor bo'yi uzun yo'lak, zinapoyali yo'l; qal'a tishlari, minoralar, bayroqlar) — jami 5 ta xarita, ovoz berish 1–5 tugmalari
 - ✅ Zavod xaritasi: dastgohlar zali (A), konteynerli ombor (B), konveyer zali, qozonxona va ustaxona; mo'rilar, quvurlar; tayyor tutun joylari; rasmiy `zavod-comp` xonasi
+- ✅ Ko'shk xaritasi: hujum uy ichidan chiqadi, himoya tashqaridan — garaj (A), hovuz (B), butali bog'; rasmiy `koshk-comp` xonasi
 - ✅ Xarita muharriri: o'z xaritangizni chizish (simmetriya, tasodifiy xarita, shablonlar), botlar bilan sinash, galereya (yangi/mashhur/meniki), onlayn xona va havola
 - ✅ Graffiti: o'z 16×16 rasmingiz yoki tayyorlari, T — devorga chizish, onlayn boshqalar ham ko'radi (server tekshiradi), o'chirib qo'yish mumkin
 - ✅ Kun vaqti (kunduz, kechqurun, tun) va ob-havo (yomg'ir va chaqmoq, qor, chang bo'roni): botlar bilan va onlayn xonalarda, rasmiy xonalarda tasodifiy

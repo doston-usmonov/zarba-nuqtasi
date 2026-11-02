@@ -40,18 +40,27 @@ func TestSpectators(t *testing.T) {
 	s2 := dialWS(t, tc, "zn-kuz&spec=1")
 	defer s2.c.Close()
 	r := h.rooms["zn-kuz"]
-	r.mu.Lock()
-	bots, humans := r.botCountLocked()
-	lst := r.listingLocked()
-	var sc *client
-	for _, cl := range r.clients {
-		if cl.id == s.id {
-			sc = cl
+	// kuzatuvchining "p" xabari o'quvchi goroutine'da qayta ishlanguncha kutamiz (yuklangan mashinada sekin)
+	var humans, bots, spec int
+	var sq, nm string
+	var alive, found bool
+	for end := time.Now().Add(5 * time.Second); ; time.Sleep(20 * time.Millisecond) {
+		r.mu.Lock()
+		bots, humans = r.botCountLocked()
+		spec = r.listingLocked().Spec
+		found = false
+		for _, cl := range r.clients {
+			if cl.id == s.id {
+				found, sq, nm, alive = true, cl.info.Sq, cl.info.Nm, cl.ps.alive
+			}
+		}
+		r.mu.Unlock()
+		if (found && nm == "Ayg'oqchi" && spec == 2) || time.Now().After(end) {
+			break
 		}
 	}
-	r.mu.Unlock()
-	if humans != 2 || bots != 0 || lst.Spec != 2 || sc == nil || sc.info.Sq != "" || sc.info.Nm != "Ayg'oqchi" || sc.ps.alive {
-		t.Fatalf("kuzatuvchi o'yinchi bo'lib qoldi: odam %d, kuzatuvchi %d, %+v", humans, lst.Spec, sc)
+	if humans != 2 || bots != 0 || spec != 2 || !found || sq != "" || nm != "Ayg'oqchi" || alive {
+		t.Fatalf("kuzatuvchi o'yinchi bo'lib qoldi: odam %d, bot %d, kuzatuvchi %d, sq %q nm %q tirik %v", humans, bots, spec, sq, nm, alive)
 	}
 	// o'yinchilar kuzatuvchining holatini olmaydi
 	s.send(map[string]any{"t": "chat", "d": map[string]any{"m": "B ga borishyapti"}})
